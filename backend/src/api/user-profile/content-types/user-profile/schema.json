@@ -1,0 +1,95 @@
+{
+  "kind": "collectionType",
+  "collectionName": "user_profiles",
+  "info": {
+    "singularName": "user-profile",
+    "pluralName": "user-profiles",
+    "displayName": "User Profile",
+    "description": "User school information for timetable integration"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "schoolLevel": {
+      "type": "enumeration",
+      "enum": ["elementary", "middle", "high", "other", "manager"],
+      "required": true
+    },
+    "managerStatus": {
+      "type": "enumeration",
+      "enum": ["pending", "approved", "rejected"]
+    },
+    "atptOfcdcScCode": {
+      "type": "string"
+    },
+    "sdSchulCode": {
+      "type": "string"
+    },
+    "schoolName": {
+      "type": "string"
+    },
+    "grade": {
+      "type": "string"
+    },
+    "className": {
+      "type": "string"
+    },
+    "examPrepWeeksBefore": {
+      "type": "integer",
+      "default": 4,
+      "min": 1,
+      "max": 12
+    },
+    "examPrepWeeksByRound": {
+      "type": "json"
+    },
+    "examPrepWeeklyPlans": {
+      "type": "json"
+    },
+    "examPrepWeeklyPlanTemplates": {
+      "type": "json"
+    },
+    "vacationWeeklyPlans": {
+      "type": "json"
+    },
+    "vacationWeeklyPlanTemplates": {
+      "type": "json"
+    },
+    "regularWeeklyPlans": {
+      "type": "json"
+    },
+    "regularWeeklyPlanTemplates": {
+      "type": "json"
+    },
+    "vacationPeriodSettings": {
+      "type": "json"
+    },
+    "examPeriodSettings": {
+      "type": "json"
+    },
+    "subjects": {
+      "type": "json"
+    },
+    "user": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "termsAgreedAt": {
+      "type": "datetime"
+    },
+    "termsVersion": {
+      "type": "string"
+    },
+    "privacyAgreedAt": {
+      "type": "datetime"
+    },
+    "privacyVersion": {
+      "type": "string"
+    },
+    "guardianConsentConfirmedAt": {
+      "type": "datetime"
+    }
+  }
+}

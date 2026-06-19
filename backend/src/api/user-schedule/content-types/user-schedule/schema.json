@@ -1,0 +1,68 @@
+{
+  "kind": "collectionType",
+  "collectionName": "user_schedules",
+  "info": {
+    "singularName": "user-schedule",
+    "pluralName": "user-schedules",
+    "displayName": "User Schedule",
+    "description": "User-created schedules (weekly recurring or one-time)"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "scheduleCategory": {
+      "type": "enumeration",
+      "enum": ["managed", "academy", "fixed", "other"],
+      "required": true,
+      "default": "managed"
+    },
+    "startTime": {
+      "type": "string",
+      "required": true
+    },
+    "endTime": {
+      "type": "string",
+      "required": true
+    },
+    "allDay": {
+      "type": "boolean",
+      "default": false
+    },
+    "recurrenceType": {
+      "type": "enumeration",
+      "enum": ["weekly", "once"],
+      "required": true
+    },
+    "daysOfWeek": {
+      "type": "json"
+    },
+    "validFrom": {
+      "type": "date"
+    },
+    "validUntil": {
+      "type": "date"
+    },
+    "date": {
+      "type": "date"
+    },
+    "endDate": {
+      "type": "date"
+    },
+    "excludedDates": {
+      "type": "json"
+    },
+    "overrides": {
+      "type": "json"
+    },
+    "user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    }
+  }
+}

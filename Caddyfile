@@ -1,0 +1,5 @@
+# Local test: APP_DOMAIN=localhost
+# Production: APP_DOMAIN=your-domain.example.com
+{$APP_DOMAIN} {
+	reverse_proxy frontend:3000
+}

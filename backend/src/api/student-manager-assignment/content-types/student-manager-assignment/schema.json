@@ -1,0 +1,36 @@
+{
+  "kind": "collectionType",
+  "collectionName": "student_manager_assignments",
+  "info": {
+    "singularName": "student-manager-assignment",
+    "pluralName": "student-manager-assignments",
+    "displayName": "Student Manager Assignment",
+    "description": "Student-to-manager assignment records for multi-manager support"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "student": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "required": true
+    },
+    "manager": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "required": true
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": ["active", "removed"],
+      "default": "active",
+      "required": true
+    },
+    "assignedAt": {
+      "type": "datetime"
+    }
+  }
+}

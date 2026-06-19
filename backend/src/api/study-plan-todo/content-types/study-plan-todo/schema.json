@@ -1,0 +1,62 @@
+{
+  "kind": "collectionType",
+  "collectionName": "study_plan_todos",
+  "info": {
+    "singularName": "study-plan-todo",
+    "pluralName": "study-plan-todos",
+    "displayName": "Study Plan Todo",
+    "description": "User study plan todos (weekly recurring or one-time)"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "subject": {
+      "type": "string",
+      "required": true
+    },
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "startTime": {
+      "type": "string",
+      "required": true
+    },
+    "endTime": {
+      "type": "string",
+      "required": true
+    },
+    "recurrenceType": {
+      "type": "enumeration",
+      "enum": ["weekly", "once"],
+      "required": true
+    },
+    "daysOfWeek": {
+      "type": "json"
+    },
+    "validFrom": {
+      "type": "date"
+    },
+    "validUntil": {
+      "type": "date"
+    },
+    "date": {
+      "type": "date"
+    },
+    "excludedDates": {
+      "type": "json"
+    },
+    "overrides": {
+      "type": "json"
+    },
+    "executionRecords": {
+      "type": "json"
+    },
+    "user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    }
+  }
+}

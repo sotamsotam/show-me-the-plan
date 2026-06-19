@@ -1,0 +1,12 @@
+{
+  "name": "routine-maker-v2",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Show Me The Plan — frontend + backend workspace root",
+  "scripts": {
+    "dev:frontend": "npm run dev --prefix frontend",
+    "dev:backend": "npm run develop --prefix backend",
+    "build:frontend": "npm run build --prefix frontend",
+    "build:backend": "npm run build --prefix backend"
+  }
+}

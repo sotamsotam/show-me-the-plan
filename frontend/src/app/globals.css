@@ -1,0 +1,3618 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body {
+    max-width: 100%;
+    overflow-x: clip;
+  }
+
+  body {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+}
+
+@layer utilities {
+  .touch-target {
+    @apply min-h-11 min-w-11 touch-manipulation;
+  }
+
+  .touch-press {
+    @apply touch-manipulation transition-[transform,opacity] duration-100 active:scale-[0.97] active:opacity-80;
+  }
+
+  .mobile-list-row {
+    @apply flex min-h-[3.25rem] w-full items-center gap-3 px-4 py-3 touch-press;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-page-in {
+    animation: none !important;
+  }
+}
+
+@keyframes calendar-edit-hint-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.calendar-edit-hint {
+  animation: calendar-edit-hint-enter 0.25s ease-out;
+}
+
+.calendar-edit-hint--select {
+  background: #e8f0fe;
+  border-color: #aecbfa;
+  color: #174ea6;
+}
+
+.calendar-edit-hint--draft {
+  background: #e6f4ea;
+  border-color: #a8dab5;
+  color: #137333;
+}
+
+@media (prefers-color-scheme: dark) {
+  .calendar-edit-hint--select {
+    background: rgba(26, 115, 232, 0.18);
+    border-color: rgba(138, 180, 248, 0.45);
+    color: #e8eaed;
+  }
+
+  .calendar-edit-hint--draft {
+    background: rgba(52, 168, 83, 0.18);
+    border-color: rgba(129, 201, 149, 0.45);
+    color: #e8eaed;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .calendar-edit-hint {
+    animation: none;
+  }
+}
+
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 214, 219, 220;
+  --background-end-rgb: 255, 255, 255;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --foreground-rgb: 255, 255, 255;
+    --background-start-rgb: 0, 0, 0;
+    --background-end-rgb: 0, 0, 0;
+  }
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(var(--background-end-rgb))
+    )
+    rgb(var(--background-start-rgb));
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+/* Tailwind preflight가 FullCalendar 내부 요소 스타일을 초기화하는 것 방지 */
+@layer base {
+  .schedule-calendar .fc .fc-button {
+    appearance: auto;
+    background-color: var(--fc-button-bg-color);
+    background-image: none;
+    border: 1px solid var(--fc-button-border-color);
+    border-radius: 0.25em;
+    color: var(--fc-button-text-color);
+    font: inherit;
+    line-height: normal;
+    margin: 0;
+    padding: 0.4em 0.65em;
+    text-transform: none;
+  }
+
+  .schedule-calendar .fc table {
+    border-collapse: collapse;
+    border-spacing: 0;
+    text-indent: 0;
+  }
+
+  .schedule-calendar .fc th,
+  .schedule-calendar .fc td {
+    border-color: var(--fc-border-color);
+  }
+}
+
+/*
+ * FullCalendar v6는 런타임에 <style data-fullcalendar>를 주입하며 :root 변수도 덮어씁니다.
+ * .schedule-calendar에 변수와 오버라이드를 스코프하면 주입된 기본값보다 우선합니다.
+ */
+.schedule-calendar {
+  --fc-small-font-size: 0.8em;
+
+  --fc-page-bg-color: #fff;
+  --fc-neutral-bg-color: hsla(0, 0%, 82%, 0.3);
+  --fc-neutral-text-color: grey;
+  --fc-border-color: #ddd;
+
+  --fc-button-text-color: #fff;
+
+  --fc-button-bg-color: #f3af00;
+  --fc-button-border-color: #f3af00;
+
+  --fc-button-hover-bg-color: #f8cf66;
+  --fc-button-hover-border-color: #f8cf66;
+
+  --fc-button-active-bg-color: #f8cf66;
+  --fc-button-active-border-color: #f8cf66;
+
+  --fc-event-bg-color: #b1b1b1;
+  --fc-event-border-color: #5f5f5f;
+  --fc-event-text-color: #ffffff;
+  --fc-event-selected-overlay-color: rgba(0, 0, 0, 0.25);
+
+  --fc-more-link-bg-color: #d0d0d0;
+  --fc-more-link-text-color: inherit;
+
+  --fc-event-resizer-thickness: 8px;
+  --fc-event-resizer-dot-total-width: 8px;
+  --fc-event-resizer-dot-border-width: 1px;
+
+  --fc-non-business-color: hsla(0, 0%, 84%, 0.3);
+
+  --fc-bg-event-color: #8fdf82;
+  --fc-bg-event-opacity: 0.3;
+
+  --fc-highlight-color: rgba(188, 232, 241, 0.3);
+  --fc-today-bg-color: rgba(255, 220, 40, 0.15);
+
+  --fc-now-indicator-color: red;
+
+  --fc-daygrid-event-dot-width: 8px;
+
+  --cal-default-bg: #f1f3f4;
+  --cal-default-accent: #5f6368;
+  --cal-default-text: #3c4043;
+}
+
+@media (prefers-color-scheme: dark) {
+  .schedule-calendar {
+    --fc-page-bg-color: transparent;
+    --fc-border-color: #3f3f46;
+    --fc-neutral-bg-color: rgba(255, 255, 255, 0.04);
+    --fc-neutral-text-color: #9ca3af;
+    --fc-today-bg-color: rgba(138, 180, 248, 0.08);
+    --fc-now-indicator-color: #f28b82;
+    --fc-highlight-color: rgba(138, 180, 248, 0.12);
+
+    --cal-default-bg: rgba(95, 99, 104, 0.22);
+    --cal-default-accent: #9aa0a6;
+    --cal-default-text: #e8eaed;
+  }
+}
+
+/* FullCalendar 타이포그래피 — Inter(앱 기본) + 컴팩트 크기 */
+.schedule-calendar .fc {
+  color: #3c4043;
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+  letter-spacing: -0.01em;
+  line-height: 1.45;
+}
+
+.schedule-calendar .fc .fc-toolbar-title {
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+}
+
+.schedule-calendar .fc .fc-toolbar-chunk--with-countdown {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+@media (max-width: 640px) {
+  .schedule-calendar .fc .fc-header-toolbar .fc-toolbar-chunk--with-countdown {
+    padding-bottom: 0.5rem;
+  }
+
+  .schedule-calendar .fc .fc-toolbar-chunk--with-countdown .exam-countdown-host {
+    margin-bottom: 0.125rem;
+  }
+}
+
+.exam-countdown-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid color-mix(in srgb, #e8710a 22%, #fdd663);
+  border-radius: 9999px;
+  background: linear-gradient(180deg, #fffaf0 0%, #fef7e0 100%);
+  color: #8a4b00;
+  line-height: 1.2;
+  padding: 0.35rem 0.75rem 0.35rem 0.65rem;
+  white-space: nowrap;
+  box-shadow:
+    0 1px 2px rgba(232, 113, 10, 0.12),
+    0 1px 3px rgba(60, 64, 67, 0.06);
+}
+
+.exam-countdown-badge::before {
+  content: '';
+  width: 0.875rem;
+  height: 0.875rem;
+  flex-shrink: 0;
+  background-color: #e8710a;
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='18' rx='2'/%3E%3Cpath d='M16 2v4'/%3E%3Cpath d='M8 2v4'/%3E%3Cpath d='M3 10h18'/%3E%3C/svg%3E");
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  opacity: 0.92;
+}
+
+.exam-countdown-badge__days {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #b06000;
+}
+
+.exam-countdown-badge__label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #8a4b00;
+  padding-left: 0.5rem;
+  border-left: 1px solid color-mix(in srgb, #e8710a 24%, transparent);
+}
+
+.exam-countdown-host .exam-countdown-badge {
+  min-height: 2rem;
+  padding: 0.375rem 0.8rem 0.375rem 0.7rem;
+}
+
+.exam-countdown-host .exam-countdown-badge__days {
+  font-size: 1rem;
+}
+
+.exam-countdown-host .exam-countdown-badge__label {
+  font-size: 0.8125rem;
+}
+
+@media (max-width: 768px) {
+  .exam-countdown-badge {
+    gap: 0.375rem;
+    padding: 0.3rem 0.6rem 0.3rem 0.55rem;
+  }
+
+  .exam-countdown-badge::before {
+    width: 0.8125rem;
+    height: 0.8125rem;
+  }
+
+  .exam-countdown-badge__days {
+    font-size: 0.875rem;
+  }
+
+  .exam-countdown-badge__label {
+    font-size: 0.6875rem;
+    padding-left: 0.4rem;
+  }
+
+  .exam-countdown-host .exam-countdown-badge__days {
+    font-size: 0.9375rem;
+  }
+
+  .exam-countdown-host .exam-countdown-badge__label {
+    font-size: 0.75rem;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .exam-countdown-badge {
+    border-color: color-mix(in srgb, #ffbc6a 32%, #5f6368);
+    background: linear-gradient(180deg, rgba(249, 171, 0, 0.14) 0%, rgba(249, 171, 0, 0.24) 100%);
+    color: #fef7e0;
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.28),
+      0 1px 3px rgba(0, 0, 0, 0.18);
+  }
+
+  .exam-countdown-badge::before {
+    background-color: #ffbc6a;
+  }
+
+  .exam-countdown-badge__days {
+    color: #fdd663;
+  }
+
+  .exam-countdown-badge__label {
+    color: #fee8a0;
+    border-left-color: color-mix(in srgb, #ffbc6a 35%, transparent);
+  }
+}
+
+.schedule-calendar .fc .fc-col-header-cell-cushion {
+  color: #5f6368;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 1.3;
+  padding: 0.4rem 0.25rem;
+}
+
+.schedule-calendar .fc .fc-col-header-cell.fc-exam-prep-day {
+  background: #fdeaea;
+}
+
+.schedule-calendar .fc .fc-col-header-cell.fc-exam-prep-day .fc-col-header-cell-cushion {
+  color: #9f1239;
+  font-weight: 600;
+}
+
+.schedule-calendar .fc .fc-col-header-cell.fc-vacation-day {
+  background: #fff8e1;
+}
+
+.schedule-calendar .fc .fc-col-header-cell.fc-vacation-day .fc-col-header-cell-cushion {
+  color: #9a6700;
+  font-weight: 600;
+}
+
+.schedule-calendar .fc .fc-col-header-cell.fc-school-term-day {
+  background: #e8f5e9;
+}
+
+.schedule-calendar .fc .fc-col-header-cell.fc-school-term-day .fc-col-header-cell-cushion {
+  color: #1b5e20;
+  font-weight: 600;
+}
+
+.schedule-calendar .fc .fc-col-header-cell-cushion .fc-exam-prep-dday {
+  margin-left: 0.2rem;
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  opacity: 0.9;
+  white-space: nowrap;
+}
+
+.schedule-calendar .fc .fc-timegrid-slot-label-cushion {
+  color: #70757a;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.schedule-calendar .fc .fc-timegrid-axis-cushion,
+.schedule-calendar .fc .fc-timegrid-slot-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* 슬롯 높이는 em 기준 — 폰트 축소 시 간격이 같이 줄어드는 것 보정 */
+.schedule-calendar .fc .fc-timegrid-slot {
+  height: 1.65em;
+}
+
+.schedule-calendar .fc .fc-daygrid-day-number {
+  color: #5f6368;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  padding: 0.25rem 0.35rem;
+}
+
+.schedule-calendar .fc .fc-button {
+  font-size: 0.875rem;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.schedule-calendar .fc .fc-button .fc-icon {
+  font-size: 0.95em;
+}
+
+/* 툴바 날짜 이동(prev/next)과 오늘 버튼 높이·간격 정렬 */
+.schedule-calendar .fc .fc-header-toolbar .fc-toolbar-chunk:first-child {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.schedule-calendar .fc .fc-header-toolbar .fc-toolbar-chunk:first-child .fc-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  line-height: 1;
+}
+
+.weekly-plan-toggle-host {
+  display: inline-flex;
+  align-items: center;
+}
+
+.weekly-plan-toggle-host .weekly-plan-toggle-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  box-sizing: border-box;
+  border: 1px solid color-mix(in srgb, #1a73e8 22%, #dadce0);
+  border-left: 3px solid #1a73e8;
+  border-radius: 6px;
+  background: linear-gradient(180deg, #f8fbff 0%, #e8f0fe 100%);
+  padding: 0.4em 0.65em;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1;
+  color: #174ea6;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow:
+    0 1px 2px rgba(26, 115, 232, 0.1),
+    0 1px 3px rgba(60, 64, 67, 0.06);
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.weekly-plan-toggle-host .weekly-plan-toggle-button::before {
+  content: '';
+  width: 0.875rem;
+  height: 0.875rem;
+  flex-shrink: 0;
+  background-color: currentColor;
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 6h13'/%3E%3Cpath d='M8 12h13'/%3E%3Cpath d='M8 18h13'/%3E%3Cpath d='M3 6h.01'/%3E%3Cpath d='M3 12h.01'/%3E%3Cpath d='M3 18h.01'/%3E%3C/svg%3E");
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  opacity: 0.92;
+}
+
+.weekly-plan-toggle-host .weekly-plan-toggle-button::after {
+  content: '';
+  width: 0.35rem;
+  height: 0.35rem;
+  margin-left: 0.1rem;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg) translateY(-1px);
+  transition: transform 0.15s ease;
+  opacity: 0.8;
+}
+
+.weekly-plan-toggle-host .weekly-plan-toggle-button[aria-expanded='true']::after {
+  transform: rotate(45deg) translateY(1px);
+}
+
+.weekly-plan-toggle-host .weekly-plan-toggle-button:hover {
+  background: linear-gradient(180deg, #eef4ff 0%, #d2e3fc 100%);
+  border-color: color-mix(in srgb, #1a73e8 34%, #c6c9cc);
+  box-shadow:
+    0 2px 6px rgba(26, 115, 232, 0.14),
+    0 1px 3px rgba(60, 64, 67, 0.08);
+}
+
+.weekly-plan-toggle-host .weekly-plan-toggle-button[aria-expanded='true'] {
+  background: linear-gradient(180deg, #1a73e8 0%, #1557b0 100%);
+  border-color: #1a73e8;
+  border-left-color: #0d47a1;
+  color: #ffffff;
+  box-shadow:
+    0 2px 8px rgba(26, 115, 232, 0.28),
+    0 1px 3px rgba(60, 64, 67, 0.1);
+}
+
+.weekly-plan-toggle-host .weekly-plan-toggle-button[aria-expanded='true']:hover {
+  background: linear-gradient(180deg, #1f7bf0 0%, #1860c4 100%);
+  border-color: #1f7bf0;
+}
+
+.weekly-plan-toggle-host .weekly-plan-toggle-button:focus-visible {
+  outline: 2px solid color-mix(in srgb, #1a73e8 45%, transparent);
+  outline-offset: 2px;
+}
+
+@media (min-width: 581px) {
+  .weekly-plan-toggle-host .weekly-plan-toggle-button {
+    height: 1.875rem;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .weekly-plan-toggle-host .weekly-plan-toggle-button {
+    border-color: color-mix(in srgb, #8ab4f8 28%, #5f6368);
+    border-left-color: #8ab4f8;
+    background: linear-gradient(180deg, rgba(26, 115, 232, 0.18) 0%, rgba(26, 115, 232, 0.28) 100%);
+    color: #8ab4f8;
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.28),
+      0 1px 3px rgba(0, 0, 0, 0.18);
+  }
+
+  .weekly-plan-toggle-host .weekly-plan-toggle-button:hover {
+    background: linear-gradient(180deg, rgba(26, 115, 232, 0.24) 0%, rgba(26, 115, 232, 0.34) 100%);
+    border-color: color-mix(in srgb, #8ab4f8 42%, #80868b);
+  }
+
+  .weekly-plan-toggle-host .weekly-plan-toggle-button[aria-expanded='true'] {
+    background: linear-gradient(180deg, #1a73e8 0%, #1557b0 100%);
+    border-color: #1a73e8;
+    border-left-color: #0d47a1;
+    color: #ffffff;
+  }
+
+  .weekly-plan-toggle-host .weekly-plan-toggle-button[aria-expanded='true']:hover {
+    background: linear-gradient(180deg, #1f7bf0 0%, #1860c4 100%);
+    border-color: #1f7bf0;
+  }
+}
+
+@media (min-width: 581px) {
+  .schedule-calendar .fc .fc-header-toolbar .fc-toolbar-chunk:first-child .fc-button {
+    height: 1.875rem;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+}
+
+.schedule-calendar .fc .fc-more-link {
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+@media (prefers-color-scheme: dark) {
+  .schedule-calendar .fc {
+    color: #e8eaed;
+  }
+
+  .schedule-calendar .fc .fc-col-header-cell-cushion,
+  .schedule-calendar .fc .fc-daygrid-day-number {
+    color: #9aa0a6;
+  }
+
+  .schedule-calendar .fc .fc-col-header-cell.fc-exam-prep-day {
+    background: rgba(248, 113, 113, 0.16);
+  }
+
+  .schedule-calendar .fc .fc-col-header-cell.fc-exam-prep-day .fc-col-header-cell-cushion {
+    color: #fca5a5;
+  }
+
+  .schedule-calendar .fc .fc-col-header-cell.fc-vacation-day {
+    background: rgba(250, 204, 21, 0.14);
+  }
+
+  .schedule-calendar .fc .fc-col-header-cell.fc-vacation-day .fc-col-header-cell-cushion {
+    color: #facc15;
+  }
+
+  .schedule-calendar .fc .fc-col-header-cell.fc-school-term-day {
+    background: rgba(74, 222, 128, 0.12);
+  }
+
+  .schedule-calendar .fc .fc-col-header-cell.fc-school-term-day .fc-col-header-cell-cushion {
+    color: #86efac;
+  }
+
+  .schedule-calendar .fc .fc-col-header-cell-cushion .fc-exam-prep-dday {
+    color: #fecaca;
+  }
+
+  .schedule-calendar .fc .fc-timegrid-slot-label-cushion,
+  .schedule-calendar .fc .fc-timegrid-axis-cushion {
+    color: #9aa0a6;
+  }
+}
+
+/* 클릭·선택 가능한 영역 */
+.schedule-calendar .fc .fc-button,
+.schedule-calendar .fc .fc-more-link,
+.schedule-calendar .fc .fc-daygrid-day-number {
+  cursor: pointer;
+}
+
+.schedule-calendar .fc .fc-timegrid-slot-lane,
+.schedule-calendar .fc .fc-daygrid-day {
+  cursor: pointer;
+}
+
+.schedule-calendar .fc .fc-event:not(.draft-event) {
+  cursor: pointer;
+}
+
+/* 일반 이벤트 (주간/일간 timeGrid) */
+.schedule-calendar .fc .fc-timegrid-event,
+.schedule-calendar .fc .fc-daygrid-block-event {
+  margin-right: 2px;
+  white-space: pre-wrap;
+}
+
+/* 캘린더 이벤트 카드 (Google Calendar / Notion 틴트 모델) */
+.schedule-calendar .fc .fc-event.cal-event-card {
+  --cal-event-bg: var(--cal-default-bg);
+  --cal-event-accent: var(--cal-default-accent);
+  --cal-event-text: var(--cal-default-text);
+
+  background: var(--cal-event-bg) !important;
+  border: none !important;
+  border-left: 3px solid var(--cal-event-accent) !important;
+  border-radius: 6px;
+  box-shadow: 0 1px 2px rgba(60, 64, 67, 0.12);
+  color: var(--cal-event-text) !important;
+  overflow: hidden;
+  padding: 3px 5px;
+}
+
+.schedule-calendar .fc .fc-event.cal-event-card:hover {
+  box-shadow: 0 2px 6px rgba(60, 64, 67, 0.16);
+}
+
+.schedule-calendar .fc .fc-event.cal-event-card .fc-event-main {
+  color: inherit;
+}
+
+.schedule-calendar .fc .fc-event.cal-event-card .cal-event-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  line-height: 1.25;
+  min-width: 0;
+}
+
+.schedule-calendar .fc .fc-event.cal-event-card .cal-event-title {
+  font-size: 13px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.schedule-calendar .fc .fc-event.cal-event-card .cal-event-title--truncate {
+  white-space: nowrap;
+}
+
+.schedule-calendar .fc .fc-event.cal-event-card .cal-event-time {
+  font-size: 11px;
+  font-weight: 500;
+  opacity: 0.8;
+  white-space: nowrap;
+}
+
+.schedule-calendar .fc .fc-event.cal-event-card .cal-event-meta {
+  font-size: 10px;
+  font-weight: 500;
+  opacity: 0.7;
+}
+
+.schedule-calendar .fc .fc-event.cal-event-card.subject-korean {
+  --cal-event-bg: #fce8e6;
+  --cal-event-accent: #d93025;
+  --cal-event-text: #c5221f;
+}
+
+.schedule-calendar .fc .fc-event.cal-event-card.subject-english {
+  --cal-event-bg: #e8f0fe;
+  --cal-event-accent: #1a73e8;
+  --cal-event-text: #174ea6;
+}
+
+.schedule-calendar .fc .fc-event.cal-event-card.subject-math {
+  --cal-event-bg: #f3e8fd;
+  --cal-event-accent: #9334e6;
+  --cal-event-text: #7627bb;
+}
+
+.schedule-calendar .fc .fc-event.cal-event-card.subject-social {
+  --cal-event-bg: #fef7e0;
+  --cal-event-accent: #f9ab00;
+  --cal-event-text: #b06000;
+}
+
+.schedule-calendar .fc .fc-event.cal-event-card.subject-science {
+  --cal-event-bg: #e6f4ea;
+  --cal-event-accent: #34a853;
+  --cal-event-text: #137333;
+}
+
+.schedule-calendar .fc .fc-event.cal-event-card.subject-ethics {
+  --cal-event-bg: #fce4ec;
+  --cal-event-accent: #e91e8c;
+  --cal-event-text: #ad1457;
+}
+
+.schedule-calendar .fc .fc-event.cal-event-card.subject-tech_home {
+  --cal-event-bg: #e0f7fa;
+  --cal-event-accent: #00838f;
+  --cal-event-text: #006064;
+}
+
+.schedule-calendar .fc .fc-event.cal-event-card.subject-info {
+  --cal-event-bg: #e3f2fd;
+  --cal-event-accent: #1976d2;
+  --cal-event-text: #0d47a1;
+}
+
+.schedule-calendar .fc .fc-event.cal-event-card.subject-history {
+  --cal-event-bg: #fff0e5;
+  --cal-event-accent: #e8710a;
+  --cal-event-text: #b06000;
+}
+
+.schedule-calendar .fc .fc-event.cal-event-card.subject-chinese {
+  --cal-event-bg: #fff3e0;
+  --cal-event-accent: #ef6c00;
+  --cal-event-text: #e65100;
+}
+
+.schedule-calendar .fc .fc-event.cal-event-card.subject-other {
+  --cal-event-bg: #f1f3f4;
+  --cal-event-accent: #5f6368;
+  --cal-event-text: #3c4043;
+}
+
+.schedule-calendar .fc .fc-event.cal-event-card.school-exam-event {
+  --cal-event-bg: #fce8e6;
+  --cal-event-accent: #d93025;
+  --cal-event-text: #b3261e;
+  font-weight: 600;
+}
+
+.schedule-calendar .fc .fc-event.cal-event-card.school-holiday-event {
+  --cal-event-bg: #e8f0fe;
+  --cal-event-accent: #1a73e8;
+  --cal-event-text: #174ea6;
+  font-weight: 600;
+}
+
+.schedule-calendar .fc .fc-timegrid .fc-daygrid-body {
+  min-height: 2.5rem;
+}
+
+.schedule-calendar .fc .fc-timegrid .fc-daygrid-event {
+  margin: 1px 2px;
+}
+
+.schedule-calendar .fc .fc-event.cal-event-card.user-event-managed {
+  --cal-event-bg: #fff3e0;
+  --cal-event-accent: #e8710a;
+  --cal-event-text: #b06000;
+}
+
+.schedule-calendar .fc .fc-event.cal-event-card.user-event-academy {
+  --cal-event-bg: #e8f0fe;
+  --cal-event-accent: #1a73e8;
+  --cal-event-text: #174ea6;
+}
+
+.schedule-calendar .fc .fc-event.cal-event-card.user-event-fixed {
+  --cal-event-bg: #f1f3f4;
+  --cal-event-accent: #5f6368;
+  --cal-event-text: #3c4043;
+}
+
+.schedule-calendar .fc .fc-event.cal-event-card.user-event-other {
+  --cal-event-bg: #f3e8fd;
+  --cal-event-accent: #9334e6;
+  --cal-event-text: #7627bb;
+}
+
+.schedule-calendar .fc .fc-event.cal-event-card.draft-event {
+  --cal-event-bg: rgba(52, 168, 83, 0.12);
+  --cal-event-accent: #34a853;
+  --cal-event-text: #137333;
+  background: var(--cal-event-bg) !important;
+  border: 2px dashed var(--cal-event-accent) !important;
+  border-left: 3px solid var(--cal-event-accent) !important;
+  cursor: grab;
+}
+
+.schedule-calendar .fc .fc-event.cal-event-card.draft-event:active {
+  cursor: grabbing;
+}
+
+.schedule-calendar .fc .fc-event.cal-event-card.event-editing {
+  background: color-mix(in srgb, var(--cal-event-bg) 78%, var(--cal-event-accent) 22%) !important;
+  border: 2px dashed var(--cal-event-accent) !important;
+  border-left: 3px solid var(--cal-event-accent) !important;
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--cal-event-accent) 28%, transparent),
+    0 2px 6px rgba(60, 64, 67, 0.16);
+  cursor: grab;
+  filter: brightness(0.9);
+  z-index: 3;
+}
+
+.schedule-calendar .fc .fc-event.cal-event-card.event-editing:active {
+  cursor: grabbing;
+}
+
+.schedule-calendar .fc .fc-event.cal-event-card.event-editing .fc-event-resizer {
+  opacity: 1;
+}
+
+.schedule-calendar .fc .fc-timegrid-event.event-editing .fc-event-resizer {
+  background: var(--cal-event-accent);
+  border-radius: 2px;
+  opacity: 0.85;
+}
+
+@media (prefers-color-scheme: dark) {
+  .schedule-calendar .fc .fc-event.cal-event-card.event-editing {
+    background: color-mix(in srgb, var(--cal-event-bg) 65%, #000 35%) !important;
+    box-shadow:
+      0 0 0 2px color-mix(in srgb, var(--cal-event-accent) 35%, transparent),
+      0 2px 8px rgba(0, 0, 0, 0.35);
+    filter: brightness(0.88);
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .schedule-calendar .fc .fc-event.cal-event-card.subject-korean {
+    --cal-event-bg: rgba(217, 48, 37, 0.2);
+    --cal-event-accent: #f28b82;
+    --cal-event-text: #e8eaed;
+  }
+
+  .schedule-calendar .fc .fc-event.cal-event-card.subject-english {
+    --cal-event-bg: rgba(26, 115, 232, 0.2);
+    --cal-event-accent: #8ab4f8;
+    --cal-event-text: #e8eaed;
+  }
+
+  .schedule-calendar .fc .fc-event.cal-event-card.subject-math {
+    --cal-event-bg: rgba(147, 52, 230, 0.2);
+    --cal-event-accent: #c58af9;
+    --cal-event-text: #e8eaed;
+  }
+
+  .schedule-calendar .fc .fc-event.cal-event-card.subject-social {
+    --cal-event-bg: rgba(249, 171, 0, 0.18);
+    --cal-event-accent: #fdd663;
+    --cal-event-text: #e8eaed;
+  }
+
+  .schedule-calendar .fc .fc-event.cal-event-card.subject-science {
+    --cal-event-bg: rgba(52, 168, 83, 0.2);
+    --cal-event-accent: #81c995;
+    --cal-event-text: #e8eaed;
+  }
+
+  .schedule-calendar .fc .fc-event.cal-event-card.subject-ethics {
+    --cal-event-bg: rgba(233, 30, 140, 0.18);
+    --cal-event-accent: #f48fb1;
+    --cal-event-text: #e8eaed;
+  }
+
+  .schedule-calendar .fc .fc-event.cal-event-card.subject-tech_home {
+    --cal-event-bg: rgba(0, 131, 143, 0.2);
+    --cal-event-accent: #4dd0e1;
+    --cal-event-text: #e8eaed;
+  }
+
+  .schedule-calendar .fc .fc-event.cal-event-card.subject-info {
+    --cal-event-bg: rgba(25, 118, 210, 0.2);
+    --cal-event-accent: #64b5f6;
+    --cal-event-text: #e8eaed;
+  }
+
+  .schedule-calendar .fc .fc-event.cal-event-card.subject-history {
+    --cal-event-bg: rgba(232, 113, 10, 0.18);
+    --cal-event-accent: #ffbc6a;
+    --cal-event-text: #e8eaed;
+  }
+
+  .schedule-calendar .fc .fc-event.cal-event-card.subject-chinese {
+    --cal-event-bg: rgba(239, 108, 0, 0.18);
+    --cal-event-accent: #ffb74d;
+    --cal-event-text: #e8eaed;
+  }
+
+  .schedule-calendar .fc .fc-event.cal-event-card.subject-other {
+    --cal-event-bg: rgba(95, 99, 104, 0.22);
+    --cal-event-accent: #9aa0a6;
+    --cal-event-text: #e8eaed;
+  }
+
+  .schedule-calendar .fc .fc-event.cal-event-card.user-event-managed {
+    --cal-event-bg: rgba(232, 113, 10, 0.18);
+    --cal-event-accent: #ffbc6a;
+    --cal-event-text: #e8eaed;
+  }
+
+  .schedule-calendar .fc .fc-event.cal-event-card.user-event-academy {
+    --cal-event-bg: rgba(26, 115, 232, 0.2);
+    --cal-event-accent: #8ab4f8;
+    --cal-event-text: #e8eaed;
+  }
+
+  .schedule-calendar .fc .fc-event.cal-event-card.user-event-fixed {
+    --cal-event-bg: rgba(95, 99, 104, 0.22);
+    --cal-event-accent: #9aa0a6;
+    --cal-event-text: #e8eaed;
+  }
+
+  .schedule-calendar .fc .fc-event.cal-event-card.user-event-other {
+    --cal-event-bg: rgba(147, 52, 230, 0.2);
+    --cal-event-accent: #c58af9;
+    --cal-event-text: #e8eaed;
+  }
+
+  .schedule-calendar .fc .fc-event.cal-event-card.draft-event {
+    --cal-event-bg: rgba(52, 168, 83, 0.15);
+    --cal-event-accent: #81c995;
+    --cal-event-text: #e8eaed;
+  }
+}
+
+.schedule-calendar .fc .fc-daygrid-event.cal-event-card .fc-daygrid-event-dot {
+  border-color: var(--cal-event-accent);
+}
+
+.schedule-calendar .fc .fc-daygrid-event.cal-event-card {
+  border-left-width: 3px;
+  border-left-style: solid;
+  border-left-color: var(--cal-event-accent);
+  padding-left: 4px;
+}
+
+/* 배경 이벤트 (display: 'background') */
+.schedule-calendar .fc .fc-bg-event .fc-event-title {
+  font-size: 16px;
+  font-style: normal;
+  font-weight: bold;
+  margin: 0.5em;
+  background-color: rgb(255, 255, 255);
+  padding: 2px 4px;
+  border-radius: 5px;
+}
+
+.schedule-calendar .fc .fc-bg-event .fc-event-title:hover {
+  background-color: rgb(255, 198, 198);
+}
+
+.schedule-calendar .fc .fc-bg-event {
+  opacity: 0.4 !important;
+}
+
+.schedule-calendar .fc .fc-timegrid-col-bg .fc-bg-event {
+  cursor: pointer;
+}
+
+.schedule-calendar .fc .fc-timegrid-col-bg .fc-bg-event:hover {
+  opacity: 0.6 !important;
+}
+
+/* 월간(dayGrid) 뷰 이벤트 */
+.schedule-calendar .fc-direction-ltr .fc-daygrid-event.fc-event-end,
+.schedule-calendar .fc-direction-rtl .fc-daygrid-event.fc-event-start {
+  margin-right: 2px;
+  white-space: pre-wrap;
+}
+
+.schedule-calendar .fc .fc-timegrid-body,
+.schedule-calendar .fc .fc-timegrid .fc-daygrid-body {
+  z-index: 1;
+}
+
+/* 스터디 플랜: 배경 스케줄 (학교·사용자 일정) — 연한 틴트 워시 */
+.study-plan-calendar .fc .fc-bg-event.cal-bg-event {
+  --cal-bg-fill: rgba(241, 243, 244, 0.55);
+  --cal-bg-accent: rgba(95, 99, 104, 0.35);
+  --cal-bg-label: #5f6368;
+
+  background: var(--cal-bg-fill) !important;
+  border: none !important;
+  border-left: 3px solid var(--cal-bg-accent) !important;
+  opacity: 1 !important;
+}
+
+.study-plan-calendar .fc .fc-bg-event.cal-bg-event .cal-bg-event-inner {
+  padding: 4px 6px;
+}
+
+.study-plan-calendar .fc .fc-bg-event.cal-bg-event .cal-bg-event-label {
+  color: var(--cal-bg-label);
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.study-plan-calendar .fc .fc-bg-event.cal-bg-event.subject-korean {
+  --cal-bg-fill: rgba(252, 232, 230, 0.7);
+  --cal-bg-accent: rgba(217, 48, 37, 0.35);
+  --cal-bg-label: #c5221f;
+}
+
+.study-plan-calendar .fc .fc-bg-event.cal-bg-event.subject-english {
+  --cal-bg-fill: rgba(232, 240, 254, 0.7);
+  --cal-bg-accent: rgba(26, 115, 232, 0.35);
+  --cal-bg-label: #174ea6;
+}
+
+.study-plan-calendar .fc .fc-bg-event.cal-bg-event.subject-math {
+  --cal-bg-fill: rgba(243, 232, 253, 0.7);
+  --cal-bg-accent: rgba(147, 52, 230, 0.35);
+  --cal-bg-label: #7627bb;
+}
+
+.study-plan-calendar .fc .fc-bg-event.cal-bg-event.subject-social {
+  --cal-bg-fill: rgba(254, 247, 224, 0.75);
+  --cal-bg-accent: rgba(249, 171, 0, 0.4);
+  --cal-bg-label: #b06000;
+}
+
+.study-plan-calendar .fc .fc-bg-event.cal-bg-event.subject-science {
+  --cal-bg-fill: rgba(230, 244, 234, 0.75);
+  --cal-bg-accent: rgba(52, 168, 83, 0.35);
+  --cal-bg-label: #137333;
+}
+
+.study-plan-calendar .fc .fc-bg-event.cal-bg-event.subject-ethics {
+  --cal-bg-fill: rgba(252, 228, 236, 0.7);
+  --cal-bg-accent: rgba(233, 30, 140, 0.35);
+  --cal-bg-label: #ad1457;
+}
+
+.study-plan-calendar .fc .fc-bg-event.cal-bg-event.subject-tech_home {
+  --cal-bg-fill: rgba(224, 247, 250, 0.7);
+  --cal-bg-accent: rgba(0, 131, 143, 0.35);
+  --cal-bg-label: #006064;
+}
+
+.study-plan-calendar .fc .fc-bg-event.cal-bg-event.subject-info {
+  --cal-bg-fill: rgba(227, 242, 253, 0.7);
+  --cal-bg-accent: rgba(25, 118, 210, 0.35);
+  --cal-bg-label: #0d47a1;
+}
+
+.study-plan-calendar .fc .fc-bg-event.cal-bg-event.subject-history {
+  --cal-bg-fill: rgba(255, 240, 229, 0.75);
+  --cal-bg-accent: rgba(232, 113, 10, 0.35);
+  --cal-bg-label: #b06000;
+}
+
+.study-plan-calendar .fc .fc-bg-event.cal-bg-event.subject-chinese {
+  --cal-bg-fill: rgba(255, 243, 224, 0.75);
+  --cal-bg-accent: rgba(239, 108, 0, 0.35);
+  --cal-bg-label: #e65100;
+}
+
+.study-plan-calendar .fc .fc-bg-event.cal-bg-event.subject-other {
+  --cal-bg-fill: rgba(241, 243, 244, 0.65);
+  --cal-bg-accent: rgba(95, 99, 104, 0.35);
+  --cal-bg-label: #3c4043;
+}
+
+.study-plan-calendar .fc .fc-bg-event.cal-bg-event.schedule-bg-user-managed {
+  --cal-bg-fill: rgba(255, 243, 224, 0.65);
+  --cal-bg-accent: rgba(232, 113, 10, 0.35);
+  --cal-bg-label: #b06000;
+}
+
+.study-plan-calendar .fc .fc-bg-event.cal-bg-event.schedule-bg-user-academy {
+  --cal-bg-fill: rgba(232, 240, 254, 0.7);
+  --cal-bg-accent: rgba(26, 115, 232, 0.35);
+  --cal-bg-label: #174ea6;
+}
+
+.study-plan-calendar .fc .fc-bg-event.cal-bg-event.schedule-bg-user-fixed {
+  --cal-bg-fill: rgba(241, 243, 244, 0.65);
+  --cal-bg-accent: rgba(95, 99, 104, 0.35);
+  --cal-bg-label: #3c4043;
+}
+
+.study-plan-calendar .fc .fc-bg-event.cal-bg-event.schedule-bg-user-other {
+  --cal-bg-fill: rgba(243, 232, 253, 0.65);
+  --cal-bg-accent: rgba(147, 52, 230, 0.35);
+  --cal-bg-label: #7627bb;
+}
+
+.study-plan-calendar .fc .fc-timegrid-col-bg .fc-bg-event {
+  cursor: default;
+  pointer-events: none;
+}
+
+/* 스터디 플랜: 전면 todo — Google Calendar / Notion 틴트 카드 (v2, 되돌리기: styles/_backup/study-plan-event-styles.v1.css) */
+.study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card {
+  --cal-event-bg: #f8f9fa;
+  --cal-event-accent: #5f6368;
+  --cal-event-text: #202124;
+  --cal-event-subject: #3c4043;
+  --cal-event-muted: #5f6368;
+  --cal-event-badge-bg: var(--cal-event-accent);
+  --cal-event-badge-text: #ffffff;
+
+  background: var(--cal-event-bg) !important;
+  border: 1px solid color-mix(in srgb, var(--cal-event-accent) 20%, transparent) !important;
+  border-left: 3px solid var(--cal-event-accent) !important;
+  border-radius: 8px;
+  box-shadow:
+    0 1px 3px rgba(60, 64, 67, 0.12),
+    0 2px 8px rgb(60 64 67 / 40%);
+  color: var(--cal-event-text) !important;
+  overflow: hidden;
+  padding: 6px 8px 6px 7px;
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card .fc-event-main {
+  color: inherit;
+}
+
+.study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card .cal-event-title,
+.study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card .cal-event-meta {
+  color: var(--cal-event-text);
+}
+
+.study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card .cal-event-time {
+  color: var(--cal-event-muted);
+  opacity: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card:hover {
+  box-shadow:
+    0 4px 12px rgba(60, 64, 67, 0.16),
+    0 6px 18px rgba(60, 64, 67, 0.1);
+  filter: none;
+  transform: translateY(-1px);
+}
+
+.study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card .cal-event-inner--study-plan {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  line-height: 1.35;
+  min-width: 0;
+}
+
+.study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card .cal-event-subject {
+  display: inline-block;
+  align-self: flex-start;
+  max-width: 100%;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 3px 8px;
+  margin-bottom: 4px;
+  border: none;
+  border-radius: 5px;
+  background: var(--cal-event-badge-bg);
+  color: var(--cal-event-badge-text);
+}
+
+.study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card .cal-event-title--wrap {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.35;
+  overflow: visible;
+  text-overflow: unset;
+  white-space: normal;
+  word-break: break-word;
+}
+
+.study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card .cal-event-time {
+  font-size: 10px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* 짧은 스터디 플랜 이벤트 (≤20분: 컴팩트+시간 생략, ≤10분: 한 줄) */
+.study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card:has(.cal-event-inner--study-plan-compact) {
+  padding: 4px 6px 4px 5px;
+}
+
+.study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card:has(.cal-event-inner--study-plan-minimal) {
+  padding: 3px 5px 3px 4px;
+}
+
+.study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card .cal-event-inner--study-plan-short {
+  gap: 2px;
+}
+
+.study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card .cal-event-subject--compact {
+  font-size: 11px;
+  padding: 2px 6px;
+  margin-bottom: 2px;
+}
+
+.study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card .cal-event-title--clamp-2 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  white-space: normal;
+  word-break: break-word;
+}
+
+.study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card .cal-event-inner--study-plan-minimal {
+  gap: 0;
+}
+
+.study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card .cal-event-inline {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card .cal-event-subject--inline {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 5px;
+  margin: 0;
+  border: none;
+  border-radius: 4px;
+  background: var(--cal-event-badge-bg);
+  color: var(--cal-event-badge-text);
+}
+
+.study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card .cal-event-inline-sep {
+  flex-shrink: 0;
+  margin: 0 3px;
+  color: var(--cal-event-muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card .cal-event-inner--study-plan-minimal .cal-event-title {
+  min-width: 0;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card .cal-event-title--truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card.subject-korean {
+  --cal-event-bg: #fce8e6;
+  --cal-event-accent: #d93025;
+  --cal-event-text: #5f1410;
+  --cal-event-subject: #c5221f;
+  --cal-event-muted: #7f1412;
+}
+
+.study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card.subject-english {
+  --cal-event-bg: #e8f0fe;
+  --cal-event-accent: #1a73e8;
+  --cal-event-text: #174ea6;
+  --cal-event-subject: #174ea6;
+  --cal-event-muted: #0b4da8;
+}
+
+.study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card.subject-math {
+  --cal-event-bg: #f3e8fd;
+  --cal-event-accent: #9334e6;
+  --cal-event-text: #4a1480;
+  --cal-event-subject: #7627bb;
+  --cal-event-muted: #4a1480;
+}
+
+.study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card.subject-social {
+  --cal-event-bg: #fef7e0;
+  --cal-event-accent: #f9ab00;
+  --cal-event-text: #6d3f00;
+  --cal-event-subject: #b06000;
+  --cal-event-muted: #6d3f00;
+  --cal-event-badge-bg: #b06000;
+  --cal-event-badge-text: #ffffff;
+}
+
+.study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card.subject-science {
+  --cal-event-bg: #e6f4ea;
+  --cal-event-accent: #34a853;
+  --cal-event-text: #0a4d22;
+  --cal-event-subject: #137333;
+  --cal-event-muted: #0a4d22;
+}
+
+.study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card.subject-ethics {
+  --cal-event-bg: #fce4ec;
+  --cal-event-accent: #e91e8c;
+  --cal-event-text: #6d0d36;
+  --cal-event-subject: #ad1457;
+  --cal-event-muted: #6d0d36;
+}
+
+.study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card.subject-tech_home {
+  --cal-event-bg: #e0f7fa;
+  --cal-event-accent: #00838f;
+  --cal-event-text: #003d40;
+  --cal-event-subject: #006064;
+  --cal-event-muted: #003d40;
+}
+
+.study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card.subject-info {
+  --cal-event-bg: #e3f2fd;
+  --cal-event-accent: #1976d2;
+  --cal-event-text: #062a61;
+  --cal-event-subject: #0d47a1;
+  --cal-event-muted: #062a61;
+}
+
+.study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card.subject-history {
+  --cal-event-bg: #fff0e5;
+  --cal-event-accent: #e8710a;
+  --cal-event-text: #6d3f00;
+  --cal-event-subject: #b06000;
+  --cal-event-muted: #6d3f00;
+}
+
+.study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card.subject-chinese {
+  --cal-event-bg: #fff3e0;
+  --cal-event-accent: #ef6c00;
+  --cal-event-text: #9a3600;
+  --cal-event-subject: #e65100;
+  --cal-event-muted: #9a3600;
+}
+
+.study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card.subject-other {
+  --cal-event-bg: #f1f3f4;
+  --cal-event-accent: #5f6368;
+  --cal-event-text: #202124;
+  --cal-event-subject: #3c4043;
+  --cal-event-muted: #5f6368;
+}
+
+.study-plan-calendar .fc .fc-event.cal-event-card.school-exam-event {
+  --cal-event-bg: #fce8e6;
+  --cal-event-accent: #d93025;
+  --cal-event-text: #b3261e;
+  background: var(--cal-event-bg) !important;
+  border: none !important;
+  border-left: 3px solid var(--cal-event-accent) !important;
+  border-radius: 6px;
+  box-shadow: 0 1px 2px rgba(60, 64, 67, 0.12);
+  color: var(--cal-event-text) !important;
+  font-weight: 600;
+  overflow: hidden;
+  padding: 3px 5px;
+}
+
+.study-plan-calendar .fc .fc-event.cal-event-card.school-holiday-event {
+  --cal-event-bg: #e8f0fe;
+  --cal-event-accent: #1a73e8;
+  --cal-event-text: #174ea6;
+  background: var(--cal-event-bg) !important;
+  border: none !important;
+  border-left: 3px solid var(--cal-event-accent) !important;
+  border-radius: 6px;
+  box-shadow: 0 1px 2px rgba(60, 64, 67, 0.12);
+  color: var(--cal-event-text) !important;
+  font-weight: 600;
+  overflow: hidden;
+  padding: 3px 5px;
+}
+
+/* Exam prep weekly plan settings matrix table */
+.exam-prep-weekly-plan-table-shell {
+  display: flex;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  align-items: stretch;
+}
+
+.exam-prep-weekly-plan-table-week {
+  flex-shrink: 0;
+  border-right: 1px solid #e5e7eb;
+}
+
+.exam-prep-weekly-plan-table-scroll {
+  min-width: 0;
+  flex: 1 1 0%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+
+.exam-prep-weekly-plan-table-scroll table {
+  width: max-content;
+  min-width: 100%;
+}
+
+.exam-prep-weekly-plan-week-cell,
+.exam-prep-weekly-plan-subject-cell {
+  min-height: 9rem;
+  vertical-align: top;
+}
+
+.exam-prep-weekly-plan-table-week thead th,
+.exam-prep-weekly-plan-table-scroll thead th {
+  height: 3.25rem;
+}
+
+/* Exam prep weekly plan sidebar panel */
+.study-plan-calendar-shell {
+  display: flex;
+  align-items: stretch;
+  gap: 1rem;
+}
+
+.study-plan-calendar-shell .exam-prep-panel {
+  width: min(100%, 17.5rem);
+  flex-shrink: 0;
+  align-self: stretch;
+}
+
+.study-plan-calendar-shell .study-plan-calendar-main {
+  min-width: 0;
+  flex: 1;
+}
+
+.exam-prep-panel {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(60, 64, 67, 0.08);
+}
+
+.exam-prep-panel-header,
+.exam-prep-panel-toggle {
+  border-bottom: 1px solid #e5e7eb;
+  padding: 0.75rem 1rem;
+}
+
+.exam-prep-panel-toggle {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border: none;
+  border-bottom: 1px solid #e5e7eb;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.15s ease;
+}
+
+.exam-prep-panel-toggle:hover {
+  background: #f8f9fa;
+}
+
+.exam-prep-panel-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.exam-prep-panel-subtitle,
+.exam-prep-panel-toggle-hint {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.exam-prep-panel-subtitle {
+  margin-top: 0.125rem;
+}
+
+.exam-prep-panel-body {
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+}
+
+.exam-prep-panel-loading {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.exam-prep-panel-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.exam-prep-panel-round {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.exam-prep-panel-round-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+
+.exam-prep-panel-week {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.exam-prep-panel-week-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.exam-prep-panel-week-range {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.exam-prep-panel-subject-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.exam-prep-panel-subject {
+  --exam-prep-subject-bg: #f8f9fa;
+  --exam-prep-subject-accent: #5f6368;
+  --exam-prep-subject-label: #3c4043;
+  --exam-prep-subject-text: #202124;
+  border: 1px solid color-mix(in srgb, var(--exam-prep-subject-accent) 22%, transparent);
+  border-left: 3px solid var(--exam-prep-subject-accent);
+  border-radius: 0.5rem;
+  background: var(--exam-prep-subject-bg);
+  box-shadow: 0 1px 2px rgba(60, 64, 67, 0.08);
+  padding: 0.625rem;
+}
+
+.exam-prep-panel-subject.subject-korean {
+  --exam-prep-subject-bg: #fce8e6;
+  --exam-prep-subject-accent: #d93025;
+  --exam-prep-subject-label: #7f1412;
+  --exam-prep-subject-text: #5f1410;
+}
+
+.exam-prep-panel-subject.subject-english {
+  --exam-prep-subject-bg: #e8f0fe;
+  --exam-prep-subject-accent: #1a73e8;
+  --exam-prep-subject-label: #174ea6;
+  --exam-prep-subject-text: #174ea6;
+}
+
+.exam-prep-panel-subject.subject-math {
+  --exam-prep-subject-bg: #f3e8fd;
+  --exam-prep-subject-accent: #7627bb;
+  --exam-prep-subject-label: #4a1480;
+  --exam-prep-subject-text: #4a1480;
+}
+
+.exam-prep-panel-subject.subject-social {
+  --exam-prep-subject-bg: #fef7e0;
+  --exam-prep-subject-accent: #b06000;
+  --exam-prep-subject-label: #6d3f00;
+  --exam-prep-subject-text: #6d3f00;
+}
+
+.exam-prep-panel-subject.subject-science {
+  --exam-prep-subject-bg: #e6f4ea;
+  --exam-prep-subject-accent: #137333;
+  --exam-prep-subject-label: #0a4d22;
+  --exam-prep-subject-text: #0a4d22;
+}
+
+.exam-prep-panel-subject.subject-ethics {
+  --exam-prep-subject-bg: #fce4ec;
+  --exam-prep-subject-accent: #ad1457;
+  --exam-prep-subject-label: #6d0d36;
+  --exam-prep-subject-text: #6d0d36;
+}
+
+.exam-prep-panel-subject.subject-tech_home {
+  --exam-prep-subject-bg: #e0f2f1;
+  --exam-prep-subject-accent: #006064;
+  --exam-prep-subject-label: #003d40;
+  --exam-prep-subject-text: #003d40;
+}
+
+.exam-prep-panel-subject.subject-info {
+  --exam-prep-subject-bg: #e3f2fd;
+  --exam-prep-subject-accent: #0d47a1;
+  --exam-prep-subject-label: #062a61;
+  --exam-prep-subject-text: #062a61;
+}
+
+.exam-prep-panel-subject.subject-history {
+  --exam-prep-subject-bg: #fff3e0;
+  --exam-prep-subject-accent: #b06000;
+  --exam-prep-subject-label: #6d3f00;
+  --exam-prep-subject-text: #6d3f00;
+}
+
+.exam-prep-panel-subject.subject-chinese {
+  --exam-prep-subject-bg: #fbe9e7;
+  --exam-prep-subject-accent: #e65100;
+  --exam-prep-subject-label: #9a3600;
+  --exam-prep-subject-text: #9a3600;
+}
+
+.exam-prep-panel-subject.subject-other {
+  --exam-prep-subject-bg: #f1f3f4;
+  --exam-prep-subject-accent: #3c4043;
+  --exam-prep-subject-label: #3c4043;
+  --exam-prep-subject-text: #202124;
+}
+
+.exam-prep-panel-subject-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--exam-prep-subject-label);
+}
+
+.exam-prep-panel-subject-content {
+  margin-top: 0.25rem;
+  font-size: 0.875rem;
+  line-height: 1.625;
+  white-space: pre-wrap;
+  color: var(--exam-prep-subject-text);
+}
+
+.exam-prep-panel-empty {
+  border: 1px dashed #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 1rem 0.75rem;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.exam-prep-panel-empty-link {
+  margin-top: 0.5rem;
+  font-weight: 500;
+  color: #2563eb;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.exam-prep-panel-empty-link:hover {
+  color: #1d4ed8;
+}
+
+@media (max-width: 640px) {
+  .study-plan-calendar-shell {
+    flex-direction: column;
+  }
+
+  .study-plan-calendar-shell .exam-prep-panel {
+    width: 100%;
+    max-height: none;
+  }
+
+  .study-plan-calendar .fc .fc-header-toolbar .fc-toolbar-chunk:first-child {
+    justify-content: flex-start !important;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+    width: 100%;
+  }
+
+  .study-plan-calendar .fc .fc-header-toolbar .fc-toolbar-chunk:first-child .fc-button-group:first-child {
+    margin-right: 0.25rem;
+  }
+}
+
+/* Study plan mobile listWeek (list view) */
+@media (max-width: 640px) {
+  .study-plan-calendar .fc .fc-list-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .study-plan-calendar .fc .fc-list-table thead {
+    display: none;
+  }
+
+  .study-plan-calendar .fc .fc-list-day > th {
+    padding: 0;
+    border: none;
+  }
+
+  .study-plan-calendar .fc .fc-list-day-cushion {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.625rem 0.75rem;
+    background: #f3f4f6;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #374151;
+  }
+
+  .study-plan-calendar .fc .fc-list-day-text,
+  .study-plan-calendar .fc .fc-list-day-side-text {
+    color: inherit;
+    text-decoration: none;
+    font-weight: inherit;
+  }
+
+  .study-plan-calendar .fc .fc-list-day-side-text {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: #6b7280;
+  }
+
+  .study-plan-calendar .fc .fc-list-day.fc-exam-prep-day .fc-list-day-cushion {
+    background: #e8f0fe;
+    color: #174ea6;
+  }
+
+  .study-plan-calendar .fc .fc-list-day.fc-vacation-day .fc-list-day-cushion {
+    background: #fef7e0;
+    color: #b06000;
+  }
+
+  .study-plan-calendar .fc .fc-list-day.fc-school-term-day .fc-list-day-cushion {
+    background: #f3f4f6;
+  }
+
+  .study-plan-calendar .fc .fc-list-event {
+    cursor: pointer;
+  }
+
+  .study-plan-calendar .fc .fc-list-event.study-plan-event.cal-event-card,
+  .study-plan-calendar .fc .fc-list-event.study-plan-event.cal-event-card td {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    filter: none !important;
+  }
+
+  .study-plan-calendar .fc .fc-list-event.study-plan-event.cal-event-card:hover {
+    box-shadow: none !important;
+    filter: none !important;
+  }
+
+  .study-plan-calendar .fc .fc-list-event.study-plan-event.cal-event-card .cal-event-title,
+  .study-plan-calendar .fc .fc-list-event.study-plan-event.cal-event-card .cal-event-inner--list,
+  .study-plan-calendar .fc .fc-list-event.study-plan-event.cal-event-card .fc-list-event-title,
+  .study-plan-calendar .fc .fc-list-event.study-plan-event.cal-event-card .fc-list-event-title a {
+    color: #111827 !important;
+    font-weight: 500;
+  }
+
+  .study-plan-calendar .fc .fc-list-event.study-plan-event.cal-event-card .fc-list-event-time {
+    color: #6b7280 !important;
+  }
+
+  .study-plan-calendar .fc .fc-list-event.cal-event-card.school-exam-event td,
+  .study-plan-calendar .fc .fc-list-event.cal-event-card.school-holiday-event td {
+    background: transparent !important;
+  }
+
+  .study-plan-calendar .fc .fc-list-event.cal-event-card.school-exam-event .fc-list-event-title,
+  .study-plan-calendar .fc .fc-list-event.cal-event-card.school-exam-event .fc-list-event-title a {
+    color: #b3261e !important;
+  }
+
+  .study-plan-calendar .fc .fc-list-event.cal-event-card.school-holiday-event .fc-list-event-title,
+  .study-plan-calendar .fc .fc-list-event.cal-event-card.school-holiday-event .fc-list-event-title a {
+    color: #137333 !important;
+  }
+
+  .study-plan-calendar .fc .fc-list-event td {
+    border-top: 1px solid #e5e7eb;
+    padding: 0.75rem 0.5rem;
+    vertical-align: top;
+  }
+
+  .study-plan-calendar .fc .fc-list-event-time {
+    width: 4.5rem;
+    white-space: nowrap;
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+    color: #6b7280;
+  }
+
+  .study-plan-calendar .fc .fc-list-event-graphic {
+    width: 1.25rem;
+    padding-left: 0.25rem;
+    padding-right: 0.25rem;
+  }
+
+  .study-plan-calendar .fc .fc-list-event-dot {
+    display: inline-block;
+    width: 0.625rem;
+    height: 0.625rem;
+    border-radius: 9999px;
+    border-width: 0;
+    background: currentColor;
+  }
+
+  .study-plan-calendar .fc .fc-list-event.study-plan-event .fc-list-event-dot {
+    background: currentColor !important;
+    border-color: transparent !important;
+  }
+
+  .study-plan-calendar .fc .fc-list-event-title {
+    font-size: 0.875rem;
+    color: #111827;
+    width: 100%;
+    max-width: 0;
+    white-space: normal !important;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .study-plan-calendar .fc .fc-list-event-title a {
+    color: inherit;
+    text-decoration: none;
+    display: block;
+    white-space: normal !important;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .study-plan-calendar .fc .fc-list-event .cal-event-inner--list {
+    padding: 0;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .study-plan-calendar .fc .fc-list-event .cal-event-inner--list .cal-event-title {
+    display: block;
+    margin-top: 0 !important;
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: unset !important;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    line-height: 1.4;
+  }
+
+  .study-plan-calendar .fc .fc-list-empty {
+    padding: 2rem 1rem;
+    text-align: center;
+    color: #6b7280;
+    font-size: 0.875rem;
+  }
+
+  .study-plan-calendar .fc .fc-list-event.subject-korean .fc-list-event-dot {
+    color: #d93025;
+  }
+
+  .study-plan-calendar .fc .fc-list-event.subject-english .fc-list-event-dot {
+    color: #1a73e8;
+  }
+
+  .study-plan-calendar .fc .fc-list-event.subject-math .fc-list-event-dot {
+    color: #9334e6;
+  }
+
+  .study-plan-calendar .fc .fc-list-event.subject-social .fc-list-event-dot {
+    color: #f9ab00;
+  }
+
+  .study-plan-calendar .fc .fc-list-event.subject-science .fc-list-event-dot {
+    color: #34a853;
+  }
+
+  .study-plan-calendar .fc .fc-list-event.subject-ethics .fc-list-event-dot {
+    color: #e91e8c;
+  }
+
+  .study-plan-calendar .fc .fc-list-event.subject-tech_home .fc-list-event-dot {
+    color: #00838f;
+  }
+
+  .study-plan-calendar .fc .fc-list-event.subject-info .fc-list-event-dot {
+    color: #1976d2;
+  }
+
+  .study-plan-calendar .fc .fc-list-event.subject-history .fc-list-event-dot {
+    color: #e8710a;
+  }
+
+  .study-plan-calendar .fc .fc-list-event.subject-chinese .fc-list-event-dot {
+    color: #ef6c00;
+  }
+
+  .study-plan-calendar .fc .fc-list-event.subject-other .fc-list-event-dot {
+    color: #5f6368;
+  }
+}
+
+@media (max-width: 640px) and (prefers-color-scheme: dark) {
+  .study-plan-calendar .fc .fc-list-day-cushion {
+    background: #27272a;
+    color: #e5e7eb;
+  }
+
+  .study-plan-calendar .fc .fc-list-day-side-text {
+    color: #a1a1aa;
+  }
+
+  .study-plan-calendar .fc .fc-list-day.fc-exam-prep-day .fc-list-day-cushion {
+    background: rgba(26, 115, 232, 0.18);
+    color: #8ab4f8;
+  }
+
+  .study-plan-calendar .fc .fc-list-day.fc-vacation-day .fc-list-day-cushion {
+    background: rgba(249, 171, 0, 0.14);
+    color: #fdd663;
+  }
+
+  .study-plan-calendar .fc .fc-list-event td {
+    border-top-color: #3f3f46;
+  }
+
+  .study-plan-calendar .fc .fc-list-event.study-plan-event.cal-event-card .cal-event-title,
+  .study-plan-calendar .fc .fc-list-event.study-plan-event.cal-event-card .cal-event-inner--list,
+  .study-plan-calendar .fc .fc-list-event.study-plan-event.cal-event-card .fc-list-event-title,
+  .study-plan-calendar .fc .fc-list-event.study-plan-event.cal-event-card .fc-list-event-title a {
+    color: #f4f4f5 !important;
+  }
+
+  .study-plan-calendar .fc .fc-list-event.study-plan-event.cal-event-card .fc-list-event-time {
+    color: #a1a1aa !important;
+  }
+
+  .study-plan-calendar .fc .fc-list-event-time {
+    color: #a1a1aa;
+  }
+
+  .study-plan-calendar .fc .fc-list-event-title {
+    color: #f4f4f5;
+  }
+
+  .study-plan-calendar .fc .fc-list-empty {
+    color: #a1a1aa;
+  }
+}
+
+/* Schedule calendar mobile listWeek (list view) — shared structure with study-plan */
+@media (max-width: 640px) {
+  .schedule-calendar .fc .fc-header-toolbar .fc-toolbar-chunk:first-child {
+    justify-content: flex-start !important;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+    width: 100%;
+  }
+
+  .schedule-calendar .fc .fc-header-toolbar .fc-toolbar-chunk:first-child .fc-button-group:first-child {
+    margin-right: 0.25rem;
+  }
+
+  .schedule-calendar .fc .fc-list-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .schedule-calendar .fc .fc-list-table thead {
+    display: none;
+  }
+
+  .schedule-calendar .fc .fc-list-day > th {
+    padding: 0;
+    border: none;
+  }
+
+  .schedule-calendar .fc .fc-list-day-cushion {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.625rem 0.75rem;
+    background: #f3f4f6;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #374151;
+  }
+
+  .schedule-calendar .fc .fc-list-day-text,
+  .schedule-calendar .fc .fc-list-day-side-text {
+    color: inherit;
+    text-decoration: none;
+    font-weight: inherit;
+  }
+
+  .schedule-calendar .fc .fc-list-day-side-text {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: #6b7280;
+  }
+
+  .schedule-calendar .fc .fc-list-day.fc-exam-prep-day .fc-list-day-cushion {
+    background: #e8f0fe;
+    color: #174ea6;
+  }
+
+  .schedule-calendar .fc .fc-list-day.fc-vacation-day .fc-list-day-cushion {
+    background: #fef7e0;
+    color: #b06000;
+  }
+
+  .schedule-calendar .fc .fc-list-day.fc-school-term-day .fc-list-day-cushion {
+    background: #f3f4f6;
+  }
+
+  .schedule-calendar .fc .fc-list-event {
+    cursor: pointer;
+  }
+
+  .schedule-calendar .fc .fc-list-event.cal-event-card,
+  .schedule-calendar .fc .fc-list-event.cal-event-card td {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    filter: none !important;
+  }
+
+  .schedule-calendar .fc .fc-list-event.cal-event-card:hover {
+    box-shadow: none !important;
+    filter: none !important;
+  }
+
+  .schedule-calendar .fc .fc-list-event.cal-event-card .cal-event-title,
+  .schedule-calendar .fc .fc-list-event.cal-event-card .cal-event-inner--list,
+  .schedule-calendar .fc .fc-list-event.cal-event-card .fc-list-event-title,
+  .schedule-calendar .fc .fc-list-event.cal-event-card .fc-list-event-title a {
+    color: #111827 !important;
+    font-weight: 500;
+  }
+
+  .schedule-calendar .fc .fc-list-event.cal-event-card .fc-list-event-time {
+    color: #6b7280 !important;
+  }
+
+  .schedule-calendar .fc .fc-list-event.cal-event-card.school-exam-event .fc-list-event-title,
+  .schedule-calendar .fc .fc-list-event.cal-event-card.school-exam-event .fc-list-event-title a {
+    color: #b3261e !important;
+  }
+
+  .schedule-calendar .fc .fc-list-event.cal-event-card.school-holiday-event .fc-list-event-title,
+  .schedule-calendar .fc .fc-list-event.cal-event-card.school-holiday-event .fc-list-event-title a {
+    color: #137333 !important;
+  }
+
+  .schedule-calendar .fc .fc-list-event td {
+    border-top: 1px solid #e5e7eb;
+    padding: 0.75rem 0.5rem;
+    vertical-align: top;
+  }
+
+  .schedule-calendar .fc .fc-list-event-time {
+    width: 4.5rem;
+    white-space: nowrap;
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+    color: #6b7280;
+  }
+
+  .schedule-calendar .fc .fc-list-event-graphic {
+    width: 1.25rem;
+    padding-left: 0.25rem;
+    padding-right: 0.25rem;
+  }
+
+  .schedule-calendar .fc .fc-list-event-dot {
+    display: inline-block;
+    width: 0.625rem;
+    height: 0.625rem;
+    border-radius: 9999px;
+    border-width: 0;
+    background: currentColor;
+  }
+
+  .schedule-calendar .fc .fc-list-event.cal-event-card .fc-list-event-dot {
+    background: currentColor !important;
+    border-color: transparent !important;
+  }
+
+  .schedule-calendar .fc .fc-list-event-title {
+    font-size: 0.875rem;
+    color: #111827;
+    width: 100%;
+    max-width: 0;
+    white-space: normal !important;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .schedule-calendar .fc .fc-list-event-title a {
+    color: inherit;
+    text-decoration: none;
+    display: block;
+    white-space: normal !important;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .schedule-calendar .fc .fc-list-event .cal-event-inner--list {
+    padding: 0;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .schedule-calendar .fc .fc-list-event .cal-event-inner--list .cal-event-title {
+    display: block;
+    margin-top: 0 !important;
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: unset !important;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    line-height: 1.4;
+  }
+
+  .schedule-calendar .fc .fc-list-empty {
+    padding: 2rem 1rem;
+    text-align: center;
+    color: #6b7280;
+    font-size: 0.875rem;
+  }
+
+  .schedule-calendar .fc .fc-list-event.subject-korean .fc-list-event-dot {
+    color: #d93025;
+  }
+
+  .schedule-calendar .fc .fc-list-event.subject-english .fc-list-event-dot {
+    color: #1a73e8;
+  }
+
+  .schedule-calendar .fc .fc-list-event.subject-math .fc-list-event-dot {
+    color: #9334e6;
+  }
+
+  .schedule-calendar .fc .fc-list-event.subject-social .fc-list-event-dot {
+    color: #f9ab00;
+  }
+
+  .schedule-calendar .fc .fc-list-event.subject-science .fc-list-event-dot {
+    color: #34a853;
+  }
+
+  .schedule-calendar .fc .fc-list-event.subject-ethics .fc-list-event-dot {
+    color: #e91e8c;
+  }
+
+  .schedule-calendar .fc .fc-list-event.subject-tech_home .fc-list-event-dot {
+    color: #00838f;
+  }
+
+  .schedule-calendar .fc .fc-list-event.subject-info .fc-list-event-dot {
+    color: #1976d2;
+  }
+
+  .schedule-calendar .fc .fc-list-event.subject-history .fc-list-event-dot {
+    color: #e8710a;
+  }
+
+  .schedule-calendar .fc .fc-list-event.subject-chinese .fc-list-event-dot {
+    color: #ef6c00;
+  }
+
+  .schedule-calendar .fc .fc-list-event.subject-other .fc-list-event-dot {
+    color: #5f6368;
+  }
+
+  .schedule-calendar .fc .fc-list-event.user-event-managed .fc-list-event-dot {
+    color: #e8710a;
+  }
+
+  .schedule-calendar .fc .fc-list-event.user-event-academy .fc-list-event-dot {
+    color: #1a73e8;
+  }
+
+  .schedule-calendar .fc .fc-list-event.user-event-fixed .fc-list-event-dot {
+    color: #5f6368;
+  }
+
+  .schedule-calendar .fc .fc-list-event.user-event-other .fc-list-event-dot {
+    color: #9334e6;
+  }
+
+  .schedule-calendar .fc .fc-list-event.school-exam-event .fc-list-event-dot {
+    color: #b3261e;
+  }
+
+  .schedule-calendar .fc .fc-list-event.school-holiday-event .fc-list-event-dot {
+    color: #137333;
+  }
+}
+
+@media (max-width: 640px) and (prefers-color-scheme: dark) {
+  .schedule-calendar .fc .fc-list-day-cushion {
+    background: #27272a;
+    color: #e5e7eb;
+  }
+
+  .schedule-calendar .fc .fc-list-day-side-text {
+    color: #a1a1aa;
+  }
+
+  .schedule-calendar .fc .fc-list-day.fc-exam-prep-day .fc-list-day-cushion {
+    background: rgba(26, 115, 232, 0.18);
+    color: #8ab4f8;
+  }
+
+  .schedule-calendar .fc .fc-list-day.fc-vacation-day .fc-list-day-cushion {
+    background: rgba(249, 171, 0, 0.14);
+    color: #fdd663;
+  }
+
+  .schedule-calendar .fc .fc-list-event td {
+    border-top-color: #3f3f46;
+  }
+
+  .schedule-calendar .fc .fc-list-event.cal-event-card .cal-event-title,
+  .schedule-calendar .fc .fc-list-event.cal-event-card .cal-event-inner--list,
+  .schedule-calendar .fc .fc-list-event.cal-event-card .fc-list-event-title,
+  .schedule-calendar .fc .fc-list-event.cal-event-card .fc-list-event-title a {
+    color: #f4f4f5 !important;
+  }
+
+  .schedule-calendar .fc .fc-list-event.cal-event-card .fc-list-event-time {
+    color: #a1a1aa !important;
+  }
+
+  .schedule-calendar .fc .fc-list-event-time {
+    color: #a1a1aa;
+  }
+
+  .schedule-calendar .fc .fc-list-event-title {
+    color: #f4f4f5;
+  }
+
+  .schedule-calendar .fc .fc-list-empty {
+    color: #a1a1aa;
+  }
+}
+
+.study-plan-calendar .fc .fc-timegrid .fc-daygrid-body {
+  min-height: 2.5rem;
+}
+
+.study-plan-calendar .fc .fc-timegrid .fc-daygrid-event {
+  margin: 1px 2px;
+}
+
+/* study-plan-event 기본 border가 .event-editing 점선을 덮어쓰므로 별도 규칙 필요 */
+.study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card.event-editing {
+  background: color-mix(in srgb, var(--cal-event-bg) 78%, var(--cal-event-accent) 22%) !important;
+  border: 2px dashed var(--cal-event-accent) !important;
+  border-left: 3px solid var(--cal-event-accent) !important;
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--cal-event-accent) 28%, transparent),
+    0 4px 12px rgba(60, 64, 67, 0.16);
+  cursor: grab;
+  filter: brightness(0.96);
+  transform: none;
+  z-index: 5;
+}
+
+.study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card.event-editing:active {
+  cursor: grabbing;
+}
+
+.study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card.event-editing .fc-event-resizer {
+  background: var(--cal-event-accent);
+  border-radius: 2px;
+  opacity: 0.85;
+}
+
+.study-plan-calendar .fc .fc-timegrid-event.study-plan-event.event-editing .fc-event-resizer {
+  opacity: 1;
+}
+
+@media (prefers-color-scheme: dark) {
+  .study-plan-calendar .fc .fc-bg-event.cal-bg-event {
+    --cal-bg-fill: rgba(95, 99, 104, 0.18);
+    --cal-bg-accent: rgba(154, 160, 166, 0.45);
+    --cal-bg-label: #e8eaed;
+  }
+
+  .study-plan-calendar .fc .fc-bg-event.cal-bg-event.subject-korean {
+    --cal-bg-fill: rgba(217, 48, 37, 0.14);
+    --cal-bg-accent: rgba(242, 139, 130, 0.45);
+    --cal-bg-label: #f28b82;
+  }
+
+  .study-plan-calendar .fc .fc-bg-event.cal-bg-event.subject-english {
+    --cal-bg-fill: rgba(26, 115, 232, 0.14);
+    --cal-bg-accent: rgba(138, 180, 248, 0.45);
+    --cal-bg-label: #8ab4f8;
+  }
+
+  .study-plan-calendar .fc .fc-bg-event.cal-bg-event.subject-math {
+    --cal-bg-fill: rgba(147, 52, 230, 0.14);
+    --cal-bg-accent: rgba(197, 138, 249, 0.45);
+    --cal-bg-label: #c58af9;
+  }
+
+  .study-plan-calendar .fc .fc-bg-event.cal-bg-event.subject-social {
+    --cal-bg-fill: rgba(249, 171, 0, 0.12);
+    --cal-bg-accent: rgba(253, 214, 99, 0.45);
+    --cal-bg-label: #fdd663;
+  }
+
+  .study-plan-calendar .fc .fc-bg-event.cal-bg-event.subject-science {
+    --cal-bg-fill: rgba(52, 168, 83, 0.14);
+    --cal-bg-accent: rgba(129, 201, 149, 0.45);
+    --cal-bg-label: #81c995;
+  }
+
+  .study-plan-calendar .fc .fc-bg-event.cal-bg-event.subject-ethics {
+    --cal-bg-fill: rgba(233, 30, 140, 0.12);
+    --cal-bg-accent: rgba(244, 143, 177, 0.45);
+    --cal-bg-label: #f48fb1;
+  }
+
+  .study-plan-calendar .fc .fc-bg-event.cal-bg-event.subject-tech_home {
+    --cal-bg-fill: rgba(0, 131, 143, 0.14);
+    --cal-bg-accent: rgba(77, 208, 225, 0.45);
+    --cal-bg-label: #4dd0e1;
+  }
+
+  .study-plan-calendar .fc .fc-bg-event.cal-bg-event.subject-info {
+    --cal-bg-fill: rgba(25, 118, 210, 0.14);
+    --cal-bg-accent: rgba(100, 181, 246, 0.45);
+    --cal-bg-label: #64b5f6;
+  }
+
+  .study-plan-calendar .fc .fc-bg-event.cal-bg-event.subject-history {
+    --cal-bg-fill: rgba(232, 113, 10, 0.12);
+    --cal-bg-accent: rgba(255, 188, 106, 0.45);
+    --cal-bg-label: #ffbc6a;
+  }
+
+  .study-plan-calendar .fc .fc-bg-event.cal-bg-event.subject-chinese {
+    --cal-bg-fill: rgba(239, 108, 0, 0.12);
+    --cal-bg-accent: rgba(255, 183, 77, 0.45);
+    --cal-bg-label: #ffb74d;
+  }
+
+  .study-plan-calendar .fc .fc-bg-event.cal-bg-event.subject-other {
+    --cal-bg-fill: rgba(95, 99, 104, 0.18);
+    --cal-bg-accent: rgba(154, 160, 166, 0.45);
+    --cal-bg-label: #e8eaed;
+  }
+
+  .study-plan-calendar .fc .fc-bg-event.cal-bg-event.schedule-bg-user-managed {
+    --cal-bg-fill: rgba(232, 113, 10, 0.12);
+    --cal-bg-accent: rgba(255, 188, 106, 0.45);
+    --cal-bg-label: #ffbc6a;
+  }
+
+  .study-plan-calendar .fc .fc-bg-event.cal-bg-event.schedule-bg-user-academy {
+    --cal-bg-fill: rgba(26, 115, 232, 0.12);
+    --cal-bg-accent: rgba(138, 180, 248, 0.45);
+    --cal-bg-label: #8ab4f8;
+  }
+
+  .study-plan-calendar .fc .fc-bg-event.cal-bg-event.schedule-bg-user-other {
+    --cal-bg-fill: rgba(147, 52, 230, 0.12);
+    --cal-bg-accent: rgba(197, 138, 249, 0.45);
+    --cal-bg-label: #c58af9;
+  }
+
+  .study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card {
+    box-shadow:
+      0 1px 3px rgba(0, 0, 0, 0.32),
+      0 3px 10px rgba(0, 0, 0, 0.24);
+    --cal-event-badge-bg: color-mix(in srgb, var(--cal-event-accent) 58%, #000 42%);
+    --cal-event-badge-text: #ffffff;
+  }
+
+  .study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card:hover {
+    box-shadow:
+      0 4px 14px rgba(0, 0, 0, 0.36),
+      0 8px 22px rgba(0, 0, 0, 0.22);
+  }
+
+  .study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card.subject-social {
+    --cal-event-bg: rgba(249, 171, 0, 0.18);
+    --cal-event-accent: #fdd663;
+    --cal-event-text: #fef7e0;
+    --cal-event-subject: #fdd663;
+    --cal-event-muted: #fee8a0;
+    --cal-event-badge-bg: #8f4500;
+    --cal-event-badge-text: #ffffff;
+  }
+
+  .study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card.subject-korean {
+    --cal-event-bg: rgba(217, 48, 37, 0.2);
+    --cal-event-accent: #f28b82;
+    --cal-event-text: #fce8e6;
+    --cal-event-subject: #f28b82;
+    --cal-event-muted: #f6aea9;
+  }
+
+  .study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card.subject-english {
+    --cal-event-bg: rgba(26, 115, 232, 0.2);
+    --cal-event-accent: #8ab4f8;
+    --cal-event-text: #e8f0fe;
+    --cal-event-subject: #8ab4f8;
+    --cal-event-muted: #aecbfa;
+  }
+
+  .study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card.subject-math {
+    --cal-event-bg: rgba(147, 52, 230, 0.2);
+    --cal-event-accent: #c58af9;
+    --cal-event-text: #f3e8fd;
+    --cal-event-subject: #c58af9;
+    --cal-event-muted: #d7aefb;
+  }
+
+  .study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card.subject-science {
+    --cal-event-bg: rgba(52, 168, 83, 0.2);
+    --cal-event-accent: #81c995;
+    --cal-event-text: #e6f4ea;
+    --cal-event-subject: #81c995;
+    --cal-event-muted: #a8dab5;
+  }
+
+  .study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card.subject-ethics {
+    --cal-event-bg: rgba(233, 30, 140, 0.18);
+    --cal-event-accent: #f48fb1;
+    --cal-event-text: #fce4ec;
+    --cal-event-subject: #f48fb1;
+    --cal-event-muted: #f8bbd0;
+  }
+
+  .study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card.subject-tech_home {
+    --cal-event-bg: rgba(0, 131, 143, 0.2);
+    --cal-event-accent: #4dd0e1;
+    --cal-event-text: #e0f7fa;
+    --cal-event-subject: #4dd0e1;
+    --cal-event-muted: #80deea;
+  }
+
+  .study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card.subject-info {
+    --cal-event-bg: rgba(25, 118, 210, 0.2);
+    --cal-event-accent: #64b5f6;
+    --cal-event-text: #e3f2fd;
+    --cal-event-subject: #64b5f6;
+    --cal-event-muted: #90caf9;
+  }
+
+  .study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card.subject-history {
+    --cal-event-bg: rgba(232, 113, 10, 0.18);
+    --cal-event-accent: #ffbc6a;
+    --cal-event-text: #fff0e5;
+    --cal-event-subject: #ffbc6a;
+    --cal-event-muted: #ffd59a;
+  }
+
+  .study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card.subject-chinese {
+    --cal-event-bg: rgba(239, 108, 0, 0.18);
+    --cal-event-accent: #ffb74d;
+    --cal-event-text: #fff3e0;
+    --cal-event-subject: #ffb74d;
+    --cal-event-muted: #ffcc80;
+  }
+
+  .study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card.subject-other {
+    --cal-event-bg: rgba(95, 99, 104, 0.22);
+    --cal-event-accent: #9aa0a6;
+    --cal-event-text: #e8eaed;
+    --cal-event-subject: #9aa0a6;
+    --cal-event-muted: #bdc1c6;
+  }
+
+  .study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card.event-editing {
+    background: color-mix(in srgb, var(--cal-event-bg) 65%, #000 35%) !important;
+    box-shadow:
+      0 0 0 2px color-mix(in srgb, var(--cal-event-accent) 35%, transparent),
+      0 4px 14px rgba(0, 0, 0, 0.35);
+    filter: brightness(0.92);
+  }
+
+  .exam-prep-panel {
+    border-color: #27272a;
+    background: #18181b;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  }
+
+  .exam-prep-panel-header,
+  .exam-prep-panel-toggle {
+    border-bottom-color: #27272a;
+  }
+
+  .exam-prep-panel-toggle:hover {
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  .exam-prep-panel-title,
+  .exam-prep-panel-week-title {
+    color: #f3f4f6;
+  }
+
+  .exam-prep-panel-subtitle,
+  .exam-prep-panel-toggle-hint,
+  .exam-prep-panel-week-range,
+  .exam-prep-panel-round-title,
+  .exam-prep-panel-loading,
+  .exam-prep-panel-empty {
+    color: #9ca3af;
+  }
+
+  .exam-prep-panel-empty {
+    border-color: #3f3f46;
+  }
+
+  .exam-prep-panel-empty-link {
+    color: #60a5fa;
+  }
+
+  .exam-prep-panel-empty-link:hover {
+    color: #93c5fd;
+  }
+
+  .exam-prep-panel-subject.subject-korean {
+    --exam-prep-subject-bg: rgba(217, 48, 37, 0.14);
+    --exam-prep-subject-accent: #f28b82;
+    --exam-prep-subject-label: #f28b82;
+    --exam-prep-subject-text: #fce8e6;
+  }
+
+  .exam-prep-panel-subject.subject-english {
+    --exam-prep-subject-bg: rgba(26, 115, 232, 0.14);
+    --exam-prep-subject-accent: #8ab4f8;
+    --exam-prep-subject-label: #8ab4f8;
+    --exam-prep-subject-text: #e8f0fe;
+  }
+
+  .exam-prep-panel-subject.subject-math {
+    --exam-prep-subject-bg: rgba(147, 52, 230, 0.14);
+    --exam-prep-subject-accent: #c58af9;
+    --exam-prep-subject-label: #c58af9;
+    --exam-prep-subject-text: #f3e8fd;
+  }
+
+  .exam-prep-panel-subject.subject-social {
+    --exam-prep-subject-bg: rgba(249, 171, 0, 0.12);
+    --exam-prep-subject-accent: #fdd663;
+    --exam-prep-subject-label: #fdd663;
+    --exam-prep-subject-text: #fef7e0;
+  }
+
+  .exam-prep-panel-subject.subject-science {
+    --exam-prep-subject-bg: rgba(52, 168, 83, 0.14);
+    --exam-prep-subject-accent: #81c995;
+    --exam-prep-subject-label: #81c995;
+    --exam-prep-subject-text: #e6f4ea;
+  }
+
+  .exam-prep-panel-subject.subject-ethics {
+    --exam-prep-subject-bg: rgba(233, 30, 140, 0.12);
+    --exam-prep-subject-accent: #f48fb1;
+    --exam-prep-subject-label: #f48fb1;
+    --exam-prep-subject-text: #fce4ec;
+  }
+
+  .exam-prep-panel-subject.subject-tech_home {
+    --exam-prep-subject-bg: rgba(0, 131, 143, 0.14);
+    --exam-prep-subject-accent: #4dd0e1;
+    --exam-prep-subject-label: #4dd0e1;
+    --exam-prep-subject-text: #e0f2f1;
+  }
+
+  .exam-prep-panel-subject.subject-info {
+    --exam-prep-subject-bg: rgba(25, 118, 210, 0.14);
+    --exam-prep-subject-accent: #64b5f6;
+    --exam-prep-subject-label: #64b5f6;
+    --exam-prep-subject-text: #e3f2fd;
+  }
+
+  .exam-prep-panel-subject.subject-history {
+    --exam-prep-subject-bg: rgba(232, 113, 10, 0.12);
+    --exam-prep-subject-accent: #ffbc6a;
+    --exam-prep-subject-label: #ffbc6a;
+    --exam-prep-subject-text: #fff3e0;
+  }
+
+  .exam-prep-panel-subject.subject-chinese {
+    --exam-prep-subject-bg: rgba(239, 108, 0, 0.12);
+    --exam-prep-subject-accent: #ffb74d;
+    --exam-prep-subject-label: #ffb74d;
+    --exam-prep-subject-text: #fbe9e7;
+  }
+
+  .exam-prep-panel-subject.subject-other {
+    --exam-prep-subject-bg: rgba(95, 99, 104, 0.18);
+    --exam-prep-subject-accent: #9aa0a6;
+    --exam-prep-subject-label: #9aa0a6;
+    --exam-prep-subject-text: #e8eaed;
+  }
+}
+
+@media (max-width: 580px) {
+  .schedule-calendar .fc .fc-header-toolbar {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+    margin-bottom: 0.625rem !important;
+  }
+
+  .schedule-calendar .fc .fc-header-toolbar .fc-toolbar-chunk {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .schedule-calendar .fc .fc-header-toolbar .fc-toolbar-chunk:nth-child(1) {
+    order: 2;
+    gap: 0.6rem;
+  }
+
+  .schedule-calendar .fc .fc-header-toolbar .fc-toolbar-chunk:nth-child(2) {
+    order: 1;
+  }
+
+  .schedule-calendar .fc .fc-button {
+    padding: 0.48em 0.88em;
+    font-size: 0.875rem;
+    line-height: 1.25;
+    min-height: 2.75rem;
+    min-width: 2.75rem;
+  }
+
+  .schedule-calendar .fc .fc-button .fc-icon {
+    font-size: 0.95em;
+  }
+
+  .schedule-calendar .fc .fc-toolbar-title {
+    font-size: 0.9375rem;
+    line-height: 1.3;
+    white-space: nowrap;
+  }
+
+  .schedule-calendar .fc .fc-col-header-cell-cushion {
+    font-size: 0.75rem;
+  }
+
+  .schedule-calendar .fc .fc-timegrid-slot-label-cushion {
+    font-size: 0.6875rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .schedule-calendar .fc .fc-header-toolbar {
+    gap: 0.375rem;
+    margin-bottom: 0.5rem !important;
+  }
+
+  .schedule-calendar .fc .fc-header-toolbar .fc-toolbar-chunk:nth-child(1) {
+    gap: 0.48rem;
+  }
+
+  .schedule-calendar .fc .fc-button {
+    padding: 0.4em 0.8em;
+    font-size: 0.8125rem;
+    line-height: 1.2;
+    min-height: 2.6rem;
+    min-width: 2.6rem;
+  }
+
+  .schedule-calendar .fc .fc-button .fc-icon {
+    font-size: 0.95em;
+  }
+
+  .schedule-calendar .fc .fc-toolbar-title {
+    font-size: 0.875rem;
+    line-height: 1.25;
+  }
+}
+
+@media (max-width: 360px) {
+  .schedule-calendar .fc .fc-header-toolbar {
+    gap: 0.25rem;
+    margin-bottom: 0.375rem !important;
+  }
+
+  .schedule-calendar .fc .fc-header-toolbar .fc-toolbar-chunk:nth-child(1) {
+    gap: 0.32rem;
+  }
+
+  .schedule-calendar .fc .fc-button {
+    padding: 0.32em 0.64em;
+    font-size: 0.8125rem;
+    line-height: 1.15;
+    min-height: 2.5rem;
+    min-width: 2.5rem;
+  }
+
+  .schedule-calendar .fc .fc-button .fc-icon {
+    font-size: 0.95em;
+  }
+
+  .schedule-calendar .fc .fc-toolbar-title {
+    font-size: 0.8125rem;
+    line-height: 1.2;
+  }
+}
+
+.line-through {
+  text-decoration: line-through;
+}
+
+/* TODO 페이지: 하루 일과 10분 격자표 */
+.day-slot-panel {
+  --day-school-fill: rgba(232, 240, 254, 0.85);
+  --day-school-accent: rgba(26, 115, 232, 0.55);
+  --day-academy-fill: rgba(243, 232, 253, 0.85);
+  --day-academy-accent: rgba(147, 52, 230, 0.5);
+  --day-fixed-fill: rgba(241, 243, 244, 0.9);
+  --day-fixed-accent: rgba(95, 99, 104, 0.55);
+  --day-managed-fill: rgba(255, 243, 224, 0.85);
+  --day-managed-accent: rgba(232, 113, 10, 0.5);
+  --day-other-fill: rgba(243, 232, 253, 0.75);
+  --day-other-accent: rgba(147, 52, 230, 0.45);
+  --day-planned-fill: rgba(230, 244, 234, 0.92);
+  --day-planned-accent: rgba(52, 168, 83, 0.65);
+  --day-executed-fill: rgba(52, 168, 83, 0.88);
+  --day-executed-accent: rgba(19, 115, 51, 0.85);
+  --day-grid-border: #e8eaed;
+  --day-grid-header-bg: #f8f9fa;
+  --day-grid-cell-bg: #ffffff;
+}
+
+.day-slot-scroll {
+  position: relative;
+  min-width: 0;
+}
+
+@media (max-width: 767px) {
+  .day-slot-panel {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .day-slot-scroll {
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior-x: contain;
+  }
+}
+
+.day-slot-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+  margin-top: 0.75rem;
+}
+
+.day-slot-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: #5f6368;
+}
+
+.day-slot-legend-swatch {
+  display: inline-block;
+  width: 1rem;
+  height: 0.5rem;
+  border-radius: 3px;
+  border-left: 3px solid transparent;
+}
+
+.day-slot-legend-school {
+  background: var(--day-school-fill);
+  border-left-color: var(--day-school-accent);
+}
+
+.day-slot-legend-academy {
+  background: var(--day-academy-fill);
+  border-left-color: var(--day-academy-accent);
+}
+
+.day-slot-legend-fixed {
+  background: var(--day-fixed-fill);
+  border-left-color: var(--day-fixed-accent);
+}
+
+.day-slot-legend-planned {
+  background: var(--day-planned-fill);
+  border-left-color: var(--day-planned-accent);
+}
+
+.day-slot-legend-executed {
+  background: #7c3aed;
+  border-left-color: #5b21b6;
+}
+
+.day-slot-allday-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  padding: 0.625rem 1rem;
+  border-bottom: 1px solid var(--day-grid-border);
+  background: #f8f9fa;
+}
+
+.day-slot-allday-badge {
+  display: inline-flex;
+  max-width: 100%;
+  align-items: center;
+  border-radius: 9999px;
+  padding: 0.125rem 0.625rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: #3c4043;
+  background: #e8eaed;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.day-slot-allday-exam {
+  color: #c5221f;
+  background: rgba(252, 232, 230, 0.95);
+}
+
+.day-slot-allday-holiday {
+  color: #137333;
+  background: rgba(230, 244, 234, 0.95);
+}
+
+.day-slot-table {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+}
+
+/* CSS Grid 차트 (연속 바) */
+.day-slot-chart {
+  --day-slot-hour-col: 2.25rem;
+  position: relative;
+  display: grid;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  grid-template-columns: var(--day-slot-hour-col) repeat(6, minmax(0, 1fr));
+  grid-template-rows: auto repeat(var(--day-slot-rows, 23), 1.75rem);
+  isolation: isolate;
+}
+
+@media (min-width: 768px) {
+  .day-slot-chart,
+  .day-slot-table {
+    min-width: 22rem;
+  }
+}
+
+@media (max-width: 767px) {
+  .day-slot-chart {
+    --day-slot-hour-col: 1.75rem;
+    grid-template-rows: auto repeat(var(--day-slot-rows, 23), 1.5rem);
+  }
+
+  .day-slot-minute-header,
+  .day-slot-hour-header {
+    font-size: 0.5625rem;
+    padding: 0.125rem 0;
+  }
+
+  .day-slot-continuous-label {
+    font-size: 0.5625rem;
+    padding: 0 3px;
+  }
+}
+
+.day-slot-chart-combined .day-slot-continuous-bar-planned {
+  z-index: 2;
+}
+
+.day-slot-chart-combined .day-slot-continuous-bar-executed {
+  z-index: 3;
+}
+
+.day-slot-chart .day-slot-corner {
+  grid-row: 1;
+  grid-column: 1;
+  position: sticky;
+  top: 0;
+  left: 0;
+  z-index: 4;
+}
+
+.day-slot-chart .day-slot-minute-header {
+  grid-row: 1;
+  position: sticky;
+  top: 0;
+  z-index: 3;
+}
+
+.day-slot-chart .day-slot-hour-header {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+}
+
+.day-slot-grid-cell {
+  border: none;
+  border-top: 1px solid var(--day-grid-border);
+  background-color: var(--day-grid-cell-bg);
+  z-index: 0;
+}
+
+.day-slot-continuous-bar {
+  position: relative;
+  z-index: 1;
+  padding: 1px 0;
+  min-width: 0;
+  max-width: 100%;
+  pointer-events: auto;
+  margin-top: -1px;
+  margin-bottom: -1px;
+  overflow: hidden;
+}
+
+.day-slot-continuous-bar-schedule {
+  z-index: 1;
+}
+
+.day-slot-continuous-bar-planned {
+  z-index: 2;
+}
+
+.day-slot-continuous-bar-executed {
+  z-index: 2;
+}
+
+.day-slot-continuous-inner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 5px;
+  box-shadow: inset 3px 0 0 transparent;
+}
+
+.day-slot-continuous-start:not(.day-slot-continuous-end) {
+  border-radius: 5px 5px 0 0;
+}
+
+.day-slot-continuous-end:not(.day-slot-continuous-start) {
+  border-radius: 0 0 5px 5px;
+}
+
+.day-slot-continuous-start:not(.day-slot-continuous-end) .day-slot-continuous-inner {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.day-slot-continuous-end:not(.day-slot-continuous-start) .day-slot-continuous-inner {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+.day-slot-continuous-single {
+  border-radius: 5px;
+}
+
+.day-slot-continuous-schedule.day-slot-school {
+  background: var(--day-school-fill);
+  box-shadow: inset 3px 0 0 var(--day-school-accent);
+}
+
+.day-slot-continuous-schedule.day-slot-user-managed {
+  background: var(--day-managed-fill);
+  box-shadow: inset 3px 0 0 var(--day-managed-accent);
+}
+
+.day-slot-continuous-schedule.day-slot-user-academy {
+  background: var(--day-academy-fill);
+  box-shadow: inset 3px 0 0 var(--day-academy-accent);
+}
+
+.day-slot-continuous-schedule.day-slot-user-fixed {
+  background: var(--day-fixed-fill);
+  box-shadow: inset 3px 0 0 var(--day-fixed-accent);
+}
+
+.day-slot-continuous-schedule.day-slot-user-other {
+  background: var(--day-other-fill);
+  box-shadow: inset 3px 0 0 var(--day-other-accent);
+}
+
+.day-slot-continuous-planned,
+.day-slot-planned-default {
+  background: var(--day-planned-fill);
+  box-shadow: inset 3px 0 0 var(--day-planned-accent);
+}
+
+.day-slot-continuous-executed,
+.day-slot-executed-default {
+  background: var(--day-executed-fill);
+  box-shadow: inset 3px 0 0 var(--day-executed-accent);
+}
+
+.day-slot-bar-subject-korean-executed {
+  background-color: #dc2626 !important;
+  box-shadow: inset 3px 0 0 #991b1b !important;
+}
+
+.day-slot-bar-subject-english-executed {
+  background-color: #2563eb !important;
+  box-shadow: inset 3px 0 0 #1e40af !important;
+}
+
+.day-slot-bar-subject-math-executed {
+  background-color: #7c3aed !important;
+  box-shadow: inset 3px 0 0 #5b21b6 !important;
+}
+
+.day-slot-bar-subject-social-executed {
+  background-color: #d97706 !important;
+  box-shadow: inset 3px 0 0 #b45309 !important;
+}
+
+.day-slot-bar-subject-science-executed {
+  background-color: #0891b2 !important;
+  box-shadow: inset 3px 0 0 #0e7490 !important;
+}
+
+.day-slot-bar-subject-ethics-executed {
+  background-color: #db2777 !important;
+  box-shadow: inset 3px 0 0 #be185d !important;
+}
+
+.day-slot-bar-subject-tech_home-executed {
+  background-color: #65a30d !important;
+  box-shadow: inset 3px 0 0 #4d7c0f !important;
+}
+
+.day-slot-bar-subject-info-executed {
+  background-color: #0284c7 !important;
+  box-shadow: inset 3px 0 0 #0369a1 !important;
+}
+
+.day-slot-bar-subject-history-executed {
+  background-color: #a16207 !important;
+  box-shadow: inset 3px 0 0 #854d0e !important;
+}
+
+.day-slot-bar-subject-chinese-executed {
+  background-color: #be123c !important;
+  box-shadow: inset 3px 0 0 #9f1239 !important;
+}
+
+.day-slot-bar-subject-other-executed {
+  background-color: #4b5563 !important;
+  box-shadow: inset 3px 0 0 #374151 !important;
+}
+
+.day-slot-continuous-label-planned {
+  color: #137333;
+}
+
+.day-slot-continuous-label-executed,
+[class*='day-slot-bar-subject-'][class*='-executed'] .day-slot-continuous-label-executed {
+  color: #ffffff;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.25);
+}
+
+.day-slot-continuous-combined-inner {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  height: 100%;
+}
+
+.day-slot-continuous-combined-planned,
+.day-slot-continuous-combined-executed {
+  flex: 1;
+  min-height: 0;
+  border-radius: 3px;
+}
+
+.day-slot-continuous-combined-spacer {
+  flex: 1;
+  min-height: 0;
+}
+
+.day-slot-continuous-label {
+  position: relative;
+  z-index: 1;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0 5px;
+  font-size: 0.625rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: #202124;
+}
+
+.day-slot-continuous-label-school,
+.day-slot-continuous-label-user-academy,
+.day-slot-continuous-label-user-fixed,
+.day-slot-continuous-label-user-managed,
+.day-slot-continuous-label-user-other {
+  color: #3c4043;
+}
+
+.day-slot-combined-table .day-slot-cell-combined {
+  height: 2.875rem;
+  padding: 2px;
+  vertical-align: middle;
+}
+
+.day-slot-cell-combined-inner {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  height: 100%;
+}
+
+.day-slot-bar {
+  flex: 1;
+  min-height: 0;
+  border-radius: 3px;
+  background-color: transparent;
+}
+
+.day-slot-bar-planned.day-slot-bar-filled,
+.day-slot-planned-filled {
+  background-color: var(--day-planned-fill);
+  border-left: 3px solid var(--day-planned-accent);
+}
+
+.day-slot-planned-default {
+  background-color: var(--day-planned-fill);
+  border-left: 3px solid var(--day-planned-accent);
+}
+
+.day-slot-bar-executed.day-slot-bar-filled,
+.day-slot-executed-filled {
+  background-color: var(--day-executed-fill);
+  border-left: 3px solid var(--day-executed-accent);
+}
+
+.day-slot-bar-subject-korean-planned {
+  background-color: rgba(252, 232, 230, 0.92) !important;
+  border-left-color: rgba(217, 48, 37, 0.65) !important;
+}
+
+.day-slot-bar-subject-english-planned {
+  background-color: rgba(232, 240, 254, 0.92) !important;
+  border-left-color: rgba(26, 115, 232, 0.65) !important;
+}
+
+.day-slot-bar-subject-math-planned {
+  background-color: rgba(243, 232, 253, 0.92) !important;
+  border-left-color: rgba(147, 52, 230, 0.65) !important;
+}
+
+.day-slot-bar-subject-social-planned {
+  background-color: rgba(254, 247, 224, 0.92) !important;
+  border-left-color: rgba(249, 171, 0, 0.65) !important;
+}
+
+.day-slot-bar-subject-science-planned {
+  background-color: rgba(230, 244, 234, 0.92) !important;
+  border-left-color: rgba(52, 168, 83, 0.65) !important;
+}
+
+.day-slot-bar-subject-ethics-planned {
+  background-color: rgba(252, 228, 236, 0.92) !important;
+  border-left-color: rgba(233, 30, 140, 0.65) !important;
+}
+
+.day-slot-bar-subject-tech_home-planned {
+  background-color: rgba(224, 247, 250, 0.92) !important;
+  border-left-color: rgba(0, 131, 143, 0.65) !important;
+}
+
+.day-slot-bar-subject-info-planned {
+  background-color: rgba(227, 242, 253, 0.92) !important;
+  border-left-color: rgba(25, 118, 210, 0.65) !important;
+}
+
+.day-slot-bar-subject-history-planned {
+  background-color: rgba(255, 240, 229, 0.92) !important;
+  border-left-color: rgba(232, 113, 10, 0.65) !important;
+}
+
+.day-slot-bar-subject-chinese-planned {
+  background-color: rgba(255, 243, 224, 0.92) !important;
+  border-left-color: rgba(239, 108, 0, 0.65) !important;
+}
+
+.day-slot-bar-subject-other-planned {
+  background-color: rgba(241, 243, 244, 0.92) !important;
+  border-left-color: rgba(95, 99, 104, 0.65) !important;
+}
+
+.day-slot-bar-executed.day-slot-subject-korean,
+.day-slot-executed-filled.day-slot-subject-korean {
+  background-color: #dc2626 !important;
+  border-left-color: #991b1b !important;
+}
+
+.day-slot-bar-executed.day-slot-subject-english,
+.day-slot-executed-filled.day-slot-subject-english {
+  background-color: #2563eb !important;
+  border-left-color: #1e40af !important;
+}
+
+.day-slot-bar-executed.day-slot-subject-math,
+.day-slot-executed-filled.day-slot-subject-math {
+  background-color: #7c3aed !important;
+  border-left-color: #5b21b6 !important;
+}
+
+.day-slot-bar-executed.day-slot-subject-social,
+.day-slot-executed-filled.day-slot-subject-social {
+  background-color: #d97706 !important;
+  border-left-color: #b45309 !important;
+}
+
+.day-slot-bar-executed.day-slot-subject-science,
+.day-slot-executed-filled.day-slot-subject-science {
+  background-color: #0891b2 !important;
+  border-left-color: #0e7490 !important;
+}
+
+.day-slot-bar-executed.day-slot-subject-ethics,
+.day-slot-executed-filled.day-slot-subject-ethics {
+  background-color: #db2777 !important;
+  border-left-color: #be185d !important;
+}
+
+.day-slot-bar-executed.day-slot-subject-tech_home,
+.day-slot-executed-filled.day-slot-subject-tech_home {
+  background-color: #65a30d !important;
+  border-left-color: #4d7c0f !important;
+}
+
+.day-slot-bar-executed.day-slot-subject-info,
+.day-slot-executed-filled.day-slot-subject-info {
+  background-color: #0284c7 !important;
+  border-left-color: #0369a1 !important;
+}
+
+.day-slot-bar-executed.day-slot-subject-history,
+.day-slot-executed-filled.day-slot-subject-history {
+  background-color: #a16207 !important;
+  border-left-color: #854d0e !important;
+}
+
+.day-slot-bar-executed.day-slot-subject-chinese,
+.day-slot-executed-filled.day-slot-subject-chinese {
+  background-color: #be123c !important;
+  border-left-color: #9f1239 !important;
+}
+
+.day-slot-bar-executed.day-slot-subject-other,
+.day-slot-executed-filled.day-slot-subject-other {
+  background-color: #4b5563 !important;
+  border-left-color: #374151 !important;
+}
+
+.day-slot-corner,
+.day-slot-minute-header,
+.day-slot-hour-header,
+.day-slot-cell {
+  border: 1px solid var(--day-grid-border);
+}
+
+.day-slot-corner {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  background: var(--day-grid-header-bg);
+}
+
+.day-slot-minute-header,
+.day-slot-hour-header {
+  position: sticky;
+  z-index: 2;
+  padding: 0.25rem 0;
+  font-size: 0.625rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  text-align: center;
+  color: #80868b;
+  background-color: var(--day-grid-header-bg);
+  box-sizing: border-box;
+}
+
+.day-slot-minute-header {
+  top: 0;
+}
+
+.day-slot-hour-header {
+  left: 0;
+}
+
+/* 시간 열은 그리드 트랙 너비에 맞춤 (고정 rem width로 분 영역 침범 방지) */
+.day-slot-chart .day-slot-corner,
+.day-slot-chart .day-slot-hour-header {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  justify-self: stretch;
+}
+
+.day-slot-chart .day-slot-hour-header {
+  z-index: 3;
+}
+
+.day-slot-cell {
+  position: relative;
+  height: 1.75rem;
+  padding: 2px;
+  background-color: var(--day-grid-cell-bg);
+  vertical-align: middle;
+}
+
+.day-slot-cell-layered,
+.day-slot-cell-combined {
+  overflow: hidden;
+}
+
+.day-slot-schedule-fill,
+.day-slot-planned-overlay,
+.day-slot-executed-fill {
+  position: absolute;
+  border-radius: 3px;
+}
+
+.day-slot-schedule-fill {
+  inset: 2px;
+  z-index: 0;
+}
+
+.day-slot-planned-overlay {
+  inset: 2px;
+  z-index: 1;
+}
+
+.day-slot-executed-fill {
+  inset: 2px;
+  z-index: 0;
+}
+
+.day-slot-schedule-filled.day-slot-school {
+  background: var(--day-school-fill);
+  box-shadow: inset 3px 0 0 var(--day-school-accent);
+}
+
+.day-slot-schedule-filled.day-slot-user-managed {
+  background: var(--day-managed-fill);
+  box-shadow: inset 3px 0 0 var(--day-managed-accent);
+}
+
+.day-slot-schedule-filled.day-slot-user-academy {
+  background: var(--day-academy-fill);
+  box-shadow: inset 3px 0 0 var(--day-academy-accent);
+}
+
+.day-slot-schedule-filled.day-slot-user-fixed {
+  background: var(--day-fixed-fill);
+  box-shadow: inset 3px 0 0 var(--day-fixed-accent);
+}
+
+.day-slot-schedule-filled.day-slot-user-other {
+  background: var(--day-other-fill);
+  box-shadow: inset 3px 0 0 var(--day-other-accent);
+}
+
+.day-slot-schedule-filled.day-slot-subject-korean,
+.day-slot-continuous-schedule.day-slot-subject-korean {
+  background: rgba(252, 232, 230, 0.92) !important;
+  box-shadow: inset 3px 0 0 rgba(217, 48, 37, 0.65) !important;
+}
+
+.day-slot-schedule-filled.day-slot-subject-english,
+.day-slot-continuous-schedule.day-slot-subject-english {
+  background: rgba(232, 240, 254, 0.92) !important;
+  box-shadow: inset 3px 0 0 rgba(26, 115, 232, 0.65) !important;
+}
+
+.day-slot-schedule-filled.day-slot-subject-math,
+.day-slot-continuous-schedule.day-slot-subject-math {
+  background: rgba(243, 232, 253, 0.92) !important;
+  box-shadow: inset 3px 0 0 rgba(147, 52, 230, 0.65) !important;
+}
+
+.day-slot-schedule-filled.day-slot-subject-social,
+.day-slot-continuous-schedule.day-slot-subject-social {
+  background: rgba(254, 247, 224, 0.92) !important;
+  box-shadow: inset 3px 0 0 rgba(249, 171, 0, 0.65) !important;
+}
+
+.day-slot-schedule-filled.day-slot-subject-science,
+.day-slot-continuous-schedule.day-slot-subject-science {
+  background: rgba(230, 244, 234, 0.92) !important;
+  box-shadow: inset 3px 0 0 rgba(52, 168, 83, 0.65) !important;
+}
+
+.day-slot-schedule-filled.day-slot-subject-ethics,
+.day-slot-continuous-schedule.day-slot-subject-ethics {
+  background: rgba(252, 228, 236, 0.92) !important;
+  box-shadow: inset 3px 0 0 rgba(233, 30, 140, 0.65) !important;
+}
+
+.day-slot-schedule-filled.day-slot-subject-tech_home,
+.day-slot-continuous-schedule.day-slot-subject-tech_home {
+  background: rgba(224, 247, 250, 0.92) !important;
+  box-shadow: inset 3px 0 0 rgba(0, 131, 143, 0.65) !important;
+}
+
+.day-slot-schedule-filled.day-slot-subject-info,
+.day-slot-continuous-schedule.day-slot-subject-info {
+  background: rgba(227, 242, 253, 0.92) !important;
+  box-shadow: inset 3px 0 0 rgba(25, 118, 210, 0.65) !important;
+}
+
+.day-slot-schedule-filled.day-slot-subject-history,
+.day-slot-continuous-schedule.day-slot-subject-history {
+  background: rgba(255, 240, 229, 0.92) !important;
+  box-shadow: inset 3px 0 0 rgba(232, 113, 10, 0.65) !important;
+}
+
+.day-slot-schedule-filled.day-slot-subject-chinese,
+.day-slot-continuous-schedule.day-slot-subject-chinese {
+  background: rgba(255, 243, 224, 0.92) !important;
+  box-shadow: inset 3px 0 0 rgba(239, 108, 0, 0.65) !important;
+}
+
+.day-slot-schedule-filled.day-slot-subject-other,
+.day-slot-continuous-schedule.day-slot-subject-other {
+  background: rgba(241, 243, 244, 0.92) !important;
+  box-shadow: inset 3px 0 0 rgba(95, 99, 104, 0.65) !important;
+}
+
+.day-slot-block-label {
+  position: absolute;
+  left: 5px;
+  top: 50%;
+  z-index: 2;
+  max-width: calc(100% - 8px);
+  transform: translateY(-50%);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  pointer-events: none;
+  font-size: 0.5625rem;
+  font-weight: 600;
+  line-height: 1.1;
+  color: #202124;
+}
+
+.day-slot-block-label-school,
+.day-slot-block-label-user-academy,
+.day-slot-block-label-user-fixed,
+.day-slot-block-label-user-managed,
+.day-slot-block-label-user-other {
+  color: #3c4043;
+}
+
+.day-slot-block-label-planned,
+.day-slot-block-label-executed {
+  color: #137333;
+}
+
+@media (prefers-color-scheme: dark) {
+  .day-slot-panel {
+    --day-school-fill: rgba(26, 115, 232, 0.16);
+    --day-school-accent: rgba(138, 180, 248, 0.75);
+    --day-academy-fill: rgba(147, 52, 230, 0.16);
+    --day-academy-accent: rgba(197, 138, 249, 0.75);
+    --day-fixed-fill: rgba(95, 99, 104, 0.2);
+    --day-fixed-accent: rgba(154, 160, 166, 0.75);
+    --day-managed-fill: rgba(232, 113, 10, 0.14);
+    --day-managed-accent: rgba(255, 188, 106, 0.75);
+    --day-other-fill: rgba(147, 52, 230, 0.14);
+    --day-other-accent: rgba(197, 138, 249, 0.75);
+    --day-planned-fill: rgba(52, 168, 83, 0.18);
+    --day-planned-accent: rgba(129, 201, 149, 0.85);
+    --day-executed-fill: rgba(52, 168, 83, 0.55);
+    --day-executed-accent: rgba(129, 201, 149, 0.9);
+    --day-grid-border: #3c4043;
+    --day-grid-header-bg: #171717;
+    --day-grid-cell-bg: #0a0a0a;
+  }
+
+  .day-slot-legend-item {
+    color: #9aa0a6;
+  }
+
+  .day-slot-allday-strip {
+    background: #171717;
+  }
+
+  .day-slot-allday-badge {
+    color: #e8eaed;
+    background: #3c4043;
+  }
+
+  .day-slot-allday-exam {
+    color: #f28b82;
+    background: rgba(217, 48, 37, 0.22);
+  }
+
+  .day-slot-allday-holiday {
+    color: #81c995;
+    background: rgba(52, 168, 83, 0.22);
+  }
+
+  .day-slot-block-label {
+    color: #e8eaed;
+  }
+
+  .day-slot-block-label-planned,
+  .day-slot-block-label-executed {
+    color: #81c995;
+  }
+
+  .day-slot-continuous-label {
+    color: #e8eaed;
+  }
+
+  .day-slot-continuous-label-planned {
+    color: #81c995;
+  }
+
+  [class*='day-slot-bar-subject-'][class*='-executed'] .day-slot-continuous-label-executed,
+  .day-slot-continuous-label-executed {
+    color: #ffffff;
+  }
+}

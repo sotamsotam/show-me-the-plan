@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Show Me The Plan">
+  <rect width="512" height="512" rx="112" fill="#2563eb"/>
+  <rect x="96" y="128" width="320" height="72" rx="20" fill="#ffffff" opacity="0.95"/>
+  <rect x="96" y="232" width="240" height="56" rx="16" fill="#ffffff" opacity="0.85"/>
+  <rect x="96" y="320" width="280" height="56" rx="16" fill="#ffffff" opacity="0.85"/>
+  <circle cx="368" cy="348" r="52" fill="#ffffff"/>
+  <path d="M348 348 L362 362 L396 322" fill="none" stroke="#2563eb" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

@@ -1,0 +1,14 @@
+node_modules
+.tmp
+.git
+.gitignore
+*.md
+.env*
+!.env.example
+build
+dist
+.strapi
+coverage
+*.log
+public/uploads/*
+!public/uploads/.gitkeep
