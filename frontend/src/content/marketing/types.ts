@@ -1,0 +1,176 @@
+export type MarketingLink = {
+  label: string;
+  href: string;
+};
+
+export type MarketingCta = {
+  label: string;
+  href: string;
+  variant?: 'primary' | 'secondary';
+};
+
+export type ValueCard = {
+  title: string;
+  description: string;
+};
+
+export type FeatureItem = {
+  title: string;
+  description: string;
+};
+
+export type PainPoint = {
+  title: string;
+  description: string;
+};
+
+export type MessageBlock = {
+  keyword: string;
+  body: string;
+};
+
+export type MessageQuote = {
+  body: string;
+};
+
+export type MessageGroup = {
+  title: string;
+  items: MessageQuote[];
+};
+
+export type MessageGroupsContent = {
+  eyebrow?: string;
+  title?: string;
+  groups: MessageGroup[];
+};
+
+export type GradeCard = {
+  title: string;
+  subtitle?: string;
+  description: string;
+  href: string;
+};
+
+export type TargetCard = {
+  title: string;
+  description: string;
+  href: string;
+  buttonLabel: string;
+};
+
+export type CrossLinkCard = {
+  label: string;
+  href: string;
+};
+
+export type PageSeo = {
+  title: string;
+  description: string;
+};
+
+export type HeroImage = {
+  src: string;
+  alt: string;
+};
+
+export type HeroContent = {
+  headline: string;
+  subcopy: string;
+  primaryCta?: MarketingCta;
+  secondaryCta?: MarketingCta;
+  image?: HeroImage;
+};
+
+export type SectionWithTitle<T> = {
+  title: string;
+  items: T[];
+};
+
+export type BottomCtaContent = {
+  headline: string;
+  subcopy?: string;
+  primaryCta: MarketingCta;
+  secondaryCta?: MarketingCta;
+};
+
+export type GradePageContent = {
+  seo: PageSeo;
+  hero: HeroContent;
+  painPoints: SectionWithTitle<PainPoint>;
+  approach: {
+    title?: string;
+    body: string;
+  };
+  features: SectionWithTitle<FeatureItem>;
+  strategy?: {
+    title: string;
+    items?: string[];
+    body?: string;
+    footnote?: string;
+  };
+  bottomCta: BottomCtaContent;
+  crossLinks: CrossLinkCard[];
+};
+
+export type VideoInsightCase = {
+  name: string;
+  subtitle?: string;
+  summary: string;
+  highlights?: string[];
+};
+
+export type VideoInsightContent = {
+  title: string;
+  youtube: {
+    videoId: string;
+    startSeconds: number;
+    title?: string;
+  };
+  source: string;
+  insight: {
+    title: string;
+    body: string;
+    highlights?: string[];
+    cases?: VideoInsightCase[];
+  };
+};
+
+export type PlannerComparisonItem = {
+  title: string;
+  paper: string;
+  smtp: string;
+};
+
+export type PlannerComparisonRow = {
+  paper: string;
+  smtp: string;
+};
+
+export type PlannerComparisonContent = {
+  title: string;
+  items: PlannerComparisonItem[];
+  summaryRows: PlannerComparisonRow[];
+  tagline: string;
+  subtagline?: string;
+};
+
+export type DedicatedDeviceContent = {
+  title: string;
+  headline: string;
+  description: string;
+};
+
+export type LandingPageContent = {
+  seo: PageSeo;
+  hero: HeroContent;
+  painPoints?: SectionWithTitle<PainPoint>;
+  videoInsight?: VideoInsightContent;
+  messages?: SectionWithTitle<MessageBlock>;
+  messageGroups?: MessageGroupsContent;
+  plannerComparison?: PlannerComparisonContent;
+  features?: SectionWithTitle<FeatureItem>;
+  dedicatedDevice?: DedicatedDeviceContent;
+  grades?: SectionWithTitle<GradeCard>;
+  bottomCta: BottomCtaContent;
+  crossLinks?: CrossLinkCard[];
+};

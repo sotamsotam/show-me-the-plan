@@ -41,6 +41,11 @@ import {
 } from '../../../services/legal-consent';
 import { deleteUserAccount } from '../../../services/account-deletion';
 import {
+  createTrialSubscription,
+  getSubscriptionSummaryForUser,
+  hasActiveSubscription,
+} from '../../../services/subscription';
+import {
   validateSignupProfile,
   validateStudentProfileFields,
 } from '../../../services/user-profile-validation';
@@ -466,6 +471,7 @@ async function buildAccountResponse(
       user.id,
       profile as Record<string, unknown> | null
     ),
+    subscription: await getSubscriptionSummaryForUser(strapi, user.id),
   };
 }
 
@@ -493,6 +499,10 @@ export default factories.createCoreController(
       const profileError = validateSignupProfile(profile ?? {});
       if (profileError) {
         return ctx.badRequest(profileError);
+      }
+
+      if (profile && 'isOperator' in profile && profile.isOperator) {
+        return ctx.badRequest('운영자 계정은 공개 가입으로 생성할 수 없습니다.');
       }
 
       const consentFields = buildConsentProfileFields(consents!);
@@ -572,6 +582,10 @@ export default factories.createCoreController(
               ? { ...otherStudentProfile, ...consentFields }
               : { ...neisStudentProfile, ...consentFields },
         });
+
+        if (!isManagerSignup) {
+          await createTrialSubscription(strapi, user.id);
+        }
 
         const jwt = strapi.plugin('users-permissions').service('jwt').issue({
           id: user.id,
@@ -664,6 +678,10 @@ export default factories.createCoreController(
       if (profileUpdate) {
         if (!existingProfile) {
           return ctx.badRequest('프로필이 없습니다.');
+        }
+
+        if ('isOperator' in profileUpdate) {
+          return ctx.badRequest('운영자 권한은 변경할 수 없습니다.');
         }
 
         if (existingProfile.schoolLevel === 'manager') {
@@ -806,6 +824,14 @@ export default factories.createCoreController(
         return ctx.badRequest('유효한 매니저를 선택해 주세요.');
       }
 
+      const subscriptionActive = await hasActiveSubscription(strapi, user.id);
+
+      if (!subscriptionActive) {
+        return ctx.badRequest(
+          '구독 또는 무료 체험 기간 중에만 매니저를 추가할 수 있습니다.'
+        );
+      }
+
       try {
         await assignManagerRecord(strapi, user.id, managerUserId!);
         return ctx.send(await buildAccountResponse(strapi, user));
@@ -873,6 +899,16 @@ export default factories.createCoreController(
         user?: { id: number; username: string; email: string } | null;
       }>;
 
+      const accessFlags = await Promise.all(
+        studentUserIds.map(async (studentUserId) => ({
+          studentUserId,
+          isAccessAllowed: await hasActiveSubscription(strapi, studentUserId),
+        }))
+      );
+      const accessByUserId = new Map(
+        accessFlags.map((entry) => [entry.studentUserId, entry.isAccessAllowed])
+      );
+
       return ctx.send({
         students: profiles
           .filter((profile) => profile.user)
@@ -884,6 +920,7 @@ export default factories.createCoreController(
             schoolName: profile.schoolName ?? null,
             grade: profile.grade ?? null,
             className: profile.className ?? null,
+            isAccessAllowed: accessByUserId.get(profile.user!.id) ?? false,
           })),
       });
     },

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import StudentSubscriptionBadge from '@/components/StudentSubscriptionBadge';
 import {
   formatManagedStudentLabel,
   isManagerStudentRequiredPath,
@@ -23,6 +24,7 @@ export default function ManagerStudentSelector() {
     isManagerMode,
     students,
     selectedStudentId,
+    selectedStudent,
     loading,
     setSelectedStudentId,
   } = useManagerStudent();
@@ -56,6 +58,7 @@ export default function ManagerStudentSelector() {
               {students.map((student) => (
                 <option key={student.userId} value={student.userId}>
                   {formatManagedStudentLabel(student)}
+                  {student.isAccessAllowed === false ? ' (만료)' : ''}
                 </option>
               ))}
             </select>
@@ -73,7 +76,14 @@ export default function ManagerStudentSelector() {
           </p>
         )}
 
-        {!loading && selectedStudentId && (
+        {!loading && selectedStudentId && selectedStudent?.isAccessAllowed === false && (
+          <p className="text-sm text-amber-700 dark:text-amber-300">
+            선택한 학생의 구독이 만료되어 스케줄·TODO 등 관리 기능을 사용할 수
+            없습니다. 학생이 재구독하면 자동으로 다시 활성화됩니다.
+          </p>
+        )}
+
+        {!loading && selectedStudentId && selectedStudent?.isAccessAllowed !== false && (
           <nav
             className="flex flex-wrap items-center gap-1"
             aria-label="선택된 학생 관리 메뉴"

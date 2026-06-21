@@ -1,6 +1,7 @@
 import 'next-auth';
 import 'next-auth/jwt';
 import type { ManagerStatus } from '@/types/school';
+import type { SubscriptionSessionPayload } from '@/lib/subscription-access';
 
 declare module 'next-auth' {
   interface Session {
@@ -10,6 +11,9 @@ declare module 'next-auth' {
       username: string;
       roleType?: string;
       managerStatus?: ManagerStatus | null;
+      schoolLevel?: string | null;
+      subscription?: SubscriptionSessionPayload | null;
+      isOperator?: boolean;
     };
   }
 
@@ -20,6 +24,9 @@ declare module 'next-auth' {
     strapiJwt: string;
     roleType?: string;
     managerStatus?: ManagerStatus | null;
+    schoolLevel?: string | null;
+    subscription?: SubscriptionSessionPayload | null;
+    isOperator?: boolean;
   }
 }
 
@@ -30,5 +37,8 @@ declare module 'next-auth/jwt' {
     strapiJwt: string;
     roleType?: string;
     managerStatus?: ManagerStatus | null;
+    schoolLevel?: string | null;
+    subscription?: SubscriptionSessionPayload | null;
+    isOperator?: boolean;
   }
 }

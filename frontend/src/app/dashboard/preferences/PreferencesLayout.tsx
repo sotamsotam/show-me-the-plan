@@ -47,7 +47,7 @@ export default function PreferencesLayout({ children }: PreferencesLayoutProps) 
   const pathname = usePathname();
 
   return (
-    <main className="flex w-full min-w-0 flex-col py-8 md:h-full md:min-h-0 md:overflow-hidden md:py-12">
+    <main className="flex w-full min-w-0 flex-col py-8 md:h-full md:min-h-0 md:overflow-hidden">
       <div className="flex w-full min-w-0 flex-col gap-6 md:min-h-0 md:flex-1 md:flex-row md:gap-8">
         <nav
           aria-label="설정 메뉴"
@@ -114,7 +114,9 @@ export default function PreferencesLayout({ children }: PreferencesLayoutProps) 
           })}
         </nav>
 
-        <div className="min-w-0 flex-1 md:min-h-0 md:overflow-y-auto">{children}</div>
+        <div className="min-w-0 flex-1 md:flex md:min-h-0 md:flex-col md:overflow-y-auto">
+          {children}
+        </div>
       </div>
     </main>
   );

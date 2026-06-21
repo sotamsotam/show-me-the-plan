@@ -1,5 +1,6 @@
 import type { Core } from '@strapi/strapi';
 import { isActiveAssignment } from './student-manager-assignment';
+import { hasActiveSubscription } from './subscription';
 
 const PROFILE_UID = 'api::user-profile.user-profile' as const;
 
@@ -67,6 +68,15 @@ export async function resolveTargetUserId(
 
   if (!assigned) {
     return { error: '담당 학생이 아닙니다.', status: 403 };
+  }
+
+  const studentSubscribed = await hasActiveSubscription(strapi, studentUserId);
+
+  if (!studentSubscribed) {
+    return {
+      error: '학생의 구독이 만료되어 관리할 수 없습니다.',
+      status: 403,
+    };
   }
 
   return { userId: studentUserId };

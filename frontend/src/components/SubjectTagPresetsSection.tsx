@@ -132,14 +132,9 @@ export default function SubjectTagPresetsSection() {
                 key={subject.id || `tag-${index}-${subject.label}`}
                 className="space-y-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-zinc-900"
               >
-                <div className="flex items-center justify-between gap-2">
-                  <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                    {subject.label}
-                  </h3>
-                  <span className="shrink-0 text-xs text-gray-400">
-                    {subject.source === 'neis' ? 'NEIS' : '직접 추가'}
-                  </span>
-                </div>
+                <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                  {subject.label}
+                </h3>
 
                 <div className="grid gap-3 sm:grid-cols-2">
                   <TagInput
@@ -155,7 +150,7 @@ export default function SubjectTagPresetsSection() {
                     label="공부방법"
                     tags={subject.studyMethods ?? []}
                     onChange={(tags) => handleSubjectTagsChange(index, 'studyMethods', tags)}
-                    placeholder="예: 개념, 유형"
+                    placeholder="예: 인강듣기, 문제풀기, 단권화하기 등"
                     disabled={saving}
                   />
                 </div>

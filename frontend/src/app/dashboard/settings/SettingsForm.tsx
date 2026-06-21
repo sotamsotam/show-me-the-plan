@@ -77,6 +77,7 @@ export default function SettingsForm() {
         user: data.user ?? null,
         role: data.role ?? null,
         profile: data.profile ?? null,
+        subscription: data.subscription ?? null,
       };
 
       setAccount(nextAccount);
@@ -432,6 +433,25 @@ export default function SettingsForm() {
           ? '기타학생 계정입니다. 과목과 일정은 직접 설정해 주세요.'
           : '학교 정보를 수정할 수 있습니다. 사용자명과 이메일은 변경할 수 없습니다.'}
       </p>
+
+      {isAnyStudentProfile ? (
+        <div className="mb-8 rounded-xl border border-blue-100 bg-blue-50 p-4 dark:border-blue-900 dark:bg-blue-950">
+          <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+            구독 · 결제
+          </p>
+          <p className="mt-1 text-sm text-blue-800 dark:text-blue-200">
+            {account?.subscription?.isAccessAllowed
+              ? `현재 이용 가능 (${account.subscription.status})`
+              : '체험 또는 구독이 필요합니다.'}
+          </p>
+          <Link
+            href="/dashboard/settings/billing"
+            className="mt-3 inline-block text-sm font-medium text-blue-700 underline dark:text-blue-300"
+          >
+            구독 관리로 이동
+          </Link>
+        </div>
+      ) : null}
 
       <form onSubmit={handleAccountSubmit} className="space-y-4 rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-zinc-900">
         <h2 className="text-lg font-medium">계정 정보</h2>
@@ -811,6 +831,13 @@ export default function SettingsForm() {
         {' · '}
         <Link href="/legal/terms" className="hover:text-gray-600 dark:hover:text-gray-300">
           이용약관
+        </Link>
+        {' · '}
+        <Link
+          href="/legal/paid-service"
+          className="hover:text-gray-600 dark:hover:text-gray-300"
+        >
+          유료서비스 약관
         </Link>
       </p>
     </main>

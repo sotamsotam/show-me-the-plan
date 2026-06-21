@@ -26,5 +26,6 @@ export async function fetchAccountInfo(
     user: data.user ?? null,
     role: data.role ?? null,
     profile: data.profile ?? null,
+    subscription: data.subscription ?? null,
   };
 }

@@ -8,6 +8,7 @@ import {
   buildTodosById,
   type StudentDailyTodoData,
 } from '@/lib/manager-daily-stats';
+import StudentSubscriptionBadge from '@/components/StudentSubscriptionBadge';
 import {
   formatManagedStudentLabel,
   withStudentUserId,
@@ -257,9 +258,12 @@ export default function ManagerOverviewDashboard() {
                       }
                     >
                       <td className="px-6 py-4">
-                        <p className="font-medium text-gray-900 dark:text-gray-100">
-                          {student.username}
-                        </p>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="font-medium text-gray-900 dark:text-gray-100">
+                            {student.username}
+                          </p>
+                          <StudentSubscriptionBadge isAccessAllowed={student.isAccessAllowed} compact />
+                        </div>
                         <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
                           {formatManagedStudentLabel(student)}
                         </p>

@@ -1,0 +1,43 @@
+{
+  "kind": "collectionType",
+  "collectionName": "plans",
+  "info": {
+    "singularName": "plan",
+    "pluralName": "plans",
+    "displayName": "Plan",
+    "description": "Student subscription plan definitions"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "code": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "targetSchoolLevels": {
+      "type": "json",
+      "required": true
+    },
+    "price": {
+      "type": "integer",
+      "required": true,
+      "min": 0
+    },
+    "interval": {
+      "type": "enumeration",
+      "enum": ["month", "year"],
+      "required": true
+    },
+    "active": {
+      "type": "boolean",
+      "default": true,
+      "required": true
+    }
+  }
+}

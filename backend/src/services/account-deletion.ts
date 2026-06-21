@@ -4,6 +4,8 @@ const STUDY_PLAN_TODO_UID = 'api::study-plan-todo.study-plan-todo' as const;
 const USER_SCHEDULE_UID = 'api::user-schedule.user-schedule' as const;
 const ASSIGNMENT_UID =
   'api::student-manager-assignment.student-manager-assignment' as const;
+const SUBSCRIPTION_UID = 'api::subscription.subscription' as const;
+const PAYMENT_HISTORY_UID = 'api::payment-history.payment-history' as const;
 const PROFILE_UID = 'api::user-profile.user-profile' as const;
 const USER_UID = 'plugin::users-permissions.user' as const;
 
@@ -11,6 +13,8 @@ type ApiContentUid =
   | typeof STUDY_PLAN_TODO_UID
   | typeof USER_SCHEDULE_UID
   | typeof ASSIGNMENT_UID
+  | typeof PAYMENT_HISTORY_UID
+  | typeof SUBSCRIPTION_UID
   | typeof PROFILE_UID;
 
 /** 연쇄 삭제 순서 — 테스트에서 호출 순서 검증용 */
@@ -18,6 +22,8 @@ export const ACCOUNT_DELETION_STEPS = [
   STUDY_PLAN_TODO_UID,
   USER_SCHEDULE_UID,
   ASSIGNMENT_UID,
+  PAYMENT_HISTORY_UID,
+  SUBSCRIPTION_UID,
   PROFILE_UID,
   USER_UID,
 ] as const;
@@ -118,6 +124,26 @@ async function deleteManagerAssignments(
   await deleteApiRecords(strapi, ASSIGNMENT_UID, [...uniqueAssignments.values()]);
 }
 
+async function deleteSubscriptionData(
+  strapi: Core.Strapi,
+  userId: number
+): Promise<void> {
+  const subscription = (await strapi.db.query(SUBSCRIPTION_UID).findOne({
+    where: { user: userId },
+  })) as { id: number; documentId?: string } | null;
+
+  if (!subscription) {
+    return;
+  }
+
+  const paymentRows = (await strapi.db.query(PAYMENT_HISTORY_UID).findMany({
+    where: { subscription: subscription.id },
+  })) as Array<{ id: number; documentId?: string }>;
+
+  await deleteApiRecords(strapi, PAYMENT_HISTORY_UID, paymentRows);
+  await deleteApiRecord(strapi, SUBSCRIPTION_UID, subscription);
+}
+
 export async function deleteUserRelatedData(
   strapi: Core.Strapi,
   userId: number
@@ -125,6 +151,7 @@ export async function deleteUserRelatedData(
   await deleteOwnedRecords(strapi, STUDY_PLAN_TODO_UID, userId);
   await deleteOwnedRecords(strapi, USER_SCHEDULE_UID, userId);
   await deleteManagerAssignments(strapi, userId);
+  await deleteSubscriptionData(strapi, userId);
 
   const profile = (await strapi.db.query(PROFILE_UID).findOne({
     where: { user: userId },

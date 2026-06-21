@@ -369,6 +369,116 @@ export interface AdminUser extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiPaymentHistoryPaymentHistory
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'payment_histories';
+  info: {
+    description: 'Student subscription payment records';
+    displayName: 'Payment History';
+    pluralName: 'payment-histories';
+    singularName: 'payment-history';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    amount: Schema.Attribute.Integer &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      >;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    currency: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'KRW'>;
+    discountAmount: Schema.Attribute.Integer &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      >;
+    discountSnapshot: Schema.Attribute.JSON;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::payment-history.payment-history'
+    > &
+      Schema.Attribute.Private;
+    paidAt: Schema.Attribute.DateTime;
+    pgPaymentId: Schema.Attribute.String & Schema.Attribute.Unique;
+    planPrice: Schema.Attribute.Integer &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      >;
+    publishedAt: Schema.Attribute.DateTime;
+    receiptUrl: Schema.Attribute.String;
+    status: Schema.Attribute.Enumeration<['succeeded', 'failed', 'refunded']> &
+      Schema.Attribute.Required;
+    subscription: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::subscription.subscription'
+    > &
+      Schema.Attribute.Required;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
+export interface ApiPlanPlan extends Struct.CollectionTypeSchema {
+  collectionName: 'plans';
+  info: {
+    description: 'Student subscription plan definitions';
+    displayName: 'Plan';
+    pluralName: 'plans';
+    singularName: 'plan';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    active: Schema.Attribute.Boolean &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<true>;
+    code: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    interval: Schema.Attribute.Enumeration<['month', 'year']> &
+      Schema.Attribute.Required;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<'oneToMany', 'api::plan.plan'> &
+      Schema.Attribute.Private;
+    name: Schema.Attribute.String & Schema.Attribute.Required;
+    price: Schema.Attribute.Integer &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      >;
+    publishedAt: Schema.Attribute.DateTime;
+    targetSchoolLevels: Schema.Attribute.JSON & Schema.Attribute.Required;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
 export interface ApiStudentManagerAssignmentStudentManagerAssignment
   extends Struct.CollectionTypeSchema {
   collectionName: 'student_manager_assignments';
@@ -458,6 +568,86 @@ export interface ApiStudyPlanTodoStudyPlanTodo
   };
 }
 
+export interface ApiSubscriptionSubscription
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'subscriptions';
+  info: {
+    description: 'Student subscription and billing state';
+    displayName: 'Subscription';
+    pluralName: 'subscriptions';
+    singularName: 'subscription';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    cancelAtPeriodEnd: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<false>;
+    canceledAt: Schema.Attribute.DateTime;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    currentPeriodEnd: Schema.Attribute.DateTime;
+    currentPeriodStart: Schema.Attribute.DateTime;
+    discountApplyOnce: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<false>;
+    discountEndsAt: Schema.Attribute.DateTime;
+    discountFixedAmount: Schema.Attribute.Integer &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      >;
+    discountGrantedAt: Schema.Attribute.DateTime;
+    discountGrantedBy: Schema.Attribute.String;
+    discountNote: Schema.Attribute.String;
+    discountPercent: Schema.Attribute.Integer &
+      Schema.Attribute.SetMinMax<
+        {
+          max: 100;
+          min: 0;
+        },
+        number
+      >;
+    discountStartsAt: Schema.Attribute.DateTime;
+    hasUsedTrial: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::subscription.subscription'
+    > &
+      Schema.Attribute.Private;
+    overridePrice: Schema.Attribute.Integer &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      >;
+    pgBillingKey: Schema.Attribute.Text & Schema.Attribute.Private;
+    pgCustomerId: Schema.Attribute.String;
+    pgProvider: Schema.Attribute.Enumeration<['toss']> &
+      Schema.Attribute.DefaultTo<'toss'>;
+    plan: Schema.Attribute.Relation<'manyToOne', 'api::plan.plan'>;
+    publishedAt: Schema.Attribute.DateTime;
+    status: Schema.Attribute.Enumeration<
+      ['trialing', 'active', 'past_due', 'canceled', 'expired']
+    > &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'trialing'>;
+    trialStartedAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    user: Schema.Attribute.Relation<
+      'oneToOne',
+      'plugin::users-permissions.user'
+    > &
+      Schema.Attribute.Required;
+  };
+}
+
 export interface ApiUserProfileUserProfile extends Struct.CollectionTypeSchema {
   collectionName: 'user_profiles';
   info: {
@@ -490,6 +680,7 @@ export interface ApiUserProfileUserProfile extends Struct.CollectionTypeSchema {
     examPrepWeeksByRound: Schema.Attribute.JSON;
     grade: Schema.Attribute.String;
     guardianConsentConfirmedAt: Schema.Attribute.DateTime;
+    isOperator: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
@@ -1086,8 +1277,11 @@ declare module '@strapi/strapi' {
       'admin::transfer-token': AdminTransferToken;
       'admin::transfer-token-permission': AdminTransferTokenPermission;
       'admin::user': AdminUser;
+      'api::payment-history.payment-history': ApiPaymentHistoryPaymentHistory;
+      'api::plan.plan': ApiPlanPlan;
       'api::student-manager-assignment.student-manager-assignment': ApiStudentManagerAssignmentStudentManagerAssignment;
       'api::study-plan-todo.study-plan-todo': ApiStudyPlanTodoStudyPlanTodo;
+      'api::subscription.subscription': ApiSubscriptionSubscription;
       'api::user-profile.user-profile': ApiUserProfileUserProfile;
       'api::user-schedule.user-schedule': ApiUserScheduleUserSchedule;
       'plugin::content-releases.release': PluginContentReleasesRelease;

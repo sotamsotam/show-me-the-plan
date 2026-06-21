@@ -6,6 +6,7 @@ import {
   MANAGER_STUDENT_NAV_ITEMS,
   type ManagedStudent,
 } from '@/lib/manager-student';
+import StudentSubscriptionBadge from '@/components/StudentSubscriptionBadge';
 import { SCHOOL_LEVEL_LABEL } from '@/types/school';
 import { useManagerStudent } from '@/contexts/ManagerStudentContext';
 
@@ -22,10 +23,14 @@ function formatSchoolInfo(student: ManagedStudent): string {
 function StudentActionButtons({
   isSelected,
   onSelect,
+  isAccessAllowed,
 }: {
   isSelected: boolean;
   onSelect: () => void;
+  isAccessAllowed?: boolean;
 }) {
+  const canManage = isAccessAllowed !== false;
+
   return (
     <div className="flex flex-wrap gap-2">
       <button
@@ -39,16 +44,18 @@ function StudentActionButtons({
       >
         {isSelected ? '선택됨' : '선택'}
       </button>
-      {MANAGER_LINKS.map((link) => (
-        <Link
-          key={link.href}
-          href={link.href}
-          onClick={onSelect}
-          className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs hover:bg-gray-50 dark:border-neutral-700 dark:hover:bg-zinc-800"
-        >
-          {link.label}
-        </Link>
-      ))}
+      {canManage
+        ? MANAGER_LINKS.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              onClick={onSelect}
+              className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs hover:bg-gray-50 dark:border-neutral-700 dark:hover:bg-zinc-800"
+            >
+              {link.label}
+            </Link>
+          ))
+        : null}
     </div>
   );
 }
@@ -103,7 +110,10 @@ export default function ManagerDashboard() {
                   }
                 >
                   <div className="space-y-1">
-                    <p className="font-medium">{student.username}</p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-medium">{student.username}</p>
+                      <StudentSubscriptionBadge isAccessAllowed={student.isAccessAllowed} />
+                    </div>
                     <p className="text-sm text-gray-600 dark:text-gray-300">
                       {student.email}
                     </p>
@@ -115,6 +125,7 @@ export default function ManagerDashboard() {
                     <StudentActionButtons
                       isSelected={isSelected}
                       onSelect={() => setSelectedStudentId(student.userId)}
+                      isAccessAllowed={student.isAccessAllowed}
                     />
                   </div>
                 </div>
@@ -129,6 +140,7 @@ export default function ManagerDashboard() {
                   <th className="px-6 py-3 font-medium">이름</th>
                   <th className="px-6 py-3 font-medium">이메일</th>
                   <th className="px-6 py-3 font-medium">학교 정보</th>
+                  <th className="px-6 py-3 font-medium">구독</th>
                   <th className="px-6 py-3 font-medium">관리</th>
                 </tr>
               </thead>
@@ -153,9 +165,13 @@ export default function ManagerDashboard() {
                         {formatSchoolInfo(student)}
                       </td>
                       <td className="px-6 py-4">
+                        <StudentSubscriptionBadge isAccessAllowed={student.isAccessAllowed} />
+                      </td>
+                      <td className="px-6 py-4">
                         <StudentActionButtons
                           isSelected={isSelected}
                           onSelect={() => setSelectedStudentId(student.userId)}
+                          isAccessAllowed={student.isAccessAllowed}
                         />
                       </td>
                     </tr>

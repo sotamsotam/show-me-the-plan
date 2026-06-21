@@ -7,6 +7,11 @@
     "dev:frontend": "npm run dev --prefix frontend",
     "dev:backend": "npm run develop --prefix backend",
     "build:frontend": "npm run build --prefix frontend",
-    "build:backend": "npm run build --prefix backend"
+    "build:backend": "npm run build --prefix backend",
+    "billing:cron": "node scripts/run-billing-cron.mjs",
+    "billing:health": "node scripts/check-billing-health.mjs",
+    "billing:qa": "node scripts/run-billing-qa.mjs",
+    "billing:manual-qa": "node scripts/run-billing-manual-qa.mjs",
+    "ops:qa": "node scripts/run-ops-qa.mjs"
   }
 }

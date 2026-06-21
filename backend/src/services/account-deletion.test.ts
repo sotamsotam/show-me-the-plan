@@ -20,6 +20,8 @@ function createMockStrapi(options?: {
   todoIds?: number[];
   scheduleIds?: number[];
   assignmentIds?: number[];
+  paymentHistoryIds?: number[];
+  subscriptionId?: number | null;
   profileId?: number | null;
 }) {
   const {
@@ -29,6 +31,8 @@ function createMockStrapi(options?: {
     todoIds = [1],
     scheduleIds = [2],
     assignmentIds = [3],
+    paymentHistoryIds = [11],
+    subscriptionId = 10,
     profileId = 4,
   } = options ?? {};
 
@@ -44,6 +48,10 @@ function createMockStrapi(options?: {
 
       if (uid === 'api::user-profile.user-profile' && profileId !== null) {
         return { id: profileId };
+      }
+
+      if (uid === 'api::subscription.subscription' && subscriptionId !== null) {
+        return { id: subscriptionId };
       }
 
       return null;
@@ -67,6 +75,10 @@ function createMockStrapi(options?: {
         if ('manager' in where) {
           return [];
         }
+      }
+
+      if (uid === 'api::payment-history.payment-history') {
+        return paymentHistoryIds.map((id) => ({ id }));
       }
 
       return [];
@@ -152,21 +164,10 @@ describe('deleteUserRelatedData', () => {
       .filter((call) => call.method === 'delete')
       .map((call) => call.uid);
 
-    expect(deletedUids).toEqual([
-      ACCOUNT_DELETION_STEPS[0],
-      ACCOUNT_DELETION_STEPS[1],
-      ACCOUNT_DELETION_STEPS[2],
-      ACCOUNT_DELETION_STEPS[3],
-      ACCOUNT_DELETION_STEPS[4],
-    ]);
+    expect(deletedUids).toEqual([...ACCOUNT_DELETION_STEPS]);
 
     expect(deleteCalls).toContainEqual({
-      uid: ACCOUNT_DELETION_STEPS[0],
-      method: 'delete',
-      where: { id: 1 },
-    });
-    expect(deleteCalls).toContainEqual({
-      uid: ACCOUNT_DELETION_STEPS[4],
+      uid: ACCOUNT_DELETION_STEPS[6],
       method: 'delete',
       where: { id: userId },
     });

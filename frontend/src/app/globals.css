@@ -1429,30 +1429,76 @@ body {
   padding: 3px 5px;
 }
 
-/* Exam prep weekly plan settings matrix table */
+/* Weekly plan settings matrix table (exam prep, vacation, regular) */
+.weekly-plan-form {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+}
+
+.weekly-plan-form-body {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+}
+
+.weekly-plan-table-wrap {
+  display: flex;
+  min-height: 12rem;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+}
+
 .exam-prep-weekly-plan-table-shell {
   display: flex;
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  align-items: stretch;
-}
-
-.exam-prep-weekly-plan-table-week {
-  flex-shrink: 0;
-  border-right: 1px solid #e5e7eb;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
 }
 
 .exam-prep-weekly-plan-table-scroll {
   min-width: 0;
-  flex: 1 1 0%;
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
+  min-height: 0;
+  flex: 1 1 auto;
+  max-height: clamp(12rem, 55vh, 36rem);
+  overflow: auto;
+  overscroll-behavior: contain;
 }
 
-.exam-prep-weekly-plan-table-scroll table {
+.weekly-plan-settings-page .exam-prep-weekly-plan-table-scroll {
+  max-height: clamp(12rem, calc(55vh + 4rem), 36rem);
+}
+
+.exam-prep-weekly-plan-table {
   width: max-content;
   min-width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.exam-prep-weekly-plan-table thead th {
+  height: 3.25rem;
+  border-bottom: 1px solid #e5e7eb;
+  background-color: #f9fafb;
+}
+
+.exam-prep-weekly-plan-corner-cell {
+  position: sticky;
+  top: 0;
+  left: 0;
+  z-index: 3;
+  border-right: 1px solid #e5e7eb;
+}
+
+.exam-prep-weekly-plan-table thead th:not(.exam-prep-weekly-plan-corner-cell) {
+  position: sticky;
+  top: 0;
+  z-index: 2;
 }
 
 .exam-prep-weekly-plan-week-cell,
@@ -1461,9 +1507,61 @@ body {
   vertical-align: top;
 }
 
-.exam-prep-weekly-plan-table-week thead th,
-.exam-prep-weekly-plan-table-scroll thead th {
-  height: 3.25rem;
+.exam-prep-weekly-plan-week-cell {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  border-right: 1px solid #e5e7eb;
+  background-color: #fff;
+}
+
+.exam-prep-weekly-plan-table tbody tr {
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.exam-prep-weekly-plan-subject-cell {
+  background-color: #fff;
+}
+
+.dark .exam-prep-weekly-plan-table thead th {
+  border-bottom-color: #404040;
+  background-color: rgba(39, 39, 42, 0.6);
+}
+
+.dark .exam-prep-weekly-plan-corner-cell,
+.dark .exam-prep-weekly-plan-week-cell {
+  border-right-color: #404040;
+}
+
+.dark .exam-prep-weekly-plan-week-cell,
+.dark .exam-prep-weekly-plan-subject-cell {
+  background-color: #18181b;
+}
+
+.dark .exam-prep-weekly-plan-table tbody tr {
+  border-bottom-color: #262626;
+}
+
+@media (min-width: 768px) {
+  .weekly-plan-settings-page {
+    display: flex;
+    min-height: 0;
+    flex: 1 1 auto;
+    flex-direction: column;
+  }
+
+  .weekly-plan-form {
+    flex: 1 1 auto;
+    overflow: hidden;
+  }
+
+  .exam-prep-weekly-plan-table-scroll {
+    max-height: none;
+  }
+
+  .weekly-plan-settings-page .weekly-plan-table-wrap {
+    min-height: calc(12rem + 4rem);
+  }
 }
 
 /* Exam prep weekly plan sidebar panel */

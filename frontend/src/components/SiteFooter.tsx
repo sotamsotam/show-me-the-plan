@@ -10,6 +10,12 @@ export default function SiteFooter() {
             이용약관
           </Link>
           <Link
+            href="/legal/paid-service"
+            className="hover:text-gray-700 dark:hover:text-gray-200"
+          >
+            유료서비스 약관
+          </Link>
+          <Link
             href="/legal/privacy"
             className="hover:text-gray-700 dark:hover:text-gray-200"
           >

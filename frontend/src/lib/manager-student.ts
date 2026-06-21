@@ -8,6 +8,7 @@ export interface ManagedStudent {
   schoolName: string | null;
   grade: string | null;
   className: string | null;
+  isAccessAllowed?: boolean;
 }
 
 export const MANAGER_SELECTED_STUDENT_KEY = 'managerSelectedStudentId';

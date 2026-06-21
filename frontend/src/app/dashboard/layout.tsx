@@ -1,6 +1,7 @@
 import DashboardShell from '@/components/DashboardShell';
 import DashboardPageTransition from '@/components/DashboardPageTransition';
 import { fetchAccountInfo, getAccountFlags, getDefaultDashboardPath } from '@/lib/account';
+import { isAnyStudent } from '@/types/school';
 import DashboardAccessGuard from './DashboardAccessGuard';
 import DashboardNav from './DashboardNav';
 
@@ -12,6 +13,7 @@ export default async function DashboardLayout({
   const account = await fetchAccountInfo();
   const { isPendingManager, isApprovedManager } = getAccountFlags(account);
   const defaultHomePath = getDefaultDashboardPath(account);
+  const isStudent = isAnyStudent(account?.profile?.schoolLevel);
 
   return (
     <div className="flex h-dvh min-w-0 flex-col overflow-hidden">
@@ -22,6 +24,8 @@ export default async function DashboardLayout({
       />
       <DashboardAccessGuard
         isPendingManager={isPendingManager}
+        isStudent={isStudent}
+        subscription={account?.subscription}
         defaultHomePath={defaultHomePath}
       >
         <DashboardShell>

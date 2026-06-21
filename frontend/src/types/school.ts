@@ -2,6 +2,7 @@ export type NeisSchoolLevel = 'elementary' | 'middle' | 'high';
 export type OtherStudentSchoolLevel = 'other';
 export type SchoolLevel = NeisSchoolLevel | OtherStudentSchoolLevel | 'manager';
 
+import type { SubscriptionSummary } from '@/types/subscription';
 import type { ExamPrepWeeklyPlans } from '@/lib/exam-prep-weekly-plan';
 import type { UserSubject } from '@/lib/user-subject';
 export type {
@@ -68,6 +69,9 @@ export interface UserProfile {
   examPrepWeeklyPlans?: ExamPrepWeeklyPlans | null;
   subjects?: UserSubject[] | null;
   assignedManagers?: ManagerUser[];
+  guardianConsentConfirmedAt?: string | null;
+  termsAgreedAt?: string | null;
+  isOperator?: boolean;
 }
 
 export interface UserRole {
@@ -86,6 +90,7 @@ export interface AccountInfo {
   user?: AccountUser | null;
   role: UserRole | null;
   profile: UserProfile | null;
+  subscription?: SubscriptionSummary | null;
 }
 
 export const SCHOOL_LEVEL_OPTIONS: {

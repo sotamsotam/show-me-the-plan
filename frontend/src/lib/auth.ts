@@ -3,6 +3,7 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import { getToken } from 'next-auth/jwt';
 import { cookies } from 'next/headers';
 import type { NextRequest } from 'next/server';
+import { buildSubscriptionSession } from '@/lib/subscription-access';
 import type { AccountInfo } from '@/types/school';
 
 const STRAPI_URL = process.env.STRAPI_URL ?? 'http://localhost:1337';
@@ -22,6 +23,7 @@ async function fetchAccountInfo(jwt: string): Promise<AccountInfo | null> {
     user: data.user ?? null,
     role: data.role ?? null,
     profile: data.profile ?? null,
+    subscription: data.subscription ?? null,
   };
 }
 
@@ -62,6 +64,9 @@ export const authOptions: NextAuthOptions = {
           strapiJwt: data.jwt,
           roleType: account?.role?.type,
           managerStatus: account?.profile?.managerStatus ?? null,
+          schoolLevel: account?.profile?.schoolLevel ?? null,
+          isOperator: account?.profile?.isOperator === true,
+          subscription: buildSubscriptionSession(account?.subscription),
         };
       },
     }),
@@ -81,6 +86,9 @@ export const authOptions: NextAuthOptions = {
         token.strapiJwt = user.strapiJwt;
         token.roleType = user.roleType;
         token.managerStatus = user.managerStatus;
+        token.schoolLevel = user.schoolLevel ?? null;
+        token.isOperator = user.isOperator === true;
+        token.subscription = user.subscription ?? null;
       }
 
       if (trigger === 'update' && session) {
@@ -101,6 +109,9 @@ export const authOptions: NextAuthOptions = {
         session.user.username = token.username;
         session.user.roleType = token.roleType;
         session.user.managerStatus = token.managerStatus;
+        session.user.schoolLevel = token.schoolLevel ?? null;
+        session.user.isOperator = token.isOperator === true;
+        session.user.subscription = token.subscription ?? null;
       }
       return session;
     },

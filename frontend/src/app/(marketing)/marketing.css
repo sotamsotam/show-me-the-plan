@@ -1,0 +1,27 @@
+.marketing-site {
+  --mkt-primary: #2563eb;
+  --mkt-primary-dark: #1d4ed8;
+  --mkt-surface: #f5f7fa;
+  --mkt-surface-warm: #f0f6ff;
+  color: #111827;
+  background: #ffffff;
+}
+
+.marketing-site .mkt-hero-bg {
+  background:
+    radial-gradient(circle at 20% 20%, rgba(37, 99, 235, 0.12), transparent 42%),
+    radial-gradient(circle at 80% 0%, rgba(14, 165, 233, 0.1), transparent 38%),
+    linear-gradient(180deg, #eef4ff 0%, #ffffff 72%);
+}
+
+.marketing-site .mkt-cta-bg {
+  background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 45%, #0ea5e9 100%);
+}
+
+.marketing-site .mkt-card-shadow {
+  box-shadow: 0 8px 32px rgba(15, 23, 42, 0.08);
+}
+
+.marketing-site .mkt-card-shadow-sm {
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.06);
+}

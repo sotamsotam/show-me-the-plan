@@ -601,8 +601,8 @@ export default function ExamPrepWeeklyPlanForm() {
   }
 
   return (
-    <section className="w-full min-w-0 max-w-full space-y-4">
-      <div>
+    <section className="weekly-plan-settings-page w-full min-w-0 max-w-full space-y-4">
+      <div className="shrink-0">
         <h2 className="text-lg font-medium">시험기간 주차별 공부계획</h2>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           회차별·주차별 공부 목표를 입력하면 스터디 플랜 캘린더에서 확인할 수 있습니다.
@@ -611,9 +611,10 @@ export default function ExamPrepWeeklyPlanForm() {
 
       <form
         onSubmit={handleSubmit}
-        className="min-w-0 max-w-full overflow-x-clip space-y-4 rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-zinc-900"
+        className="weekly-plan-form min-w-0 max-w-full overflow-x-clip space-y-4 rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-zinc-900"
       >
-        <div className="space-y-2">
+        <div className="shrink-0 space-y-4">
+          <div className="space-y-2">
           <label htmlFor="exam-prep-weekly-plan-round" className="block text-sm font-medium">
             시험 회차
           </label>
@@ -646,13 +647,7 @@ export default function ExamPrepWeeklyPlanForm() {
           </select>
         </div>
 
-        {selectedPreview.hasSchedule && selectedPreview.firstDay && selectedPreview.lastDay ? (
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            {selectedPreview.label ?? EXAM_ROUND_LABELS[selectedRoundSlot]} ·{' '}
-            {formatExamDateRange(selectedPreview.firstDay, selectedPreview.lastDay)} · 준비{' '}
-            {getWeeksForSlot(selectedRoundSlot, examPrepWeeksByRound)}주
-          </p>
-        ) : (
+        {selectedPreview.hasSchedule && selectedPreview.firstDay && selectedPreview.lastDay ? null : (
           <p className="text-sm text-amber-600 dark:text-amber-400">
             선택한 회차의 시험 일정이 없어 공부계획을 입력할 수 없습니다.{' '}
             <Link href="/dashboard/preferences/exam-prep" className="underline">
@@ -696,6 +691,13 @@ export default function ExamPrepWeeklyPlanForm() {
               <ExcelIcon />
               엑셀파일 불러오기
             </button>
+            <button
+              type="submit"
+              disabled={saving}
+              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            >
+              {saving ? '저장 중...' : '공부계획 저장'}
+            </button>
             <input
               ref={excelFileInputRef}
               type="file"
@@ -706,121 +708,99 @@ export default function ExamPrepWeeklyPlanForm() {
           </div>
         ) : null}
 
-        {subjects.length === 0 ? (
-          <p className="text-sm text-amber-600 dark:text-amber-400">
-            등록된 과목이 없습니다.{' '}
-            <Link href="/dashboard/settings" className="underline">
-              프로필 설정
-            </Link>
-            에서 과목을 먼저 등록해 주세요.
-          </p>
-        ) : selectedPreview.hasSchedule ? (
-          <div className="exam-prep-weekly-plan-table-shell rounded-lg border border-gray-200 dark:border-neutral-700">
-            <table className="exam-prep-weekly-plan-table-week border-collapse text-sm dark:border-neutral-700">
-              <thead>
-                <tr className="border-b border-gray-200 bg-gray-50 text-left dark:border-neutral-700 dark:bg-zinc-800/60">
-                  <th className="min-w-[5.5rem] px-3 py-2 font-medium">주차</th>
-                </tr>
-              </thead>
-              <tbody>
-                {weekNumbers.map((weekNumber) => (
-                  <tr
-                    key={weekNumber}
-                    className="border-b border-gray-100 dark:border-neutral-800"
-                  >
-                    <th
-                      scope="row"
-                      className="exam-prep-weekly-plan-week-cell px-3 py-3 text-left font-medium text-gray-700 dark:text-gray-200"
-                    >
-                      {formatPrepWeekLabel(weekNumber)}
-                    </th>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          {subjects.length === 0 ? (
+            <p className="text-sm text-amber-600 dark:text-amber-400">
+              등록된 과목이 없습니다.{' '}
+              <Link href="/dashboard/settings" className="underline">
+                프로필 설정
+              </Link>
+              에서 과목을 먼저 등록해 주세요.
+            </p>
+          ) : null}
+        </div>
 
-            <div className="exam-prep-weekly-plan-table-scroll">
-              <table className="border-collapse text-sm">
-                <thead>
-                  <tr className="border-b border-gray-200 bg-gray-50 text-left dark:border-neutral-700 dark:bg-zinc-800/60">
-                    {subjects.map((subject) => (
-                      <th
-                        key={subject.id}
-                        className="w-[20rem] min-w-[20rem] px-3 py-2 font-medium"
-                        title={subject.label}
-                      >
-                        <span className="line-clamp-2">{subject.label}</span>
+        {subjects.length > 0 && selectedPreview.hasSchedule ? (
+          <div className="weekly-plan-table-wrap">
+            <div className="exam-prep-weekly-plan-table-shell rounded-lg border border-gray-200 dark:border-neutral-700">
+              <div
+                className="exam-prep-weekly-plan-table-scroll"
+                tabIndex={0}
+                aria-label="주차별 공부계획 표"
+              >
+                <table className="exam-prep-weekly-plan-table border-collapse text-sm dark:border-neutral-700">
+                  <thead>
+                    <tr className="bg-gray-50 text-left dark:bg-zinc-800/60">
+                      <th className="exam-prep-weekly-plan-corner-cell min-w-[5.5rem] px-3 py-2 font-medium">
+                        주차
                       </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {weekNumbers.map((weekNumber) => (
-                    <tr
-                      key={weekNumber}
-                      className="border-b border-gray-100 align-top dark:border-neutral-800"
-                    >
-                      {subjects.map((subject) => {
-                        const weekLabel = formatPrepWeekLabel(weekNumber);
-                        const fieldId = `exam-prep-plan-${selectedRoundSlot}-${weekNumber}-${subject.id}`;
-
-                        return (
-                          <td
-                            key={subject.id}
-                            className="exam-prep-weekly-plan-subject-cell w-[20rem] min-w-[20rem] px-3 py-3"
-                          >
-                            <label htmlFor={fieldId} className="sr-only">
-                              {weekLabel} {subject.label}
-                            </label>
-                            <textarea
-                              id={fieldId}
-                              value={readWeekContent(
-                                draftPlans,
-                                selectedRoundSlot,
-                                weekNumber,
-                                subject.id
-                              )}
-                              onChange={(event) =>
-                                handleContentChange(weekNumber, subject.id, event.target.value)
-                              }
-                              rows={4}
-                              maxLength={MAX_EXAM_PREP_WEEKLY_PLAN_CONTENT_LENGTH}
-                              placeholder="이번 주 공부 목표"
-                              className="min-h-[7rem] w-full resize-y rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 dark:border-neutral-700 dark:bg-zinc-800"
-                            />
-                          </td>
-                        );
-                      })}
+                      {subjects.map((subject) => (
+                        <th
+                          key={subject.id}
+                          className="w-[20rem] min-w-[20rem] px-3 py-2 font-medium"
+                          title={subject.label}
+                        >
+                          <span className="line-clamp-2">{subject.label}</span>
+                        </th>
+                      ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {weekNumbers.map((weekNumber) => (
+                      <tr key={weekNumber} className="align-top">
+                        <th
+                          scope="row"
+                          className="exam-prep-weekly-plan-week-cell px-3 py-3 text-left font-medium text-gray-700 dark:text-gray-200"
+                        >
+                          {formatPrepWeekLabel(weekNumber)}
+                        </th>
+                        {subjects.map((subject) => {
+                          const weekLabel = formatPrepWeekLabel(weekNumber);
+                          const fieldId = `exam-prep-plan-${selectedRoundSlot}-${weekNumber}-${subject.id}`;
+
+                          return (
+                            <td
+                              key={subject.id}
+                              className="exam-prep-weekly-plan-subject-cell w-[20rem] min-w-[20rem] px-3 py-3"
+                            >
+                              <label htmlFor={fieldId} className="sr-only">
+                                {weekLabel} {subject.label}
+                              </label>
+                              <textarea
+                                id={fieldId}
+                                value={readWeekContent(
+                                  draftPlans,
+                                  selectedRoundSlot,
+                                  weekNumber,
+                                  subject.id
+                                )}
+                                onChange={(event) =>
+                                  handleContentChange(weekNumber, subject.id, event.target.value)
+                                }
+                                rows={4}
+                                maxLength={MAX_EXAM_PREP_WEEKLY_PLAN_CONTENT_LENGTH}
+                                placeholder="이번 주 공부 목표"
+                                className="min-h-[7rem] w-full resize-y rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 dark:border-neutral-700 dark:bg-zinc-800"
+                              />
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         ) : null}
 
-        <p className="text-xs text-gray-500 dark:text-gray-400">
-          주차는{' '}
-          <Link href="/dashboard/preferences/exam-prep" className="underline">
-            시험기간 설정
-          </Link>
-          에서 지정한 준비 기간을 기준으로 자동 계산됩니다.
-        </p>
-
-        {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
-        {success && (
-          <p className="text-sm text-green-600 dark:text-green-400">{success}</p>
+        {(error || success) && (
+          <div className="shrink-0 space-y-2">
+            {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+            {success && (
+              <p className="text-sm text-green-600 dark:text-green-400">{success}</p>
+            )}
+          </div>
         )}
-
-        <button
-          type="submit"
-          disabled={
-            saving || !selectedPreview.hasSchedule || subjects.length === 0
-          }
-          className="w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-        >
-          {saving ? '저장 중...' : '공부계획 저장'}
-        </button>
       </form>
 
       <ExamPrepTemplateSaveModal

@@ -1,5 +1,24 @@
 import type { Core } from '@strapi/strapi';
 import { getClassInfo, searchSchools } from './services/neis';
+import {
+  backfillMissingStudentSubscriptions,
+  expireDueSubscriptions,
+  seedDefaultPlans,
+} from './services/subscription';
+import {
+  approveOpsManager,
+  getOpsDashboardSummary,
+  getOpsSubscriptionDetail,
+  listOpsMembers,
+  listOpsPendingManagers,
+  listOpsSubscriptions,
+  markManagerPendingForQa,
+  normalizeOpsDiscountInput,
+  previewOpsSubscriptionDiscount,
+  rejectOpsManager,
+  updateOpsSubscriptionDiscount,
+} from './services/ops';
+import { assertOpsInternalAccess } from './services/ops-internal-auth';
 
 async function ensureManagerRole(strapi: Core.Strapi) {
   const existing = await strapi.db
@@ -384,6 +403,37 @@ async function setupPermissions(strapi: Core.Strapi) {
   for (const action of managerActions) {
     await ensureRolePermission(strapi, 'manager', action);
   }
+
+  await ensureRolePermission(strapi, 'public', 'api::plan.plan.listActive');
+  await ensureRolePermission(
+    strapi,
+    'authenticated',
+    'api::subscription.subscription.me'
+  );
+  await ensureRolePermission(
+    strapi,
+    'authenticated',
+    'api::subscription.subscription.paymentHistory'
+  );
+  await ensureRolePermission(
+    strapi,
+    'authenticated',
+    'api::subscription.subscription.cancel'
+  );
+}
+
+async function setupBilling(strapi: Core.Strapi) {
+  await seedDefaultPlans(strapi);
+
+  const created = await backfillMissingStudentSubscriptions(strapi);
+  if (created > 0) {
+    strapi.log.info(`Backfilled ${created} student trial subscriptions`);
+  }
+
+  const expired = await expireDueSubscriptions(strapi);
+  if (expired > 0) {
+    strapi.log.info(`Marked ${expired} subscriptions as expired`);
+  }
 }
 
 async function fixLegacyUsersWithoutProvider(strapi: Core.Strapi) {
@@ -503,13 +553,259 @@ function registerNeisRoutes(strapi: Core.Strapi) {
   ]);
 }
 
+function registerOpsRoutes(strapi: Core.Strapi) {
+  strapi.server.routes([
+    {
+      method: 'GET',
+      path: '/api/ops/internal/dashboard/summary',
+      handler: async (ctx) => {
+        if (!assertOpsInternalAccess(ctx)) {
+          return;
+        }
+
+        ctx.body = await getOpsDashboardSummary(strapi);
+      },
+      config: { auth: false },
+    },
+    {
+      method: 'GET',
+      path: '/api/ops/internal/members',
+      handler: async (ctx) => {
+        if (!assertOpsInternalAccess(ctx)) {
+          return;
+        }
+
+        const {
+          page,
+          pageSize,
+          schoolLevel,
+          subscriptionStatus,
+          q,
+        } = ctx.query as {
+          page?: string;
+          pageSize?: string;
+          schoolLevel?: string;
+          subscriptionStatus?: string;
+          q?: string;
+        };
+
+        ctx.body = await listOpsMembers(strapi, {
+          page: page ? Number(page) : undefined,
+          pageSize: pageSize ? Number(pageSize) : undefined,
+          schoolLevel,
+          subscriptionStatus,
+          q,
+        });
+      },
+      config: { auth: false },
+    },
+    {
+      method: 'GET',
+      path: '/api/ops/internal/subscriptions',
+      handler: async (ctx) => {
+        if (!assertOpsInternalAccess(ctx)) {
+          return;
+        }
+
+        const { page, pageSize, status, cancelAtPeriodEnd } = ctx.query as {
+          page?: string;
+          pageSize?: string;
+          status?: string;
+          cancelAtPeriodEnd?: string;
+        };
+
+        ctx.body = await listOpsSubscriptions(strapi, {
+          page: page ? Number(page) : undefined,
+          pageSize: pageSize ? Number(pageSize) : undefined,
+          status,
+          cancelAtPeriodEnd: cancelAtPeriodEnd === 'true' ? true : undefined,
+        });
+      },
+      config: { auth: false },
+    },
+    {
+      method: 'GET',
+      path: '/api/ops/internal/subscriptions/:userId',
+      handler: async (ctx) => {
+        if (!assertOpsInternalAccess(ctx)) {
+          return;
+        }
+
+        const userId = Number(ctx.params.userId);
+        if (!Number.isFinite(userId) || userId <= 0) {
+          return ctx.badRequest('Invalid userId');
+        }
+
+        const detail = await getOpsSubscriptionDetail(strapi, userId);
+        if (!detail) {
+          return ctx.notFound('Member not found');
+        }
+
+        ctx.body = detail;
+      },
+      config: { auth: false },
+    },
+    {
+      method: 'POST',
+      path: '/api/ops/internal/subscriptions/:userId/discount/preview',
+      handler: async (ctx) => {
+        if (!assertOpsInternalAccess(ctx)) {
+          return;
+        }
+
+        const userId = Number(ctx.params.userId);
+        if (!Number.isFinite(userId) || userId <= 0) {
+          return ctx.badRequest('Invalid userId');
+        }
+
+        try {
+          const input = normalizeOpsDiscountInput(
+            (ctx.request.body ?? {}) as Record<string, unknown>
+          );
+          const preview = await previewOpsSubscriptionDiscount(strapi, userId, input);
+          if (!preview) {
+            return ctx.notFound('Subscription not found');
+          }
+
+          ctx.body = preview;
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'Invalid discount input';
+          return ctx.badRequest(message);
+        }
+      },
+      config: { auth: false },
+    },
+    {
+      method: 'PATCH',
+      path: '/api/ops/internal/subscriptions/:userId/discount',
+      handler: async (ctx) => {
+        if (!assertOpsInternalAccess(ctx)) {
+          return;
+        }
+
+        const userId = Number(ctx.params.userId);
+        if (!Number.isFinite(userId) || userId <= 0) {
+          return ctx.badRequest('Invalid userId');
+        }
+
+        const grantedBy =
+          typeof ctx.request.headers['x-ops-operator'] === 'string'
+            ? ctx.request.headers['x-ops-operator']
+            : 'ops';
+
+        try {
+          const input = normalizeOpsDiscountInput(
+            (ctx.request.body ?? {}) as Record<string, unknown>
+          );
+          const result = await updateOpsSubscriptionDiscount(
+            strapi,
+            userId,
+            input,
+            grantedBy
+          );
+
+          if (!result) {
+            return ctx.notFound('Subscription not found');
+          }
+
+          ctx.body = result;
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'Invalid discount input';
+          return ctx.badRequest(message);
+        }
+      },
+      config: { auth: false },
+    },
+    {
+      method: 'GET',
+      path: '/api/ops/internal/managers/pending',
+      handler: async (ctx) => {
+        if (!assertOpsInternalAccess(ctx)) {
+          return;
+        }
+
+        ctx.body = { items: await listOpsPendingManagers(strapi) };
+      },
+      config: { auth: false },
+    },
+    {
+      method: 'POST',
+      path: '/api/ops/internal/managers/:userId/approve',
+      handler: async (ctx) => {
+        if (!assertOpsInternalAccess(ctx)) {
+          return;
+        }
+
+        const userId = Number(ctx.params.userId);
+        if (!Number.isFinite(userId) || userId <= 0) {
+          return ctx.badRequest('Invalid userId');
+        }
+
+        const result = await approveOpsManager(strapi, userId);
+        if (!result) {
+          return ctx.notFound('Pending manager not found');
+        }
+
+        ctx.body = result;
+      },
+      config: { auth: false },
+    },
+    {
+      method: 'POST',
+      path: '/api/ops/internal/managers/:userId/reject',
+      handler: async (ctx) => {
+        if (!assertOpsInternalAccess(ctx)) {
+          return;
+        }
+
+        const userId = Number(ctx.params.userId);
+        if (!Number.isFinite(userId) || userId <= 0) {
+          return ctx.badRequest('Invalid userId');
+        }
+
+        const result = await rejectOpsManager(strapi, userId);
+        if (!result) {
+          return ctx.notFound('Pending manager not found');
+        }
+
+        ctx.body = result;
+      },
+      config: { auth: false },
+    },
+    {
+      method: 'POST',
+      path: '/api/ops/internal/qa/managers/:userId/mark-pending',
+      handler: async (ctx) => {
+        if (!assertOpsInternalAccess(ctx)) {
+          return;
+        }
+
+        const userId = Number(ctx.params.userId);
+        if (!Number.isFinite(userId) || userId <= 0) {
+          return ctx.badRequest('Invalid userId');
+        }
+
+        const result = await markManagerPendingForQa(strapi, userId);
+        if (!result) {
+          return ctx.notFound('Manager not found');
+        }
+
+        ctx.body = result;
+      },
+      config: { auth: false },
+    },
+  ]);
+}
+
 export default {
   register(/* { strapi }: { strapi: Core.Strapi } */) {},
 
   async bootstrap({ strapi }: { strapi: Core.Strapi }) {
     registerNeisRoutes(strapi);
+    registerOpsRoutes(strapi);
     await setupPermissions(strapi);
     await setupPasswordResetSettings(strapi);
+    await setupBilling(strapi);
     await migrateLegacyDayOfWeek(strapi);
     await fixLegacyUsersWithoutProvider(strapi);
   },

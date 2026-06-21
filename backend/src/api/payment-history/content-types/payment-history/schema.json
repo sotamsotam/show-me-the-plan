@@ -1,0 +1,59 @@
+{
+  "kind": "collectionType",
+  "collectionName": "payment_histories",
+  "info": {
+    "singularName": "payment-history",
+    "pluralName": "payment-histories",
+    "displayName": "Payment History",
+    "description": "Student subscription payment records"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "subscription": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::subscription.subscription",
+      "required": true
+    },
+    "planPrice": {
+      "type": "integer",
+      "required": true,
+      "min": 0
+    },
+    "discountAmount": {
+      "type": "integer",
+      "required": true,
+      "min": 0
+    },
+    "amount": {
+      "type": "integer",
+      "required": true,
+      "min": 0
+    },
+    "currency": {
+      "type": "string",
+      "default": "KRW",
+      "required": true
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": ["succeeded", "failed", "refunded"],
+      "required": true
+    },
+    "pgPaymentId": {
+      "type": "string",
+      "unique": true
+    },
+    "paidAt": {
+      "type": "datetime"
+    },
+    "receiptUrl": {
+      "type": "string"
+    },
+    "discountSnapshot": {
+      "type": "json"
+    }
+  }
+}

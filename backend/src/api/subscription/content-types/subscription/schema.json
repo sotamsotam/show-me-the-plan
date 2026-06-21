@@ -1,0 +1,96 @@
+{
+  "kind": "collectionType",
+  "collectionName": "subscriptions",
+  "info": {
+    "singularName": "subscription",
+    "pluralName": "subscriptions",
+    "displayName": "Subscription",
+    "description": "Student subscription and billing state"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "user": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "plugin::users-permissions.user",
+      "required": true
+    },
+    "plan": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::plan.plan"
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": ["trialing", "active", "past_due", "canceled", "expired"],
+      "required": true,
+      "default": "trialing"
+    },
+    "trialStartedAt": {
+      "type": "datetime"
+    },
+    "hasUsedTrial": {
+      "type": "boolean",
+      "default": false
+    },
+    "pgProvider": {
+      "type": "enumeration",
+      "enum": ["toss"],
+      "default": "toss"
+    },
+    "pgCustomerId": {
+      "type": "string"
+    },
+    "pgBillingKey": {
+      "type": "text",
+      "private": true
+    },
+    "currentPeriodStart": {
+      "type": "datetime"
+    },
+    "currentPeriodEnd": {
+      "type": "datetime"
+    },
+    "cancelAtPeriodEnd": {
+      "type": "boolean",
+      "default": false
+    },
+    "canceledAt": {
+      "type": "datetime"
+    },
+    "discountPercent": {
+      "type": "integer",
+      "min": 0,
+      "max": 100
+    },
+    "discountFixedAmount": {
+      "type": "integer",
+      "min": 0
+    },
+    "overridePrice": {
+      "type": "integer",
+      "min": 0
+    },
+    "discountStartsAt": {
+      "type": "datetime"
+    },
+    "discountEndsAt": {
+      "type": "datetime"
+    },
+    "discountApplyOnce": {
+      "type": "boolean",
+      "default": false
+    },
+    "discountNote": {
+      "type": "string"
+    },
+    "discountGrantedAt": {
+      "type": "datetime"
+    },
+    "discountGrantedBy": {
+      "type": "string"
+    }
+  }
+}

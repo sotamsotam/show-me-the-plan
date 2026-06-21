@@ -21,6 +21,12 @@ export default function LegalLayout({
               이용약관
             </Link>
             <Link
+              href="/legal/paid-service"
+              className="hover:text-gray-900 dark:hover:text-gray-100"
+            >
+              유료서비스 약관
+            </Link>
+            <Link
               href="/legal/privacy"
               className="hover:text-gray-900 dark:hover:text-gray-100"
             >

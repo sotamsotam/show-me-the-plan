@@ -90,6 +90,10 @@
     },
     "guardianConsentConfirmedAt": {
       "type": "datetime"
+    },
+    "isOperator": {
+      "type": "boolean",
+      "default": false
     }
   }
 }
