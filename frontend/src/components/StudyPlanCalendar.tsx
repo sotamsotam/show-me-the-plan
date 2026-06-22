@@ -368,6 +368,7 @@ export default function StudyPlanCalendar() {
   }, [isMobile, clearEditSession]);
 
   const isListView = isListCalendarView(activeViewType);
+  const isMonthView = activeViewType === 'dayGridMonth';
   const isMobileDayView = isMobileDayCalendarView(isMobile, activeViewType);
 
   const calendarLocale = useMemo(
@@ -422,14 +423,23 @@ export default function StudyPlanCalendar() {
   const calendarEvents = useMemo(() => {
     const events = isListView
       ? [...allDayScheduleEvents, ...editableTodoEvents]
-      : [...backgroundEvents, ...allDayScheduleEvents, ...editableTodoEvents];
+      : isMonthView
+        ? [...allDayScheduleEvents]
+        : [...backgroundEvents, ...allDayScheduleEvents, ...editableTodoEvents];
 
-    if (draftEvent && !isListView) {
+    if (draftEvent && !isListView && !isMonthView) {
       events.push(draftToEventInput(draftEvent));
     }
 
     return events;
-  }, [allDayScheduleEvents, backgroundEvents, draftEvent, editableTodoEvents, isListView]);
+  }, [
+    allDayScheduleEvents,
+    backgroundEvents,
+    draftEvent,
+    editableTodoEvents,
+    isListView,
+    isMonthView,
+  ]);
 
   const closeAllModals = useCallback(() => {
     setFormOpen(false);
@@ -616,7 +626,7 @@ export default function StudyPlanCalendar() {
 
   const handleSelect = useCallback(
     (arg: DateSelectArg) => {
-      if (isListCalendarView(arg.view.type)) {
+      if (isListCalendarView(arg.view.type) || arg.view.type === 'dayGridMonth') {
         return;
       }
 
@@ -1152,10 +1162,10 @@ export default function StudyPlanCalendar() {
             allDaySlotHeight={ALL_DAY_SLOT_HEIGHT}
             height={isListView ? 'auto' : CALENDAR_HEIGHT}
             nowIndicator={!isListView}
-            selectable={!isListView && (!isMobile || isMobileDayView)}
-            editable={!isListView}
-            eventStartEditable={!isListView}
-            eventDurationEditable={!isListView}
+            selectable={!isListView && !isMonthView && (!isMobile || isMobileDayView)}
+            editable={!isListView && !isMonthView}
+            eventStartEditable={!isListView && !isMonthView}
+            eventDurationEditable={!isListView && !isMonthView}
             eventLongPressDelay={isMobileDayView ? 400 : 0}
             unselectAuto
           />

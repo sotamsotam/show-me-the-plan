@@ -539,8 +539,8 @@ async function fetchSchoolTimetableFromNeis(
     toDate: params.toDate,
   };
 
-  const [timetableResult, scheduleRows] = await Promise.all([
-    fetchNeis(endpoint, {
+  const [timetableRows, scheduleRows] = await Promise.all([
+    fetchNeisAll(endpoint, {
       ATPT_OFCDC_SC_CODE: params.atptOfcdcScCode,
       SD_SCHUL_CODE: params.sdSchulCode,
       GRADE: params.grade,
@@ -556,13 +556,11 @@ async function fetchSchoolTimetableFromNeis(
   const offDates = extractOffDatesFromScheduleRows(scheduleRows, params.grade);
   const scheduleEvents = extractSchoolScheduleEventsFromRows(scheduleRows, params.grade);
 
-  const { rows, code } = timetableResult;
-
-  if (code === 'INFO-200') {
+  if (timetableRows.length === 0) {
     return { entries: [], scheduleEvents };
   }
 
-  const entries = rows
+  const entries = timetableRows
     .filter((row) => row.ALL_TI_YMD && row.PERIO && row.ITRT_CNTNT)
     .map((row) => ({
       date: row.ALL_TI_YMD,
