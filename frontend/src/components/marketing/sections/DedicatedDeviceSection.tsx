@@ -7,13 +7,13 @@ export default function DedicatedDeviceSection({
   description,
 }: DedicatedDeviceContent) {
   return (
-    <MarketingSection title={title} variant="default">
+    <MarketingSection title={title} variant="primary-tint">
       <div className="mx-auto max-w-3xl text-center">
-        <div className="mkt-card-shadow-sm rounded-3xl bg-[#f0f6ff] p-8 ring-1 ring-blue-100 sm:p-10">
-          <p className="text-lg font-extrabold leading-snug text-gray-900 sm:text-xl sm:leading-relaxed">
+        <div className="mkt-card-gradient rounded-3xl p-8 sm:p-10">
+          <p className="text-lg font-extrabold leading-snug sm:text-xl sm:leading-relaxed">
             {headline}
           </p>
-          <p className="mt-4 text-sm leading-relaxed text-gray-700 sm:text-base sm:leading-7">
+          <p className="mt-4 text-sm leading-relaxed text-mkt-text-on-accent sm:text-base sm:leading-7">
             {description}
           </p>
         </div>

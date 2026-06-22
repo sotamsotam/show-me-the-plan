@@ -152,9 +152,7 @@ export default function DashboardBottomNav({ variant }: DashboardBottomNavProps)
             <SettingsIcon className="h-4 w-4" />
             내정보 수정
           </Link>
-          <div className="px-3 pt-2">
-            <SignOutButton />
-          </div>
+          <SignOutButton variant="menu" />
         </nav>
       </ResponsiveOverlay>
     </>

@@ -11,16 +11,16 @@ export default function MessageBlockSection({
   items: MessageBlock[];
 }) {
   return (
-    <MarketingSection title={title} eyebrow={eyebrow} variant="default">
+    <MarketingSection title={title} eyebrow={eyebrow} variant="accent-strong">
       <div className="mx-auto grid max-w-5xl gap-6 lg:grid-cols-2 lg:gap-8">
         {items.map((item) => (
           <article
             key={item.keyword}
-            className="mkt-card-shadow relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-600 to-sky-500 p-7 text-white sm:p-8"
+            className="mkt-card-gradient relative overflow-hidden rounded-3xl p-7 sm:p-8"
           >
             <div className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full bg-white/10" />
             <h3 className="text-lg font-extrabold sm:text-xl">{item.keyword}</h3>
-            <p className="mt-4 text-sm leading-relaxed text-blue-50 sm:text-base">{item.body}</p>
+            <p className="mt-4 text-sm leading-relaxed text-mkt-text-on-accent sm:text-base">{item.body}</p>
           </article>
         ))}
       </div>

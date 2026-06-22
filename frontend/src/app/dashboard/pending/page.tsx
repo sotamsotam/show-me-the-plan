@@ -15,7 +15,7 @@ export default function PendingManagerPage() {
           <p>승인이 완료되면 다시 로그인하거나 페이지를 새로고침해 주세요.</p>
         </div>
 
-        <SignOutButton />
+        <SignOutButton variant="text" />
       </div>
     </main>
   );

@@ -44,13 +44,16 @@ type MarketingSectionProps = {
   children: React.ReactNode;
   className?: string;
   id?: string;
-  variant?: 'default' | 'alt' | 'warm';
+  variant?: 'default' | 'alt' | 'warm' | 'accent-tint' | 'primary-tint' | 'accent-strong';
 };
 
 const variantClasses = {
-  default: 'bg-white',
-  alt: 'bg-[#f5f7fa]',
-  warm: 'bg-[#f0f6ff]',
+  default: 'bg-mkt-surface',
+  alt: 'bg-mkt-surface-alt',
+  warm: 'bg-mkt-surface-warm',
+  'accent-tint': 'mkt-section-accent-tint',
+  'primary-tint': 'mkt-section-primary-tint',
+  'accent-strong': 'mkt-section-accent-strong',
 };
 
 export function MarketingSection({

@@ -1,10 +1,14 @@
 import AuthSessionProvider from '@/components/providers/SessionProvider';
 import PwaInstallHint from '@/components/PwaInstallHint';
 import type { Metadata, Viewport } from 'next';
-import { Inter } from 'next/font/google';
+import { Noto_Sans_KR } from 'next/font/google';
 import './globals.css';
 
-const inter = Inter({ subsets: ['latin'] });
+const notoSansKr = Noto_Sans_KR({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: 'Show Me The Plan',
@@ -25,7 +29,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#2563eb',
+  themeColor: '#1e3a5f',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
@@ -39,7 +43,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko">
-      <body className={inter.className}>
+      <body className={notoSansKr.className}>
         <AuthSessionProvider>
           <PwaInstallHint />
           {children}

@@ -50,20 +50,6 @@ function formatTimeRange(start: string, end: string): string {
   return `${start.slice(11, 16)}~${end.slice(11, 16)}`;
 }
 
-const SUBJECT_DOT_COLORS: Record<LegacyStudyPlanSubject, string> = {
-  korean: 'bg-red-600',
-  english: 'bg-blue-600',
-  math: 'bg-violet-600',
-  social: 'bg-amber-600',
-  science: 'bg-cyan-600',
-  ethics: 'bg-pink-600',
-  tech_home: 'bg-lime-600',
-  info: 'bg-sky-600',
-  history: 'bg-yellow-700',
-  chinese: 'bg-rose-700',
-  other: 'bg-gray-600',
-};
-
 const SUBJECT_ACCENT_COLORS: Record<LegacyStudyPlanSubject, string> = {
   korean: 'bg-red-500',
   english: 'bg-blue-500',
@@ -76,6 +62,20 @@ const SUBJECT_ACCENT_COLORS: Record<LegacyStudyPlanSubject, string> = {
   history: 'bg-yellow-600',
   chinese: 'bg-rose-600',
   other: 'bg-gray-500',
+};
+
+const SUBJECT_BADGE_STYLES: Record<LegacyStudyPlanSubject, string> = {
+  korean: 'bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300',
+  english: 'bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300',
+  math: 'bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300',
+  social: 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300',
+  science: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-300',
+  ethics: 'bg-pink-100 text-pink-700 dark:bg-pink-950/40 dark:text-pink-300',
+  tech_home: 'bg-lime-100 text-lime-700 dark:bg-lime-950/40 dark:text-lime-300',
+  info: 'bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300',
+  history: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-950/40 dark:text-yellow-300',
+  chinese: 'bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300',
+  other: 'bg-gray-100 text-gray-700 dark:bg-zinc-800/70 dark:text-gray-300',
 };
 
 const SUBJECT_ROW_STYLES: Record<LegacyStudyPlanSubject, string> = {
@@ -251,18 +251,16 @@ export default function StudyPlanTodoList({
                     />
 
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-1.5">
                         <span
-                          className={`h-2 w-2 shrink-0 rounded-full md:h-2.5 md:w-2.5 ${SUBJECT_DOT_COLORS[subjectCategory]}`}
-                          aria-hidden
-                        />
-                        <p className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                          className={`shrink-0 rounded px-1.5 py-0.5 text-xs font-medium ${SUBJECT_BADGE_STYLES[subjectCategory]}`}
+                        >
                           {getSubjectLabel(todo.subject, profileSubjects)}
+                        </span>
+                        <p className="min-w-0 text-[15px] font-semibold leading-snug text-gray-900 dark:text-gray-100">
+                          {todo.title}
                         </p>
                       </div>
-                      <p className="mt-0.5 text-[15px] font-semibold leading-snug text-gray-900 dark:text-gray-100">
-                        {todo.title}
-                      </p>
                       <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
                         계획 {formatTimeRange(todo.start, todo.end)}
                       </p>

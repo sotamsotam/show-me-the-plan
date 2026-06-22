@@ -19,6 +19,16 @@ export type FeatureItem = {
   description: string;
 };
 
+export type FaqItem = {
+  question: string;
+  answer: string;
+};
+
+export type ProcessStep = {
+  title: string;
+  description: string;
+};
+
 export type PainPoint = {
   title: string;
   description: string;
@@ -79,6 +89,8 @@ export type HeroContent = {
   primaryCta?: MarketingCta;
   secondaryCta?: MarketingCta;
   image?: HeroImage;
+  /** CSS 앱 UI 목업 (홈 등) */
+  appPreview?: boolean;
 };
 
 export type SectionWithTitle<T> = {

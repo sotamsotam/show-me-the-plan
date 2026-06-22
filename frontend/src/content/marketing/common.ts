@@ -26,7 +26,7 @@ export const CORE_VALUES: ValueCard[] = [
 ];
 
 export const NAV_LINKS = [
-  { label: 'Home', href: '/' },
+  { label: '홈', href: '/' },
   { label: '요금', href: '/pricing' },
   { label: '초등', href: '/elementary' },
   { label: '중등', href: '/middle' },

@@ -54,8 +54,9 @@ function formatUserLabel(
   return username ?? null;
 }
 
-function navLinkClass(active: boolean) {
-  return `rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+function navLinkClass(active: boolean, compact = false) {
+  const padding = compact ? 'px-3 py-1.5' : 'px-3 py-2';
+  return `${padding} rounded-lg text-sm font-medium transition-colors ${
     active
       ? 'bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300'
       : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-zinc-800 dark:hover:text-gray-100'
@@ -149,6 +150,19 @@ export default function DashboardNav({
   const pageTitle = getDashboardPageTitle(pathname);
   const showMobileBottomNav = !pendingManager;
 
+  const renderDesktopNav = (className: string, compact = false) => (
+    <nav className={className} aria-label="주 메뉴">
+      {desktopNavItems.map(({ href, label, exact }) => {
+        const active = isActive(href, exact);
+        return (
+          <Link key={href} href={href} className={navLinkClass(active, compact)}>
+            {label}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+
   return (
     <>
       <header
@@ -156,67 +170,63 @@ export default function DashboardNav({
           isScrolled ? 'shadow-md dark:shadow-black/40' : 'shadow-none'
         }`}
       >
-        <div className="flex w-full items-center justify-between px-4 py-3 md:px-[50px] md:py-3">
-          <div className="flex min-w-0 flex-1 items-center gap-4 md:gap-6">
-            <Link href={homeHref} className="hidden shrink-0 md:inline-block">
-              <img
-                src="/logo/logo_wide.png"
-                alt="Show Me The Plan"
-                className="h-7 w-auto object-contain"
-              />
-            </Link>
-            <div className="flex min-w-0 items-center gap-2 overflow-hidden md:hidden">
-              <img
-                src="/logo/logo_wide.png"
-                alt="Show Me The Plan"
-                className="h-7 w-auto shrink-0 object-contain"
-              />
-              <span
-                className="shrink-0 text-xs text-gray-300 dark:text-gray-600"
-                aria-hidden
-              >
-                ·
-              </span>
-              <h1 className="truncate text-[11px] font-medium text-gray-500 dark:text-gray-500">
-                {pageTitle}
-              </h1>
+        <div className="flex w-full flex-col">
+          <div className="flex w-full items-center justify-between gap-4 px-4 pt-3 pb-4 min-[900px]:gap-6 md:px-[50px] md:pt-3 md:pb-4">
+            <div className="flex min-w-0 flex-1 items-center gap-4 md:gap-6">
+              <Link href={homeHref} className="hidden shrink-0 md:inline-block">
+                <img
+                  src="/logo/logo_wide_pc.png"
+                  alt="Show Me The Plan"
+                  className="h-9 w-auto object-contain sm:h-10"
+                />
+              </Link>
+              <div className="flex min-w-0 items-center gap-2 overflow-hidden md:hidden">
+                <img
+                  src="/logo/logo_wide_pc.png"
+                  alt="Show Me The Plan"
+                  className="h-9 w-auto shrink-0 object-contain sm:h-10"
+                />
+                <span
+                  className="shrink-0 text-xs text-gray-300 dark:text-gray-600"
+                  aria-hidden
+                >
+                  ·
+                </span>
+                <h1 className="truncate text-[11px] font-medium text-gray-500 dark:text-gray-500">
+                  {pageTitle}
+                </h1>
+              </div>
+              {renderDesktopNav('hidden min-[900px]:flex items-center gap-1')}
             </div>
-            <nav className="hidden items-center gap-1 md:flex" aria-label="주 메뉴">
-              {desktopNavItems.map(({ href, label, exact }) => {
-                const active = isActive(href, exact);
-                return (
-                  <Link key={href} href={href} className={navLinkClass(active)}>
-                    {label}
-                  </Link>
-                );
-              })}
-            </nav>
-          </div>
-          <div className="flex shrink-0 items-center gap-2 md:gap-4">
-            {userLabel && (
-              <p className="hidden max-w-[240px] truncate text-sm text-gray-600 lg:block dark:text-gray-300">
-                {userLabel}
-              </p>
-            )}
-          <Link
-            href="/dashboard/settings"
-            className="touch-press inline-flex h-11 w-11 items-center justify-center rounded-lg text-gray-600 hover:bg-gray-50 hover:text-gray-900 md:hidden dark:text-gray-400 dark:hover:bg-zinc-800 dark:hover:text-gray-100"
-              aria-label="내정보 수정"
-              title="내정보 수정"
-            >
-              <SettingsIcon />
-            </Link>
-            <div className="hidden items-center gap-2 md:flex">
+            <div className="flex shrink-0 items-center gap-2 md:gap-4">
+              {userLabel && (
+                <p className="hidden max-w-[240px] truncate text-sm text-gray-600 lg:block dark:text-gray-300">
+                  {userLabel}
+                </p>
+              )}
               <Link
                 href="/dashboard/settings"
-                className="inline-flex items-center justify-center rounded-lg p-2 text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-zinc-800 dark:hover:text-gray-100"
+                className="touch-press inline-flex h-11 w-11 items-center justify-center rounded-lg text-gray-600 hover:bg-gray-50 hover:text-gray-900 md:hidden dark:text-gray-400 dark:hover:bg-zinc-800 dark:hover:text-gray-100"
                 aria-label="내정보 수정"
                 title="내정보 수정"
               >
                 <SettingsIcon />
               </Link>
-              <SignOutButton />
+              <div className="hidden items-center gap-2 md:flex">
+                <Link
+                  href="/dashboard/settings"
+                  className="inline-flex items-center justify-center rounded-lg p-2 text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-zinc-800 dark:hover:text-gray-100"
+                  aria-label="내정보 수정"
+                  title="내정보 수정"
+                >
+                  <SettingsIcon />
+                </Link>
+                <SignOutButton />
+              </div>
             </div>
+          </div>
+          <div className="hidden border-t border-gray-200 bg-gray-50 px-4 md:flex md:px-[50px] min-[900px]:hidden dark:border-neutral-800 dark:bg-zinc-800/70">
+            {renderDesktopNav('flex w-full flex-wrap items-center gap-1', true)}
           </div>
         </div>
       </header>

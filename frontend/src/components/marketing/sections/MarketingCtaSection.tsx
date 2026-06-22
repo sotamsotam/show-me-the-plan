@@ -26,12 +26,12 @@ export default function MarketingCtaSection({
       <div className="pointer-events-none absolute -right-20 bottom-0 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
 
       <div className="relative mx-auto max-w-3xl px-4 text-center sm:px-6">
-        <p className="text-sm font-bold tracking-wide text-blue-100">{eyebrow}</p>
-        <h2 className="mt-3 text-2xl font-extrabold leading-tight text-white sm:text-3xl lg:text-4xl">
+        <p className="text-sm font-bold tracking-wide text-mkt-text-on-accent">{eyebrow}</p>
+        <h2 className="mkt-h2 mt-3 text-white">
           <MultilineText text={headline} />
         </h2>
         {subcopy ? (
-          <p className="mt-4 text-sm text-blue-100 sm:text-base">
+          <p className="mt-4 text-sm text-mkt-text-on-accent sm:text-base">
             <MultilineText text={subcopy} />
           </p>
         ) : null}
@@ -42,7 +42,7 @@ export default function MarketingCtaSection({
               <Link
                 key={link.href}
                 href={link.href}
-                className="inline-flex w-full max-w-xs items-center justify-center rounded-full bg-white px-8 py-4 text-base font-bold text-blue-700 shadow-lg shadow-black/10 transition-colors hover:bg-blue-50 sm:w-auto"
+                className="inline-flex w-full max-w-xs items-center justify-center rounded-full bg-white px-8 py-4 text-base font-bold text-mkt-accent shadow-lg shadow-black/10 transition-colors hover:bg-mkt-surface-warm sm:w-auto"
               >
                 {link.label}
               </Link>

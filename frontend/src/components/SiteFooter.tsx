@@ -22,6 +22,9 @@ export default function SiteFooter() {
             개인정보 처리방침
           </Link>
         </nav>
+        <p className="text-gray-600 dark:text-gray-400">
+          {OPERATOR_INFO.serviceDescription}
+        </p>
         <p>
           {OPERATOR_INFO.serviceName} · {OPERATOR_INFO.operatorName}
         </p>

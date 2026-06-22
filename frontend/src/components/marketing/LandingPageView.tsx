@@ -48,11 +48,11 @@ export default function LandingPageView({
         <>
           <GradeCardsSection title={grades.title} items={grades.items} />
           {elementaryNote ? (
-            <p className="-mt-6 pb-10 text-center text-sm text-gray-600">
+            <p className="-mt-6 bg-mkt-surface-accent-strong pb-10 text-center text-sm text-mkt-text-muted">
               초등학생은{' '}
               <Link
                 href="/elementary"
-                className="font-bold text-blue-600 hover:underline"
+                className="font-bold text-mkt-accent hover:underline"
               >
                 초등 페이지
               </Link>

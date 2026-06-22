@@ -4,11 +4,13 @@ type ButtonVariant = 'primary' | 'secondary' | 'inverse' | 'outline-light';
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary:
-    'bg-blue-600 text-white shadow-lg shadow-blue-600/25 hover:bg-blue-700 hover:shadow-blue-700/30',
+    'bg-mkt-accent text-white shadow-mkt-cta hover:bg-mkt-accent-hover hover:shadow-mkt-hover',
   secondary:
-    'border-2 border-gray-200 bg-white text-gray-900 hover:border-blue-200 hover:bg-blue-50',
-  inverse: 'bg-white text-blue-700 shadow-lg shadow-black/10 hover:bg-blue-50',
-  'outline-light': 'border-2 border-white/40 bg-transparent text-white hover:bg-white/10',
+    'border-2 border-mkt-border bg-mkt-surface text-mkt-text hover:border-mkt-primary-light/30 hover:bg-mkt-surface-warm',
+  inverse:
+    'bg-white text-mkt-accent shadow-lg shadow-black/10 hover:bg-mkt-surface-warm',
+  'outline-light':
+    'border-2 border-white/40 bg-transparent text-white hover:bg-white/10',
 };
 
 type MarketingCtaButtonProps = {
