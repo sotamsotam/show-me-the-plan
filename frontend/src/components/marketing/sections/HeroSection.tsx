@@ -1,3 +1,4 @@
+import HeroAnimatedHeadline from '@/components/marketing/HeroAnimatedHeadline';
 import HeroAppPreview from '@/components/marketing/HeroAppPreview';
 import MarketingCtaButton from '@/components/marketing/MarketingCtaButton';
 import { MultilineText } from '@/components/marketing/MarketingSection';
@@ -9,18 +10,21 @@ type HeroSectionProps = {
   hero: HeroContent;
   badges?: string[];
   showDefaultBadges?: boolean;
+  animateHeadline?: boolean;
 };
 
-const DEFAULT_BADGES = ['NEIS 시간표 연동', '분량 중심 학습', '초·중·고 맞춤'];
+const DEFAULT_BADGES = ['학교시간표 자동연동', '시험기간 D-day 자동계산', '순공시간 타이머'];
 
 function HeroTextBlock({
   hero,
   badges,
   visual = false,
+  animateHeadline = false,
 }: {
   hero: HeroContent;
   badges: string[];
   visual?: boolean;
+  animateHeadline?: boolean;
 }) {
   const layoutClass = visual
     ? 'mx-auto max-w-xl text-center md:mx-0 md:max-w-none md:text-left'
@@ -36,21 +40,30 @@ function HeroTextBlock({
   return (
     <div className={layoutClass}>
       <p
-        className={`mkt-eyebrow mb-4 inline-flex rounded-full bg-white/80 px-4 py-1.5 text-xs shadow-sm ring-1 ring-mkt-border backdrop-blur sm:text-sm ${eyebrowClass}`}
+        className={`mkt-eyebrow mkt-hero-stagger mkt-hero-stagger-1 mb-4 inline-flex rounded-full bg-white/80 px-4 py-1.5 text-xs shadow-sm ring-1 ring-mkt-border backdrop-blur sm:text-sm ${eyebrowClass}`}
       >
         {SUB_SLOGAN}
       </p>
 
-      <h1 className="mkt-h1">
-        <MultilineText text={hero.headline} stacked />
+      <h1
+        className="mkt-h1"
+        aria-label={animateHeadline ? hero.headline.replace(/\n/g, ' ') : undefined}
+      >
+        {animateHeadline ? (
+          <HeroAnimatedHeadline text={hero.headline} />
+        ) : (
+          <MultilineText text={hero.headline} stacked />
+        )}
       </h1>
 
-      <p className="mkt-lead mt-6">
+      <p className="mkt-lead mkt-hero-stagger mkt-hero-stagger-2 mt-6">
         <MultilineText text={hero.subcopy} />
       </p>
 
       {(hero.primaryCta || hero.secondaryCta) && (
-        <div className={`mt-10 flex flex-wrap items-center gap-3 sm:gap-4 ${ctaAlignClass}`}>
+        <div
+          className={`mkt-hero-stagger mkt-hero-stagger-3 mt-10 flex flex-wrap items-center gap-3 sm:gap-4 ${ctaAlignClass}`}
+        >
           {hero.primaryCta ? <MarketingCtaButton {...hero.primaryCta} size="lg" /> : null}
           {hero.secondaryCta ? (
             <MarketingCtaButton {...hero.secondaryCta} size="lg" />
@@ -59,7 +72,9 @@ function HeroTextBlock({
       )}
 
       {badges.length > 0 ? (
-        <ul className={`mt-10 flex flex-wrap gap-2 sm:gap-3 ${badgeAlignClass}`}>
+        <ul
+          className={`mkt-hero-stagger mkt-hero-stagger-4 mt-10 flex flex-wrap gap-2 sm:gap-3 ${badgeAlignClass}`}
+        >
           {badges.map((badge) => (
             <li
               key={badge}
@@ -103,6 +118,7 @@ export default function HeroSection({
   hero,
   badges,
   showDefaultBadges = false,
+  animateHeadline = false,
 }: HeroSectionProps) {
   const displayBadges = badges ?? (showDefaultBadges ? DEFAULT_BADGES : []);
   const hasVisual = Boolean(hero.image || hero.appPreview);
@@ -113,13 +129,22 @@ export default function HeroSection({
 
       <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:py-24">
         {hasVisual ? (
-          <div className="grid items-center gap-10 md:grid-cols-2 md:gap-10 lg:gap-14">
-            <HeroTextBlock hero={hero} badges={displayBadges} visual />
+          <div className="grid items-start gap-10 md:grid-cols-2 md:gap-10 lg:gap-14">
+            <HeroTextBlock
+              hero={hero}
+              badges={displayBadges}
+              visual
+              animateHeadline={animateHeadline}
+            />
             <HeroVisual hero={hero} />
           </div>
         ) : (
           <div className="mx-auto max-w-4xl">
-            <HeroTextBlock hero={hero} badges={displayBadges} />
+            <HeroTextBlock
+              hero={hero}
+              badges={displayBadges}
+              animateHeadline={animateHeadline}
+            />
           </div>
         )}
       </div>

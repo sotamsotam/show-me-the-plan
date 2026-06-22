@@ -2,6 +2,7 @@ import FaqSection from '@/components/marketing/sections/FaqSection';
 import FeatureGridSection from '@/components/marketing/sections/FeatureGridSection';
 import GradeCardsSection from '@/components/marketing/sections/GradeCardsSection';
 import HeroSection from '@/components/marketing/sections/HeroSection';
+import KeyFeaturesShowcaseSection from '@/components/marketing/sections/KeyFeaturesShowcaseSection';
 import MarketingCtaSection from '@/components/marketing/sections/MarketingCtaSection';
 import ProcessSection from '@/components/marketing/sections/ProcessSection';
 import TargetSplitSection from '@/components/marketing/sections/TargetSplitSection';
@@ -18,7 +19,12 @@ export const metadata: Metadata = {
 export default function HomePage() {
   return (
     <>
-      <HeroSection hero={homeContent.hero} showDefaultBadges />
+      <HeroSection hero={homeContent.hero} showDefaultBadges animateHeadline />
+      <KeyFeaturesShowcaseSection
+        eyebrow={homeContent.keyFeaturesShowcase.eyebrow}
+        title={homeContent.keyFeaturesShowcase.title}
+        items={homeContent.keyFeaturesShowcase.items}
+      />
       <TargetSplitSection items={homeContent.targetCards} />
       <ValueCardsSection
         eyebrow="핵심 가치"

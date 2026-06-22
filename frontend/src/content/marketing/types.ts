@@ -19,6 +19,26 @@ export type FeatureItem = {
   description: string;
 };
 
+export type KeyFeatureShowcaseScreen = {
+  src: string;
+  alt: string;
+  device: 'mobile' | 'desktop';
+};
+
+export type KeyFeatureShowcaseContent = {
+  eyebrow?: string;
+  title?: string;
+  items: readonly KeyFeatureShowcaseItem[];
+};
+
+export type KeyFeatureShowcaseItem = {
+  title: string;
+  titleAccent: string;
+  description: string;
+  icon?: 'calendar' | 'checklist' | 'timetable' | 'timeline' | 'chart' | 'users';
+  screen: KeyFeatureShowcaseScreen;
+};
+
 export type FaqItem = {
   question: string;
   answer: string;

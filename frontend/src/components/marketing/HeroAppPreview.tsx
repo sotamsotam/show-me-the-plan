@@ -12,10 +12,10 @@ export default function HeroAppPreview() {
       <div className="pointer-events-none absolute -right-6 top-8 hidden h-40 w-40 rounded-full bg-mkt-accent/10 blur-3xl lg:block" />
       <div className="pointer-events-none absolute -left-4 bottom-4 hidden h-32 w-32 rounded-full bg-mkt-primary/10 blur-3xl lg:block" />
 
-      <div className="relative mx-auto aspect-[4/2.9] w-full translate-y-9 sm:translate-y-10 lg:translate-y-11 sm:aspect-[5/3.5] lg:aspect-[16/10]">
+      <div className="relative mx-auto aspect-[4/2.9] w-full translate-y-[86px] sm:translate-y-[90px] lg:translate-y-[94px] sm:aspect-[5/3.5] lg:aspect-[16/10]">
         {/* PC — 모니터 목업 이미지 */}
         <div className="mkt-hero-pc absolute inset-0">
-          <div className="relative h-full translate-x-14 scale-[1.06] origin-bottom sm:translate-x-16 sm:scale-110 lg:translate-x-20 lg:scale-[1.18]">
+          <div className="relative h-full translate-x-16 scale-[1.06] origin-bottom sm:translate-x-20 sm:scale-110 lg:translate-x-28 lg:scale-[1.18]">
             <Image
               src={PC_CAPTURE}
               alt="Show Me The Plan PC 주간 공부계획 화면"

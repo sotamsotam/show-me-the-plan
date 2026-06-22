@@ -1,6 +1,6 @@
 import type { CrossLinkCard, GradeCard, TargetCard, ValueCard } from './types';
 
-export const SERVICE_NAME = 'Show Me The Plan';
+export const SERVICE_NAME = '쇼미더플랜';
 
 export const MAIN_SLOGAN = '계획을 플레이하는 순간, 공부는 퀘스트가 된다.';
 
@@ -31,6 +31,45 @@ export const NAV_LINKS = [
   { label: '초등', href: '/elementary' },
   { label: '중등', href: '/middle' },
   { label: '고등', href: '/high' },
+] as const;
+
+export const HOME_KEY_FEATURES_SHOWCASE = [
+  {
+    title: "학교시간표·시험·방학·학사일정",
+    titleAccent: "내 일정표에 자동으로 반영",
+    description:
+      "직접 입력할 필요가 없습니다. 시험 D-day 역산, 방학·평소 복습루틴까지 학교 일정에 맞춰 주차별로 공부 계획을 손쉽게 세웁니다.",
+    icon: "calendar" as const,
+    screen: {
+      src: "/images/pc_plan.jpg",
+      alt: "주차별 스터디 플랜 화면",
+      device: "desktop" as const,
+    },
+  },
+  {
+    title: "학원숙제, 단어암기, 수업복습 등",
+    titleAccent: "루틴한 공부는 한번만 입력하세요",
+    description:
+      '"번거롭게 매번 입력할 필요가 없습니다. 학원숙제, 단어암기, 수업복습 등 루틴한 공부는 한번만 입력하세요.',
+    icon: "checklist" as const,
+    screen: {
+      src: "/images/mobile_todo.jpg",
+      alt: "오늘의 TODO 미션 화면",
+      device: "mobile" as const,
+    },
+  },
+  {
+    title: "시험계획 탬플릿 기능",
+    titleAccent: "저장 후 다음시험에 자동 적용 ",
+    description:
+      "중간고사, 기말고사 등 이전 시험계획을 불러와서 더 나은계획으로 업그레이드 하면서 바로 적용하세요",
+    icon: "timetable" as const,
+    screen: {
+      src: "/images/main_pc.png",
+      alt: "NEIS 시간표 연동 스케줄 화면",
+      device: "desktop" as const,
+    },
+  },
 ] as const;
 
 export const HOME_FEATURES = [

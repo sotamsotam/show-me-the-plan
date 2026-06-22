@@ -23,6 +23,7 @@
   --mkt-surface-primary-tint: #e8eef6;
   --mkt-surface-accent-strong: #e0ebff;
   --mkt-footer-bg: #0f172a;
+  --mkt-showcase-bg: #000033;
 
   /* Borders */
   --mkt-border: #e5e7eb;
@@ -119,6 +120,17 @@
   .marketing-site .mkt-body {
     font-size: 1rem;
   }
+}
+
+/* Key features showcase */
+.marketing-site .mkt-showcase-section {
+  background: var(--mkt-showcase-bg);
+}
+
+.marketing-site .mkt-showcase-card {
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.18),
+    0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .marketing-site .mkt-hero-bg {
@@ -299,6 +311,71 @@
   }
 }
 
+@keyframes mkt-hero-stagger-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes mkt-hero-cursor-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0;
+  }
+}
+
+.marketing-site .mkt-hero-stagger {
+  opacity: 1;
+  animation: mkt-hero-stagger-in 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.marketing-site .mkt-hero-stagger-1 {
+  animation-delay: 0.08s;
+}
+
+.marketing-site .mkt-hero-stagger-2 {
+  animation-delay: 1.45s;
+}
+
+.marketing-site .mkt-hero-stagger-3 {
+  animation-delay: 1.75s;
+}
+
+.marketing-site .mkt-hero-stagger-4 {
+  animation-delay: 2.05s;
+}
+
+.marketing-site .mkt-hero-headline-line-in {
+  animation: mkt-hero-stagger-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.marketing-site .mkt-hero-headline-cursor {
+  margin-left: 0.06em;
+  font-weight: 300;
+  color: var(--mkt-accent);
+  animation: mkt-hero-cursor-blink 0.9s step-end infinite;
+}
+
+.marketing-site .mkt-hero-headline-accent {
+  background: linear-gradient(
+    135deg,
+    var(--mkt-primary) 0%,
+    var(--mkt-primary-light) 45%,
+    var(--mkt-accent) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
 @keyframes mkt-hero-float {
   0%,
   100% {
@@ -326,8 +403,15 @@
 @media (prefers-reduced-motion: reduce) {
   .marketing-site .mkt-hero-pc,
   .marketing-site .mkt-hero-mobile,
-  .marketing-site .mkt-hero-mobile-float {
+  .marketing-site .mkt-hero-mobile-float,
+  .marketing-site .mkt-hero-headline-line-in,
+  .marketing-site .mkt-hero-stagger {
     animation: none;
     opacity: 1;
+    transform: none;
+  }
+
+  .marketing-site .mkt-hero-headline-cursor {
+    display: none;
   }
 }

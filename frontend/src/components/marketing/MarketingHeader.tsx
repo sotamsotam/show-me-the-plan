@@ -9,7 +9,7 @@ export default async function MarketingHeader() {
   const session = await getServerSession(authOptions);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-mkt-border bg-mkt-surface/95 shadow-sm backdrop-blur-md">
+    <header className="sticky top-0 z-50 border-b border-mkt-border bg-mkt-surface shadow-sm">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 pt-3 pb-4 sm:px-6 sm:pt-4 sm:pb-5">
         <Link href="/" className="flex shrink-0 items-center">
           <img
