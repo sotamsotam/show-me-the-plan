@@ -12,9 +12,11 @@ import {
 } from './subscription';
 import {
   DEFAULT_MONTHLY_PLAN_CODE,
+  DEFAULT_PG_PROVIDER,
   PAYMENT_HISTORY_UID,
   PLAN_UID,
   SUBSCRIPTION_UID,
+  type PgProvider,
   type SubscriptionStatus,
 } from './subscription-constants';
 
@@ -54,6 +56,7 @@ export type PaymentSuccessInput = {
   receiptUrl?: string | null;
   pgBillingKey?: string | null;
   pgCustomerId?: string | null;
+  pgProvider?: PgProvider | null;
   paidAt?: string | Date | null;
 };
 
@@ -138,7 +141,8 @@ export async function saveBillingKey(
   userId: number,
   planCode: string,
   billingKey: string,
-  customerKey: string
+  customerKey: string,
+  pgProvider: PgProvider = DEFAULT_PG_PROVIDER
 ): Promise<SubscriptionRow | null> {
   const subscription = await getSubscriptionByUserId(strapi, userId);
   const plan = await getPlanByCode(strapi, planCode);
@@ -151,7 +155,7 @@ export async function saveBillingKey(
     where: { id: subscription.id },
     data: {
       plan: plan.id,
-      pgProvider: 'toss',
+      pgProvider,
       pgBillingKey: encryptBillingSecret(billingKey),
       pgCustomerId: customerKey,
     },
@@ -219,7 +223,7 @@ export async function applyPaymentSuccess(
       ...(input.pgBillingKey
         ? {
             pgBillingKey: encryptBillingSecret(input.pgBillingKey),
-            pgProvider: 'toss',
+            pgProvider: input.pgProvider ?? DEFAULT_PG_PROVIDER,
           }
         : {}),
       ...(input.pgCustomerId ? { pgCustomerId: input.pgCustomerId } : {}),

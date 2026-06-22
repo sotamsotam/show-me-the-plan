@@ -4,28 +4,30 @@ import {
   notifyPaymentSucceeded,
   saveBillingKeyInternal,
 } from '@/lib/billing/strapi-internal';
-import { chargeBillingKey, issueBillingKey } from '@/lib/toss/server';
+import { createBillingOrderId } from '@/lib/billing/auth';
+import { getBillingKey, payWithBillingKey } from '@/lib/portone/server';
 import type { BillingBreakdown } from '@/types/subscription';
+
+const DEFAULT_PG_PROVIDER = 'portone' as const;
 
 export async function completeBillingCheckout(input: {
   userId: number;
   planCode: string;
   planName: string;
   customerKey: string;
-  authKey: string;
+  billingKey: string;
   email: string;
   breakdown: BillingBreakdown;
+  paymentId?: string;
 }) {
-  const billing = await issueBillingKey({
-    authKey: input.authKey,
-    customerKey: input.customerKey,
-  });
+  await getBillingKey(input.billingKey);
 
   await saveBillingKeyInternal({
     userId: input.userId,
     planCode: input.planCode,
-    billingKey: billing.billingKey,
+    billingKey: input.billingKey,
     customerKey: input.customerKey,
+    pgProvider: DEFAULT_PG_PROVIDER,
   });
 
   if (input.breakdown.skipPgCharge) {
@@ -35,45 +37,46 @@ export async function completeBillingCheckout(input: {
     });
 
     return {
-      billingKey: billing.billingKey,
-      paymentKey: null,
+      billingKey: input.billingKey,
+      paymentId: null,
       amount: 0,
     };
   }
 
-  const orderId = `smp-${input.userId}-${Date.now()}`;
+  const paymentId = input.paymentId ?? createBillingOrderId(input.userId);
 
   try {
-    const payment = await chargeBillingKey({
-      billingKey: billing.billingKey,
-      customerKey: input.customerKey,
-      amount: input.breakdown.billedAmount,
-      orderId,
+    const payment = await payWithBillingKey({
+      paymentId,
+      billingKey: input.billingKey,
       orderName: input.planName,
+      customerId: input.customerKey,
       customerEmail: input.email,
+      amount: input.breakdown.billedAmount,
     });
 
     await notifyPaymentSucceeded({
       userId: input.userId,
       planCode: input.planCode,
-      pgPaymentId: payment.paymentKey,
+      pgPaymentId: payment.paymentId,
       planPrice: input.breakdown.planPrice,
       discountAmount: input.breakdown.discountAmount,
       amount: input.breakdown.billedAmount,
-      receiptUrl: payment.receipt?.url ?? null,
-      pgBillingKey: billing.billingKey,
+      receiptUrl: payment.receiptUrl ?? null,
+      pgBillingKey: input.billingKey,
       pgCustomerId: input.customerKey,
+      pgProvider: DEFAULT_PG_PROVIDER,
     });
 
     return {
-      billingKey: billing.billingKey,
-      paymentKey: payment.paymentKey,
+      billingKey: input.billingKey,
+      paymentId: payment.paymentId,
       amount: input.breakdown.billedAmount,
     };
   } catch (error) {
     await notifyPaymentFailed({
       userId: input.userId,
-      pgPaymentId: orderId,
+      pgPaymentId: paymentId,
     });
     throw error;
   }

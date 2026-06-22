@@ -37,8 +37,8 @@
     },
     "pgProvider": {
       "type": "enumeration",
-      "enum": ["toss"],
-      "default": "toss"
+      "enum": ["portone"],
+      "default": "portone"
     },
     "pgCustomerId": {
       "type": "string"

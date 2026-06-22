@@ -1,7 +1,7 @@
 # Show Me The Plan — Billing CS 매뉴얼
 
 > **대상:** 운영·고객지원  
-> **관련 문서:** [`MONETIZATION-REVIEW.md`](./MONETIZATION-REVIEW.md), [`MONETIZATION-IMPLEMENTATION-TODO.md`](./MONETIZATION-IMPLEMENTATION-TODO.md)
+> **관련 문서:** [`MONETIZATION-REVIEW.md`](./MONETIZATION-REVIEW.md), [`BILLING-PORTONE-MIGRATION-TODO.md`](./BILLING-PORTONE-MIGRATION-TODO.md)
 
 ---
 
@@ -13,7 +13,7 @@
 | 매니저 | **항상 무료** (학생 구독 유효 시에만 관리) |
 | 체험 | 가입 **14일**, **무카드** |
 | 정가 | **월 4,900원** (`student_monthly`, VAT 포함) |
-| PG | 토스페이먼츠 빌링키 자동결제 |
+| PG | **포트원 V2** 빌링키 자동결제 (하위 PG 채널 연동) |
 
 ---
 
@@ -88,7 +88,7 @@ CS에서 “무료로 N개월 연장”이 필요할 때:
 
 ## 5. 환불 (1차 — 수동)
 
-1. 토스페이먼츠 관리자에서 **환불 처리**
+1. **포트원 관리자 콘솔** 또는 연동 PG에서 **환불 처리**
 2. Strapi **payment-history** 상태 수동 반영 (또는 2차 Admin UI)
 3. 필요 시 subscription `currentPeriodEnd` 조정 / `status` 변경
 4. 학생·매니저 접근은 `hasActiveSubscription` / `isAccessAllowed` 기준으로 자동 반영
@@ -115,7 +115,7 @@ CS에서 “무료로 N개월 연장”이 필요할 때:
 
 - [ ] `npm run billing:health` → `"ready": true`
 - [ ] Cron: `npm run billing:cron` 또는 OS 스케줄러 (일 1회 이상)
-- [ ] Webhook: `TOSS_WEBHOOK_SKIP_VERIFY=false` (운영)
+- [ ] Webhook: `PORTONE_WEBHOOK_SKIP_VERIFY=false` (운영)
 - [ ] 결제 실패 로그: `[billing] webhook.*` / `[billing] cron.*` 서버 로그
 
 ---

@@ -5,12 +5,14 @@ describe('getBillingReadinessChecks', () => {
   it('flags missing secrets in production', () => {
     const checks = getBillingReadinessChecks({
       NODE_ENV: 'production',
-      TOSS_SECRET_KEY: 'live_sk_test',
-      NEXT_PUBLIC_TOSS_CLIENT_KEY: 'live_ck_test',
+      PORTONE_API_SECRET: 'api-secret',
+      NEXT_PUBLIC_PORTONE_STORE_ID: 'store-id',
+      NEXT_PUBLIC_PORTONE_CHANNEL_KEY: 'channel-key',
+      PORTONE_WEBHOOK_SECRET: 'webhook-secret',
       BILLING_INTERNAL_SECRET: 'internal',
       BILLING_CRON_SECRET: 'cron',
       BILLING_ENCRYPTION_KEY: 'encryption-key-32-characters-min!!',
-      TOSS_WEBHOOK_SKIP_VERIFY: 'true',
+      PORTONE_WEBHOOK_SKIP_VERIFY: 'true',
       NEXTAUTH_URL: 'https://example.com',
     });
 
@@ -22,12 +24,14 @@ describe('getBillingReadinessChecks', () => {
   it('is ready when production env is complete', () => {
     const checks = getBillingReadinessChecks({
       NODE_ENV: 'production',
-      TOSS_SECRET_KEY: 'live_sk_test',
-      NEXT_PUBLIC_TOSS_CLIENT_KEY: 'live_ck_test',
+      PORTONE_API_SECRET: 'api-secret',
+      NEXT_PUBLIC_PORTONE_STORE_ID: 'store-id',
+      NEXT_PUBLIC_PORTONE_CHANNEL_KEY: 'channel-key',
+      PORTONE_WEBHOOK_SECRET: 'webhook-secret',
       BILLING_INTERNAL_SECRET: 'internal',
       BILLING_CRON_SECRET: 'cron',
       BILLING_ENCRYPTION_KEY: 'encryption-key-32-characters-min!!',
-      TOSS_WEBHOOK_SKIP_VERIFY: 'false',
+      PORTONE_WEBHOOK_SKIP_VERIFY: 'false',
       NEXTAUTH_URL: 'https://example.com',
     });
 

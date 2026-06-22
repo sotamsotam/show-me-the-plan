@@ -4,7 +4,11 @@ import {
   requireStudentBillingSession,
 } from '@/lib/billing/auth';
 import { fetchAccountInfo } from '@/lib/account';
-import { getTossClientKey, isTossConfigured } from '@/lib/toss/config';
+import {
+  getPortOneChannelKey,
+  getPortOneStoreId,
+  isPortOneConfigured,
+} from '@/lib/portone/config';
 import { strapiFetch } from '@/lib/strapi';
 import { DEFAULT_MONTHLY_PLAN_CODE } from '@/types/subscription';
 import { NextRequest, NextResponse } from 'next/server';
@@ -19,7 +23,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  if (!isTossConfigured()) {
+  if (!isPortOneConfigured()) {
     return NextResponse.json(
       { error: '결제 설정이 완료되지 않았습니다.' },
       { status: 503 }
@@ -80,12 +84,13 @@ export async function POST(request: NextRequest) {
   };
 
   const customerKey = buildCustomerKey(session.userId);
-  const orderId = createBillingOrderId(session.userId);
+  const paymentId = createBillingOrderId(session.userId);
 
   return NextResponse.json({
-    clientKey: getTossClientKey(),
+    storeId: getPortOneStoreId(),
+    channelKey: getPortOneChannelKey(),
     customerKey,
-    orderId,
+    paymentId,
     plan: {
       code: plan.code,
       name: plan.name,

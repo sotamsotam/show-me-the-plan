@@ -1,6 +1,6 @@
 'use client';
 
-import { loadTossPayments } from '@tosspayments/tosspayments-sdk';
+import * as PortOne from '@portone/browser-sdk/v2';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -9,8 +9,10 @@ import { formatBillingInterval, formatKrw } from '@/lib/billing/format';
 import { DEFAULT_MONTHLY_PLAN_CODE } from '@/types/subscription';
 
 type PrepareResponse = {
-  clientKey: string;
+  storeId: string;
+  channelKey: string;
   customerKey: string;
+  paymentId: string;
   plan: {
     code: string;
     name: string;
@@ -28,6 +30,25 @@ type PrepareResponse = {
   failUrl: string;
   error?: string;
 };
+
+async function confirmBillingCheckout(input: {
+  billingKey: string;
+  planCode: string;
+  paymentId?: string;
+}) {
+  const res = await fetch('/api/billing/billing-key/confirm', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data.error ?? '결제 확인에 실패했습니다.');
+  }
+
+  return data;
+}
 
 export default function BillingCheckoutClient() {
   const router = useRouter();
@@ -86,16 +107,34 @@ export default function BillingCheckoutClient() {
     setSubmitting(true);
     setError(null);
 
-    try {
-      const tossPayments = await loadTossPayments(prepare.clientKey);
-      const payment = tossPayments.payment({ customerKey: prepare.customerKey });
+    const successRedirectUrl = `${prepare.successUrl}?planCode=${encodeURIComponent(prepare.plan.code)}&paymentId=${encodeURIComponent(prepare.paymentId)}`;
 
-      await payment.requestBillingAuth({
-        method: 'CARD',
-        successUrl: `${prepare.successUrl}?planCode=${encodeURIComponent(prepare.plan.code)}`,
-        failUrl: prepare.failUrl,
-        customerEmail: undefined,
+    try {
+      const issueResponse = await PortOne.requestIssueBillingKey({
+        storeId: prepare.storeId,
+        channelKey: prepare.channelKey,
+        billingKeyMethod: 'CARD',
+        customer: { customerId: prepare.customerKey },
+        issueName: prepare.plan.name,
+        displayAmount: prepare.nextBilling.billedAmount,
+        currency: 'KRW',
+        redirectUrl: successRedirectUrl,
       });
+
+      if (!issueResponse?.billingKey) {
+        if (issueResponse?.code) {
+          throw new Error(issueResponse.message ?? '빌링키 발급에 실패했습니다.');
+        }
+        return;
+      }
+
+      await confirmBillingCheckout({
+        billingKey: issueResponse.billingKey,
+        planCode: prepare.plan.code,
+        paymentId: prepare.paymentId,
+      });
+
+      router.replace('/dashboard/settings/billing');
     } catch (checkoutError) {
       setError(
         checkoutError instanceof Error

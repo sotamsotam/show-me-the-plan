@@ -104,6 +104,7 @@ export default factories.createCoreController(
         receiptUrl: body.receiptUrl ?? null,
         pgBillingKey: body.pgBillingKey ?? null,
         pgCustomerId: body.pgCustomerId ?? null,
+        pgProvider: body.pgProvider === 'portone' ? 'portone' : undefined,
         paidAt: body.paidAt ?? null,
       });
 
@@ -139,11 +140,12 @@ export default factories.createCoreController(
         return;
       }
 
-      const { userId, planCode, billingKey, customerKey } = ctx.request.body as {
+      const { userId, planCode, billingKey, customerKey, pgProvider } = ctx.request.body as {
         userId?: number;
         planCode?: string;
         billingKey?: string;
         customerKey?: string;
+        pgProvider?: string;
       };
 
       if (!userId || !planCode || !billingKey || !customerKey) {
@@ -155,7 +157,8 @@ export default factories.createCoreController(
         Number(userId),
         String(planCode),
         String(billingKey),
-        String(customerKey)
+        String(customerKey),
+        pgProvider === 'portone' ? 'portone' : undefined
       );
 
       if (!updated) {

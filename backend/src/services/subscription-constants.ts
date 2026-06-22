@@ -2,6 +2,12 @@ export const TRIAL_DAYS = 14;
 
 export const DEFAULT_MONTHLY_PLAN_CODE = 'student_monthly';
 
+export const PG_PROVIDERS = ['portone'] as const;
+
+export type PgProvider = (typeof PG_PROVIDERS)[number];
+
+export const DEFAULT_PG_PROVIDER: PgProvider = 'portone';
+
 export const SUBSCRIPTION_STATUSES = [
   'trialing',
   'active',

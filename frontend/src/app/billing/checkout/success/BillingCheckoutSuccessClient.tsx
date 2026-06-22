@@ -12,11 +12,15 @@ export default function BillingCheckoutSuccessClient() {
   const [done, setDone] = useState(false);
 
   useEffect(() => {
-    const authKey = searchParams.get('authKey');
+    // 모바일 리다이렉트 시 billingKey가 쿼리로 전달됩니다.
+    // 리다이렉트가 누락되어도 포트원 Webhook이 최종 결제 결과를 처리합니다.
+    const billingKey =
+      searchParams.get('billingKey') ?? searchParams.get('billing_key');
     const planCode = searchParams.get('planCode') ?? DEFAULT_MONTHLY_PLAN_CODE;
+    const paymentId = searchParams.get('paymentId') ?? undefined;
 
-    if (!authKey) {
-      setError('인증 정보가 없습니다.');
+    if (!billingKey) {
+      setError('빌링키 정보가 없습니다.');
       return;
     }
 
@@ -27,7 +31,7 @@ export default function BillingCheckoutSuccessClient() {
         const res = await fetch('/api/billing/billing-key/confirm', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ authKey, planCode }),
+          body: JSON.stringify({ billingKey, planCode, paymentId }),
         });
         const data = await res.json();
 

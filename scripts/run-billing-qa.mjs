@@ -51,9 +51,15 @@ function loadEnvFile(path) {
 }
 
 function mergeEnv() {
-  const rootEnv = loadEnvFile(join(root, '.env'));
-  for (const [key, value] of Object.entries(rootEnv)) {
-    if (!process.env[key]) process.env[key] = value;
+  for (const file of [
+    join(root, '.env'),
+    join(root, 'backend/.env'),
+    join(root, 'frontend/.env.local'),
+  ]) {
+    const parsed = loadEnvFile(file);
+    for (const [key, value] of Object.entries(parsed)) {
+      if (!process.env[key]) process.env[key] = value;
+    }
   }
 }
 
@@ -114,8 +120,9 @@ function checkEnv() {
   mergeEnv();
 
   const keys = [
-    'TOSS_SECRET_KEY',
-    'NEXT_PUBLIC_TOSS_CLIENT_KEY',
+    'PORTONE_API_SECRET',
+    'NEXT_PUBLIC_PORTONE_STORE_ID',
+    'NEXT_PUBLIC_PORTONE_CHANNEL_KEY',
     'BILLING_INTERNAL_SECRET',
     'BILLING_ENCRYPTION_KEY',
     'BILLING_CRON_SECRET',
@@ -146,6 +153,55 @@ function checkStaticContent() {
     'Static',
     'Marketing 14-day trial copy',
     marketing.includes('14일') ? 'pass' : 'fail'
+  );
+
+  const checkoutClient = readFileSync(
+    join(root, 'frontend/src/app/billing/checkout/BillingCheckoutClient.tsx'),
+    'utf8'
+  );
+  record(
+    'Static',
+    'Checkout uses PortOne SDK',
+    checkoutClient.includes('requestIssueBillingKey') &&
+      checkoutClient.includes('@portone/browser-sdk/v2')
+      ? 'pass'
+      : 'fail'
+  );
+  record(
+    'Static',
+    'Checkout has no Toss SDK import',
+    !checkoutClient.includes('tosspayments') ? 'pass' : 'fail'
+  );
+
+  const paidService = readFileSync(
+    join(root, 'frontend/src/content/legal/paid-service-v1.ts'),
+    'utf8'
+  );
+  record(
+    'Static',
+    'Paid service terms mention PortOne',
+    paidService.includes('포트원') && !paidService.includes('토스페이먼츠') ? 'pass' : 'fail'
+  );
+
+  record(
+    'Static',
+    'PortOne lib present',
+    existsSync(join(root, 'frontend/src/lib/portone/config.ts')) &&
+      existsSync(join(root, 'frontend/src/lib/portone/server.ts'))
+      ? 'pass'
+      : 'fail'
+  );
+  record(
+    'Static',
+    'Toss lib removed',
+    !existsSync(join(root, 'frontend/src/lib/toss/config.ts')) ? 'pass' : 'fail'
+  );
+  record(
+    'Static',
+    'PortOne webhook route',
+    existsSync(join(root, 'frontend/src/app/api/billing/webhooks/portone/route.ts'))
+      ? 'pass'
+      : 'fail'
   );
 }
 
@@ -307,10 +363,13 @@ async function runIntegration() {
     record('Integration', 'Cron / health auth tests', 'skip', 'BILLING_CRON_SECRET not set');
   }
 
-  const badWebhook = await fetchJson(`${FRONTEND_URL}/api/billing/webhooks/toss`, {
+  const badWebhook = await fetchJson(`${FRONTEND_URL}/api/billing/webhooks/portone`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ eventType: 'PAYMENT', data: { paymentKey: 't', orderId: 'smp-1-1' } }),
+    body: JSON.stringify({
+      type: 'Transaction.Paid',
+      data: { paymentId: 'smp-1-1', storeId: 'store-test', transactionId: 'tx-test' },
+    }),
   }).catch((error) => ({
     response: { status: 0, ok: false },
     body: { error: error instanceof Error ? error.message : String(error) },
@@ -415,7 +474,7 @@ function printSummary() {
   }
 
   console.log('\nManual only (see docs/BILLING-QA-CHECKLIST.md):');
-  console.log('  - 토스 테스트 카드 결제 UI');
+  console.log('  - 포트원 테스트 카드 결제 UI');
   console.log('  - D-day 배너 / middleware /billing/expired redirect (browser)');
   console.log('  - 매니저 연결 + 만료 배지 UI');
   console.log('  - 해지 예약 UX');

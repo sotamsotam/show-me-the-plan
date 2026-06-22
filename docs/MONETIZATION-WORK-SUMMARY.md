@@ -1,8 +1,8 @@
 # Show Me The Plan — 유료화 작업 종합 정리
 
-> **작성일:** 2026-06-20  
+> **작성일:** 2026-06-20 (PG 전환: 2026-06-22)  
 > **범위:** Phase 0~4 코드·문서 구현 (1차 출시 준비)  
-> **PG:** 토스페이먼츠 (빌링키 자동결제)  
+> **PG:** 포트원 V2 (빌링키 자동결제) — [`BILLING-PORTONE-MIGRATION-TODO.md`](./BILLING-PORTONE-MIGRATION-TODO.md)  
 > **아키텍처:** 결제·Webhook·Cron → **Next.js BFF** / 구독·할인 DB → **Strapi 5**
 
 ---
@@ -16,6 +16,7 @@
 | [`BILLING-QA-CHECKLIST.md`](./BILLING-QA-CHECKLIST.md) | 배포 전 QA |
 | [`BILLING-CS-MANUAL.md`](./BILLING-CS-MANUAL.md) | 운영·CS 매뉴얼 |
 | [`BILLING-PRODUCTION-GO-LIVE.md`](./BILLING-PRODUCTION-GO-LIVE.md) | 프로덕션 전환 가이드 |
+| [`BILLING-PORTONE-MIGRATION-TODO.md`](./BILLING-PORTONE-MIGRATION-TODO.md) | PG 전환 (토스 → 포트원) |
 | [`MONETIZATION-OPS-ADMIN-PLAN.md`](./MONETIZATION-OPS-ADMIN-PLAN.md) | 운영 Admin `/ops` 구현 계획 |
 
 ---
@@ -29,7 +30,7 @@
 | 기능 티어 | 없음 — 유효 구독·체험 중 **전 기능** |
 | 체험 | 가입 **14일**, **카드 등록 없음** (`trialing`) |
 | 요금 | **월 4,900원** (`student_monthly`, VAT 포함) |
-| PG | **토스페이먼츠** 빌링키 자동결제 |
+| PG | **포트원 V2** 빌링키 자동결제 |
 | 매니저–학생 | 학생 구독·체험 **유효 시에만** 매니저가 해당 학생 관리 |
 | 할인 (1차) | Strapi Admin **수동 할인** (`discountPercent`, `overridePrice`, `discountApplyOnce`) |
 | 만료 UX | **Hard block** — 대시보드 차단, billing·구독 설정 등 예외 허용 |
@@ -48,14 +49,14 @@
     subscription.ts · billing.ts · subscription-billing.ts
     manager-access.ts (학생 구독 검증)
     ↓ internal API (x-billing-internal-secret)
-[토스페이먼츠]
-    requestBillingAuth → 빌링키 → 자동결제 / Webhook
+[포트원 V2]
+    requestIssueBillingKey → 빌링키 → payWithBillingKey / Webhook
 ```
 
 **역할 분리**
 
 - **Strapi:** 구독 상태·할인·결제 이력·매니저 접근 도메인
-- **Next.js BFF:** 토스 SDK·시크릿키·Webhook·갱신 cron (PG 직접 호출)
+- **Next.js BFF:** 포트원 SDK·API 시크릿·Webhook·갱신 cron
 - **Middleware:** 학생 만료 시 dashboard/API 차단
 
 ---
@@ -94,9 +95,9 @@
 
 ---
 
-### Phase 2 — 토스 BFF (2026-06-20) ✅
+### Phase 2 — 포트원 BFF (2026-06-20 구현, 2026-06-22 전환) ✅
 
-**패키지:** `@tosspayments/tosspayments-sdk`
+**패키지:** `@portone/browser-sdk`, `@portone/server-sdk`
 
 **Next.js BFF (`frontend/src/app/api/`)**
 
@@ -108,7 +109,7 @@
 | GET | `/api/billing/plans` | 활성 요금제 |
 | GET | `/api/billing/history` | 결제 내역 |
 | POST | `/api/billing/subscription/cancel` | 해지 예약 |
-| POST | `/api/billing/webhooks/toss` | 토스 Webhook |
+| POST | `/api/billing/webhooks/portone` | 포트원 Webhook |
 | POST | `/api/billing/cron/run` | 구독 자동 갱신 cron |
 | GET | `/api/billing/health` | 배포 readiness (cron secret) |
 
@@ -120,7 +121,7 @@
 
 **라이브러리**
 
-- `frontend/src/lib/toss/*` — SDK·서버 API
+- `frontend/src/lib/portone/*` — SDK·서버 API
 - `frontend/src/lib/billing/*` — auth, strapi-internal, checkout, logger, readiness, format
 
 **UI (1차)**
@@ -197,7 +198,7 @@
 | 명령 | 설명 |
 |------|------|
 | `npm run billing:qa` | QA 자동 실행 (`scripts/run-billing-qa.mjs`) |
-| `npm run billing:manual-qa` | 토스 없이 API·UI 시나리오 (`scripts/run-billing-manual-qa.mjs`) |
+| `npm run billing:manual-qa` | 포트원 키 없이 API·UI 시나리오 (`scripts/run-billing-manual-qa.mjs`) |
 | `npm run billing:health` | env readiness 확인 |
 | `npm run billing:cron` | 갱신 cron 수동 호출 |
 | `npm run ops:qa` | 운영 Admin QA (`scripts/run-ops-qa.mjs`) |
@@ -234,16 +235,18 @@
 
 | 변수 | 용도 |
 |------|------|
-| `TOSS_SECRET_KEY` | 토스 API (BFF 서버) |
-| `NEXT_PUBLIC_TOSS_CLIENT_KEY` | 토스 SDK (브라우저) |
+| `PORTONE_API_SECRET` | 포트원 API (BFF 서버) |
+| `NEXT_PUBLIC_PORTONE_STORE_ID` | 포트원 SDK (브라우저) |
+| `NEXT_PUBLIC_PORTONE_CHANNEL_KEY` | 빌링키 발급 채널 |
+| `PORTONE_WEBHOOK_SECRET` | Webhook 서명 검증 |
 | `BILLING_INTERNAL_SECRET` | Strapi ↔ BFF internal API (동일 값) |
 | `BILLING_ENCRYPTION_KEY` | 빌링키 암호화 (Strapi) |
 | `BILLING_CRON_SECRET` | cron/health 인증 헤더 |
-| `TOSS_WEBHOOK_SKIP_VERIFY` | 로컬 `true`, **운영 `false`** |
+| `PORTONE_WEBHOOK_SKIP_VERIFY` | 로컬 `true`, **운영 `false`** |
 | `NEXTAUTH_URL` | checkout success/fail URL 기준 |
 | `OPS_INTERNAL_SECRET` | Strapi ↔ BFF ops internal API (동일 값) |
 
-**로컬 테스트 키:** 토스 개발자센터 가입 → `test_sk_` / `test_ck_` (가맹 계약 전 가능, 빌링 MID 확인 필요)
+**로컬 테스트 키:** [포트원 관리자 콘솔](https://admin.portone.io) → 테스트 스토어·채널 키 발급
 
 ---
 
@@ -251,7 +254,7 @@
 
 ### Billing (`npm run billing:qa`) — 2026-06-21
 
-**Pass 16 / Fail 0 / Skip 7** (토스·`BILLING_*` 키 미설정)
+**Pass 16 / Fail 0 / Skip 7** (포트원·`BILLING_*` 키 미설정)
 
 | 통과 | 내용 |
 |------|------|
@@ -263,7 +266,7 @@
 
 | Skip | 사유 |
 |------|------|
-| TOSS/BILLING env | 토스 계정·키 **미발급** (추후) |
+| PORTONE/BILLING env | 포트원 계정·키 **미발급** (추후) |
 | cron/health, internal payment | `BILLING_*` secret 없음 |
 
 ### Ops (`npm run ops:qa`) — 2026-06-21
@@ -272,14 +275,14 @@
 
 ### Manual (`npm run billing:manual-qa`) — 2026-06-21
 
-**Pass 26 / Fail 0 / Skip 5** (토스 키 없이)
+**Pass 26 / Fail 0 / Skip 5** (포트원 키 없이)
 
 | 통과 | D-day 로직, 매니저 연결·배지, 만료·403, 해지 예약, Ops 매니저 승인 API |
-| Skip | 브라우저: `/ops`, middleware 리다이렉트, D-day 배너, 토스 결제 |
+| Skip | 브라우저: `/ops`, middleware 리다이렉트, D-day 배너, 포트원 결제 |
 
 **수동 QA 남음 (브라우저):** middleware `/billing/expired` 리다이렉트, D-day 배너 표시, 운영자 `/ops`
 
-**토스 키 후:** 테스트 카드 결제, PG amount·cron 갱신 E2E
+**포트원 키 후:** 테스트 카드 결제, PG amount·cron 갱신 E2E
 
 ---
 
@@ -300,7 +303,7 @@
 | TOSS/BILLING env | 로컬 `.env` 미설정 |
 | cron/health, internal payment | `BILLING_*` secret 없음 |
 
-**수동 QA 남음:** D-day 배너, 만료 리다이렉트, 매니저 배지, 토스 테스트 카드 결제, 해지·재구독 UX
+**수동 QA 남음:** D-day 배너, 만료 리다이렉트, 매니저 배지, 포트원 테스트 카드 결제, 해지·재구독 UX
 
 ---
 
@@ -327,7 +330,7 @@ frontend/
   src/lib/subscription-access.ts
   src/lib/ops/
   src/lib/billing/
-  src/lib/toss/
+  src/lib/portone/
   src/app/api/billing/
   src/app/api/ops/
   src/app/api/subscription/
@@ -387,13 +390,13 @@ docs/
 
 ### 출시 전 필수
 
-1. **토스 개발자센터** — 테스트 키 발급 후 `.env` 설정 → `npm run billing:qa` Skip 항목 해소
-2. **수동 QA** — [`BILLING-QA-CHECKLIST.md`](./BILLING-QA-CHECKLIST.md) (토스 없이: 배너·리다이렉트·매니저 배지)
+1. **포트원 콘솔** — 테스트 키 발급 후 `.env` 설정 → `npm run billing:qa` Skip 항목 해소
+2. **수동 QA** — [`BILLING-QA-CHECKLIST.md`](./BILLING-QA-CHECKLIST.md) (포트원 키 없이: 배너·리다이렉트·매니저 배지)
 3. **프로덕션 전환** — [`BILLING-PRODUCTION-GO-LIVE.md`](./BILLING-PRODUCTION-GO-LIVE.md)
 
 ### 비즈니스·법무 (Phase 0 잔여)
 
-- 토스 가맹·빌링 계약, 통신판매업
+- 포트원 가맹·빌링 채널 계약, 통신판매업
 - 환불 정책, `past_due` grace period, 연간 요금
 - 약관·개인정보 **법무 검토** (페이지는 배포됨)
 
@@ -419,7 +422,7 @@ cd frontend; npm run dev
 # 2. env 설정 후 QA
 $env:FRONTEND_URL='http://localhost:3000'
 $env:STRAPI_URL='http://localhost:1337'
-npm run billing:qa    # 토스 키 없이도 Pass 16 / Skip 7
+npm run billing:qa    # 포트원 키 없이도 Pass 가능 (일부 Skip)
 npm run ops:qa        # OPS_INTERNAL_SECRET 필요 ( .env.example 기본값 )
 
 # 3. 운영 Admin (Strapi Admin에서 isOperator=true 계정 생성 후)

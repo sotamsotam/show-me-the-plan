@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     warningCount: summary.warningCount,
     checks: summary.checks,
     webhookUrl: process.env.NEXTAUTH_URL
-      ? `${process.env.NEXTAUTH_URL.replace(/\/$/, '')}/api/billing/webhooks/toss`
+      ? `${process.env.NEXTAUTH_URL.replace(/\/$/, '')}/api/billing/webhooks/portone`
       : null,
     cronUrl: process.env.NEXTAUTH_URL
       ? `${process.env.NEXTAUTH_URL.replace(/\/$/, '')}/api/billing/cron/run`

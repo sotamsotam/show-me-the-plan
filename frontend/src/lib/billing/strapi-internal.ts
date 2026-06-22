@@ -31,6 +31,7 @@ export async function notifyPaymentSucceeded(body: {
   receiptUrl?: string | null;
   pgBillingKey?: string | null;
   pgCustomerId?: string | null;
+  pgProvider?: 'portone';
 }) {
   const res = await billingInternalFetch('/api/subscriptions/internal/payment-succeeded', {
     method: 'POST',
@@ -63,6 +64,7 @@ export async function saveBillingKeyInternal(body: {
   planCode: string;
   billingKey: string;
   customerKey: string;
+  pgProvider?: 'portone';
 }) {
   const res = await billingInternalFetch('/api/subscriptions/internal/save-billing-key', {
     method: 'POST',

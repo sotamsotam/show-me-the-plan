@@ -2,7 +2,7 @@
 
 /**
  * Billing manual QA (API-level) — maps to docs/BILLING-QA-CHECKLIST.md
- * 토스 키 없이 실행 가능한 시나리오.
+ * 포트원 키 없이 실행 가능한 API·UI 시나리오.
  *
  * Usage (repo root, Strapi + frontend running):
  *   npm run billing:manual-qa
@@ -212,6 +212,24 @@ async function runApiScenarios() {
     return;
   }
 
+  const secretProbe = await fetchJson(`${STRAPI_URL}/api/subscriptions/internal/expire-for-qa`, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-billing-internal-secret': billingSecret,
+    },
+    body: JSON.stringify({ userId: 1 }),
+  });
+  if (secretProbe.response.status === 403) {
+    record(
+      'API',
+      'Expire-for-qa scenarios',
+      'skip',
+      'BILLING_INTERNAL_SECRET mismatch — Strapi .env와 동일한 값으로 설정하세요'
+    );
+    return;
+  }
+
   const suffix = Date.now();
 
   const student = await registerUser({
@@ -388,6 +406,19 @@ async function runOpsPendingScenario() {
     return;
   }
 
+  const opsProbe = await fetchJson(`${STRAPI_URL}/api/ops/internal/managers/pending`, {
+    headers: { 'x-ops-internal-secret': opsSecret },
+  });
+  if (opsProbe.response.status === 403) {
+    record(
+      'Ops',
+      '매니저 승인 E2E',
+      'skip',
+      'OPS_INTERNAL_SECRET mismatch — Strapi .env와 동일한 값으로 설정하세요'
+    );
+    return;
+  }
+
   const suffix = Date.now();
   const manager = await registerUser({
     username: `qa_ops_pending_${suffix}`,
@@ -466,9 +497,9 @@ function printBrowserChecklist() {
   );
   record(
     'Browser',
-    '토스 결제 UI',
+    '포트원 결제 UI',
     'skip',
-    '토스 테스트 키 발급 후 /billing/checkout'
+    '포트원 테스트 키 발급 후 /billing/checkout'
   );
 }
 

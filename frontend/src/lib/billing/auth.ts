@@ -40,3 +40,12 @@ export function buildCustomerKey(userId: number): string {
 export function createBillingOrderId(userId: number): string {
   return `smp-${userId}-${Date.now()}`;
 }
+
+export function parseUserIdFromPaymentId(paymentId?: string): number | null {
+  if (!paymentId) {
+    return null;
+  }
+
+  const match = paymentId.match(/^smp-(\d+)-/);
+  return match ? Number(match[1]) : null;
+}

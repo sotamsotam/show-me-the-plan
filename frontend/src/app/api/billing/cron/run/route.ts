@@ -6,9 +6,11 @@ import {
 } from '@/lib/billing/strapi-internal';
 import { logBillingEvent } from '@/lib/billing/logger';
 import { createBillingOrderId } from '@/lib/billing/auth';
-import { chargeBillingKey } from '@/lib/toss/server';
-import { isTossConfigured } from '@/lib/toss/config';
+import { payWithBillingKey } from '@/lib/portone/server';
+import { isPortOneConfigured } from '@/lib/portone/config';
 import { NextRequest, NextResponse } from 'next/server';
+
+const DEFAULT_PG_PROVIDER = 'portone' as const;
 
 function assertCronSecret(request: NextRequest): boolean {
   const expected = process.env.BILLING_CRON_SECRET?.trim();
@@ -26,9 +28,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
-  if (!isTossConfigured()) {
+  if (!isPortOneConfigured()) {
     return NextResponse.json(
-      { error: 'TOSS_SECRET_KEY is not configured.' },
+      { error: 'PORTONE_API_SECRET is not configured.' },
       { status: 503 }
     );
   }
@@ -49,25 +51,26 @@ export async function POST(request: NextRequest) {
         continue;
       }
 
-      const orderId = createBillingOrderId(candidate.userId);
-      const payment = await chargeBillingKey({
+      const paymentId = createBillingOrderId(candidate.userId);
+      const payment = await payWithBillingKey({
+        paymentId,
         billingKey: candidate.billingKey,
-        customerKey: candidate.customerKey,
-        amount: candidate.breakdown.billedAmount,
-        orderId,
         orderName: candidate.orderName,
+        customerId: candidate.customerKey,
+        amount: candidate.breakdown.billedAmount,
       });
 
       await notifyPaymentSucceeded({
         userId: candidate.userId,
         planCode: candidate.planCode,
-        pgPaymentId: payment.paymentKey,
+        pgPaymentId: payment.paymentId,
         planPrice: candidate.breakdown.planPrice,
         discountAmount: candidate.breakdown.discountAmount,
         amount: candidate.breakdown.billedAmount,
-        receiptUrl: payment.receipt?.url ?? null,
+        receiptUrl: payment.receiptUrl ?? null,
         pgBillingKey: candidate.billingKey,
         pgCustomerId: candidate.customerKey,
+        pgProvider: DEFAULT_PG_PROVIDER,
       });
 
       results.push({ userId: candidate.userId, ok: true });

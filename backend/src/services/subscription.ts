@@ -6,6 +6,7 @@ import {
 } from './billing';
 import {
   DEFAULT_MONTHLY_PLAN_CODE,
+  DEFAULT_PG_PROVIDER,
   PLAN_UID,
   SUBSCRIPTION_UID,
   TRIAL_DAYS,
@@ -190,7 +191,7 @@ export async function createTrialSubscription(
       hasUsedTrial: true,
       currentPeriodStart: now,
       currentPeriodEnd: periodEnd,
-      pgProvider: 'toss',
+      pgProvider: DEFAULT_PG_PROVIDER,
       cancelAtPeriodEnd: false,
     },
     populate: ['plan'],

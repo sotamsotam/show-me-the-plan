@@ -3,7 +3,7 @@ import {
   buildCustomerKey,
   requireStudentBillingSession,
 } from '@/lib/billing/auth';
-import { isTossConfigured } from '@/lib/toss/config';
+import { isPortOneConfigured } from '@/lib/portone/config';
 import { strapiFetch } from '@/lib/strapi';
 import { DEFAULT_MONTHLY_PLAN_CODE } from '@/types/subscription';
 import { NextRequest, NextResponse } from 'next/server';
@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  if (!isTossConfigured()) {
+  if (!isPortOneConfigured()) {
     return NextResponse.json(
       { error: '결제 설정이 완료되지 않았습니다.' },
       { status: 503 }
@@ -26,12 +26,13 @@ export async function POST(request: NextRequest) {
   }
 
   const body = (await request.json()) as {
-    authKey?: string;
+    billingKey?: string;
     planCode?: string;
+    paymentId?: string;
   };
 
-  if (!body.authKey) {
-    return NextResponse.json({ error: 'authKey가 필요합니다.' }, { status: 400 });
+  if (!body.billingKey) {
+    return NextResponse.json({ error: 'billingKey가 필요합니다.' }, { status: 400 });
   }
 
   const planCode = body.planCode ?? DEFAULT_MONTHLY_PLAN_CODE;
@@ -71,9 +72,10 @@ export async function POST(request: NextRequest) {
       planCode,
       planName: plan.name,
       customerKey: buildCustomerKey(session.userId),
-      authKey: body.authKey,
+      billingKey: body.billingKey,
       email: session.email,
       breakdown,
+      paymentId: body.paymentId,
     });
 
     return NextResponse.json({ ok: true, ...result });

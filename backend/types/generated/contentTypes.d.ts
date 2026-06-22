@@ -627,8 +627,8 @@ export interface ApiSubscriptionSubscription
       >;
     pgBillingKey: Schema.Attribute.Text & Schema.Attribute.Private;
     pgCustomerId: Schema.Attribute.String;
-    pgProvider: Schema.Attribute.Enumeration<['toss']> &
-      Schema.Attribute.DefaultTo<'toss'>;
+    pgProvider: Schema.Attribute.Enumeration<['portone']> &
+      Schema.Attribute.DefaultTo<'portone'>;
     plan: Schema.Attribute.Relation<'manyToOne', 'api::plan.plan'>;
     publishedAt: Schema.Attribute.DateTime;
     status: Schema.Attribute.Enumeration<

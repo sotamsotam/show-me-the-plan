@@ -1,10 +1,11 @@
-# Show Me The Plan — 유료화 구현 TODO (토스페이먼츠)
+# Show Me The Plan — 유료화 구현 TODO (포트원 V2)
 
 > **기준 문서:** [`MONETIZATION-REVIEW.md`](./MONETIZATION-REVIEW.md)  
 > **작업 종합:** [`MONETIZATION-WORK-SUMMARY.md`](./MONETIZATION-WORK-SUMMARY.md)  
 > **운영 Admin:** [`MONETIZATION-OPS-ADMIN-PLAN.md`](./MONETIZATION-OPS-ADMIN-PLAN.md)  
-> **PG:** **토스페이먼츠** (빌링키 자동결제)  
-> **작성일:** 2026-06-20  
+> **PG 전환:** [`BILLING-PORTONE-MIGRATION-TODO.md`](./BILLING-PORTONE-MIGRATION-TODO.md) (2026-06-22, 토스 → 포트원)  
+> **PG:** **포트원 V2** (빌링키 자동결제) — _초기 구현은 토스 기준이었으나 포트원으로 전환 완료_  
+> **작성일:** 2026-06-20 (PG 전환: 2026-06-22)  
 > **아키텍처:** 결제·Webhook·Cron → **Next.js BFF** / 구독·할인 DB → **Strapi 5**
 
 ---
@@ -26,7 +27,7 @@
 - [x] 신규 가입 14일 체험 (`trialing`)
 - [x] 매니저 접근 = 연결된 **학생 구독 유효** 시에만
 - [x] 회원별 Admin 수동 할인 (1차)
-- [x] PG: **토스페이먼츠**
+- [x] PG: **포트원 V2** _(2026-06-22 전환, [`BILLING-PORTONE-MIGRATION-TODO.md`](./BILLING-PORTONE-MIGRATION-TODO.md))_
 - [x] 월간 요금: **4,900원 (VAT 포함)**
 - [x] 체험 14일: **무카드**
 
@@ -39,18 +40,19 @@
 - [ ] `past_due` **grace period** 일수 확정 (예: 3일 / 7일)
 - [x] 만료 시 **Hard block** 확정 — dashboard 차단, `/billing`·구독 설정 예외 (Phase 3 구현)
 - [x] 체험 14일: **무카드** (카드 선등록 없음)
-- [ ] 토스페이먼츠 **가맹점·자동결제(빌링)** 계약 신청
+- [ ] 포트원 **가맹·빌링 채널** 계약 신청
 - [ ] 통신판매업 신고 (또는 일정 확정)
 - [x] 이용약관·유료서비스약관·개인정보(PG 위탁) **페이지 배포** (`/legal/*`) — 법무 검토 별도
 
 ### 0.3 환경·키
 
-- [ ] 토스 **테스트** `secretKey`, `clientKey` 발급
+- [ ] 포트원 **테스트** API 시크릿, Store ID, Channel Key 발급
 - [ ] Docker / `.env`에 키 추가 (git 제외)
-  - `TOSS_SECRET_KEY`
-  - `NEXT_PUBLIC_TOSS_CLIENT_KEY`
-  - `TOSS_WEBHOOK_SECRET` (또는 서명 검증용)
-- [ ] Webhook 수신 URL 확정: `https://{domain}/api/billing/webhooks/toss`
+  - `PORTONE_API_SECRET`
+  - `NEXT_PUBLIC_PORTONE_STORE_ID`
+  - `NEXT_PUBLIC_PORTONE_CHANNEL_KEY`
+  - `PORTONE_WEBHOOK_SECRET`
+- [ ] Webhook 수신 URL 확정: `https://{domain}/api/billing/webhooks/portone`
 - [ ] Caddy/방화벽에서 Webhook 경로 외부 접근 가능 확인
 
 ---
@@ -77,12 +79,12 @@
 
 ---
 
-## Phase 2 — 토스페이먼츠 · Next.js BFF ✅ (2026-06-20)
+## Phase 2 — 포트원 V2 · Next.js BFF ✅ (2026-06-20 구현, 2026-06-22 포트원 전환)
 
 ### 2.1 패키지·설정
 
-- [x] `@tosspayments/tosspayments-sdk`
-- [x] `frontend/src/lib/toss/*`, `frontend/src/lib/billing/*`
+- [x] `@portone/browser-sdk`, `@portone/server-sdk`
+- [x] `frontend/src/lib/portone/*`, `frontend/src/lib/billing/*`
 - [x] `.env.example` / `docker-compose.yml` env 추가
 
 ### 2.2 BFF 라우트
@@ -92,7 +94,7 @@
 - [x] `GET /api/subscription/me`, `GET /api/billing/plans`
 - [x] `POST /api/billing/subscription/cancel`
 - [x] `GET /api/billing/history`
-- [x] `POST /api/billing/webhooks/toss`
+- [x] `POST /api/billing/webhooks/portone`
 - [x] `POST /api/billing/cron/run`
 
 ### 2.3 Strapi internal API
@@ -110,7 +112,7 @@
 ### 2.5 남은 작업 (Phase 3~)
 
 - [x] middleware 구독 차단, 체험 D-day 배너
-- [ ] Webhook 서명 검증 운영 설정 (`TOSS_WEBHOOK_SKIP_VERIFY=false`) — 배포 시
+- [ ] Webhook 서명 검증 운영 설정 (`PORTONE_WEBHOOK_SKIP_VERIFY=false`) — 배포 시
 - [x] 외부 cron `/api/billing/cron/run` → `npm run billing:cron` + [`BILLING-PRODUCTION-GO-LIVE.md`](./BILLING-PRODUCTION-GO-LIVE.md)
 
 ---
@@ -134,7 +136,7 @@
 ### 3.3 학생 Billing UI
 
 - [x] `/pricing` — 요금 안내 (마케팅)
-- [x] `/billing/checkout` — 토스 결제창, plan 선택
+- [x] `/billing/checkout` — 포트원 빌링키 발급창, plan 선택
 - [x] `/dashboard/settings/billing` — 상태, 체험 잔여, 정가·할인·**다음 청구액**, 해지
 - [x] `/dashboard/settings/billing/history` — 결제 내역
 - [x] `/billing/expired` — 만료 안내·재결제 CTA
@@ -194,7 +196,7 @@
 
 - [x] 전환 가이드 → [`BILLING-PRODUCTION-GO-LIVE.md`](./BILLING-PRODUCTION-GO-LIVE.md)
 - [x] Cron 스크립트 → `npm run billing:cron`
-- [ ] 토스 **라이브** 키로 교체 (배포 시)
+- [ ] 포트원 **라이브** 채널·키로 교체 (배포 시)
 - [ ] Webhook URL 운영 도메인 등록 (배포 시)
 - [ ] Admin plan 가격 최종 반영 (배포 시)
 - [x] `MONETIZATION-REVIEW.md` Phase 0 잔여 항목 정리 (Hard block·약관 배포 반영, 2026-06-21)
@@ -251,7 +253,7 @@
 | 매니저 | `backend/src/services/manager-access.ts` (수정) |
 | 가입 | `backend/src/api/user-profile/controllers/user-profile.ts` (수정) |
 | BFF | `frontend/src/app/api/billing/**`, `api/subscription/**` |
-| 토스 | `frontend/src/lib/toss/**`, `frontend/src/lib/billing/**` |
+| 포트원 | `frontend/src/lib/portone/**`, `frontend/src/lib/billing/**` |
 | UI | `frontend/src/app/(marketing)/pricing/`, `billing/**`, `dashboard/settings/billing/**` |
 | 인증 | `frontend/src/lib/auth.ts`, `middleware.ts` (수정) |
 
@@ -264,7 +266,7 @@ Phase 0 (가격·계약·키)
     ↓
 Phase 1 (Strapi CT + hasActiveSubscription + resolveBillingAmount)
     ↓
-Phase 2 (토스 BFF + Webhook + Cron)  ← Phase 1 API 필요
+Phase 2 (포트원 BFF + Webhook + Cron)  ← Phase 1 API 필요
     ↓
 Phase 3 (middleware + UI + manager-access UI)  ← Phase 1·2 병행 가능
     ↓
@@ -275,9 +277,9 @@ Phase 4 (약관·QA·라이브)
 
 ## 참고 링크
 
-- [토스페이먼츠 개발자센터](https://docs.tosspayments.com/)
-- [자동결제(빌링)](https://docs.tosspayments.com/guides/v2/billing)
-- [Webhook](https://docs.tosspayments.com/guides/v2/webhook)
+- [포트원 개발자센터](https://developers.portone.io/)
+- [빌링키 발급 (V2)](https://developers.portone.io/opi/ko/integration/start/v2/billing/issue)
+- [Webhook (V2)](https://developers.portone.io/opi/ko/integration/webhook/readme-v2)
 - 내부: [`MONETIZATION-REVIEW.md`](./MONETIZATION-REVIEW.md)
 
 ---
