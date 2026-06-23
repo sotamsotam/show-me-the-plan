@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import OpsDiscountEditor from '@/components/ops/OpsDiscountEditor';
+import OpsPointsEditor from '@/components/ops/OpsPointsEditor';
 import { fetchOpsInternal } from '@/lib/ops/auth';
 import { SCHOOL_LEVEL_LABEL } from '@/types/school';
 
@@ -49,9 +50,16 @@ export default async function OpsSubscriptionDetailPage({
       cancelAtPeriodEnd: boolean;
       hasBillingKey: boolean;
       plan: { name: string; price: number } | null;
-      nextBilling: { billedAmount: number; basePrice: number; discountAmount: number } | null;
+      nextBilling: {
+        billedAmount: number;
+        planPrice: number;
+        discountAmount: number;
+        pointAmountUsed: number;
+      } | null;
+      pointBalance: number;
+      usePointsOnNextBilling: boolean;
     } | null;
-      discount: {
+    discount: {
       discountPercent: number | null;
       discountFixedAmount: number | null;
       overridePrice: number | null;
@@ -61,6 +69,10 @@ export default async function OpsSubscriptionDetailPage({
       discountNote: string | null;
       discountGrantedAt: string | null;
       discountGrantedBy: string | null;
+    } | null;
+    points: {
+      pointBalance: number;
+      usePointsOnNextBilling: boolean;
     } | null;
     paymentHistory: Array<{
       id: number;
@@ -83,7 +95,7 @@ export default async function OpsSubscriptionDetailPage({
     );
   }
 
-  const { user, profile, subscription, discount, paymentHistory, managerCount } =
+  const { user, profile, subscription, discount, points, paymentHistory, managerCount } =
     result.data;
 
   return (
@@ -158,8 +170,19 @@ export default async function OpsSubscriptionDetailPage({
               <dd>
                 {formatKrw(subscription.nextBilling?.billedAmount)}
                 {subscription.nextBilling?.discountAmount
-                  ? ` (할인 ${formatKrw(subscription.nextBilling.discountAmount)})`
+                  ? ` (총 할인 ${formatKrw(subscription.nextBilling.discountAmount)}`
                   : null}
+                {subscription.nextBilling?.pointAmountUsed
+                  ? `, 포인트 ${formatKrw(subscription.nextBilling.pointAmountUsed)}`
+                  : null}
+                {subscription.nextBilling?.discountAmount ? ')' : null}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-slate-500">보유 포인트</dt>
+              <dd>
+                {subscription.pointBalance.toLocaleString('ko-KR')}P
+                {subscription.usePointsOnNextBilling ? ' · 다음 청구 적용 예약' : ''}
               </dd>
             </div>
           </dl>
@@ -201,6 +224,14 @@ export default async function OpsSubscriptionDetailPage({
       ) : null}
 
       {subscription ? <OpsDiscountEditor userId={userId} initial={discount} /> : null}
+
+      {points ? (
+        <OpsPointsEditor
+          userId={userId}
+          initialPointBalance={points.pointBalance}
+          usePointsOnNextBilling={points.usePointsOnNextBilling}
+        />
+      ) : null}
 
       <section className="rounded-lg border border-slate-800 bg-slate-900/40 p-4">
         <h3 className="text-sm font-medium text-slate-300">결제 내역</h3>

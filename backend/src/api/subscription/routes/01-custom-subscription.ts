@@ -9,6 +9,14 @@ export default {
       },
     },
     {
+      method: 'POST',
+      path: '/subscriptions/me/use-points',
+      handler: 'subscription.usePoints',
+      config: {
+        auth: {},
+      },
+    },
+    {
       method: 'GET',
       path: '/subscriptions/payment-history',
       handler: 'subscription.paymentHistory',
@@ -20,6 +28,14 @@ export default {
       method: 'POST',
       path: '/subscriptions/cancel',
       handler: 'subscription.cancel',
+      config: {
+        auth: {},
+      },
+    },
+    {
+      method: 'POST',
+      path: '/subscriptions/cancel/resume',
+      handler: 'subscription.resumeCancel',
       config: {
         auth: {},
       },

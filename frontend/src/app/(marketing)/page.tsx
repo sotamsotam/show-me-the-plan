@@ -4,19 +4,37 @@ import GradeCardsSection from '@/components/marketing/sections/GradeCardsSection
 import HeroSection from '@/components/marketing/sections/HeroSection';
 import KeyFeaturesShowcaseSection from '@/components/marketing/sections/KeyFeaturesShowcaseSection';
 import MarketingCtaSection from '@/components/marketing/sections/MarketingCtaSection';
+import PlannerComparisonSection from '@/components/marketing/sections/PlannerComparisonSection';
 import ProcessSection from '@/components/marketing/sections/ProcessSection';
 import TargetSplitSection from '@/components/marketing/sections/TargetSplitSection';
 import ValueCardsSection from '@/components/marketing/sections/ValueCardsSection';
 import { CORE_VALUES, homeContent, homeSeo } from '@/content/marketing';
+import { authOptions } from '@/lib/auth';
+import {
+  getDefaultDashboardPathFromSession,
+  isMarketingHomeBypass,
+} from '@/lib/account-helpers';
 import type { Metadata } from 'next';
+import { getServerSession } from 'next-auth';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 
 export const metadata: Metadata = {
   title: homeSeo.title,
   description: homeSeo.description,
 };
 
-export default function HomePage() {
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams?: { view?: string | string[] };
+}) {
+  const session = await getServerSession(authOptions);
+
+  if (session?.user && !isMarketingHomeBypass(searchParams)) {
+    redirect(getDefaultDashboardPathFromSession(session.user));
+  }
+
   return (
     <>
       <HeroSection hero={homeContent.hero} showDefaultBadges animateHeadline />
@@ -25,6 +43,7 @@ export default function HomePage() {
         title={homeContent.keyFeaturesShowcase.title}
         items={homeContent.keyFeaturesShowcase.items}
       />
+      <PlannerComparisonSection {...homeContent.plannerComparison} />
       <TargetSplitSection items={homeContent.targetCards} />
       <ValueCardsSection
         eyebrow="핵심 가치"

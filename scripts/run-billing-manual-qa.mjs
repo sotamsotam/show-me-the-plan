@@ -336,6 +336,17 @@ async function runApiScenarios() {
     `cancelAtPeriodEnd=${cancelRes.body?.subscription?.cancelAtPeriodEnd}`
   );
 
+  const resumeRes = await fetchJson(`${STRAPI_URL}/api/subscriptions/cancel/resume`, {
+    method: 'POST',
+    headers: authHeaders(student.jwt),
+  });
+  record(
+    'Cancel',
+    '해지 예약 취소 cancelAtPeriodEnd=false',
+    resumeRes.body?.subscription?.cancelAtPeriodEnd === false ? 'pass' : 'fail',
+    `cancelAtPeriodEnd=${resumeRes.body?.subscription?.cancelAtPeriodEnd}`
+  );
+
   const expired = await expireStudent(student.userId, billingSecret);
   const expiredOk =
     expired.response.ok &&

@@ -28,8 +28,8 @@ export default function SignupConsentSection({
   }
 
   return (
-    <fieldset className="space-y-3 rounded-lg border border-gray-200 p-4 dark:border-neutral-700">
-      <legend className="px-1 text-sm font-medium">약관 및 개인정보 동의</legend>
+    <fieldset className="space-y-3 rounded-xl border border-gray-200 bg-gray-50/50 p-4">
+      <legend className="px-1 text-sm font-medium text-gray-700">약관 및 개인정보 동의</legend>
 
       <label className="flex cursor-pointer items-start gap-2 text-sm">
         <input
@@ -41,7 +41,7 @@ export default function SignupConsentSection({
         <span className="font-medium">전체 동의</span>
       </label>
 
-      <div className="space-y-2 border-t border-gray-100 pt-3 dark:border-neutral-800">
+      <div className="space-y-2 border-t border-gray-200 pt-3">
         <label className="flex cursor-pointer items-start gap-2 text-sm">
           <input
             type="checkbox"

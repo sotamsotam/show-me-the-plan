@@ -1,3 +1,5 @@
+import { buildUploadPluginConfig } from './upload-provider';
+
 export default ({ env }) => {
   const defaultFromEmail = env('EMAIL_DEFAULT_FROM');
   const defaultFromName = env('EMAIL_DEFAULT_NAME', 'Show Me The Plan');
@@ -7,6 +9,7 @@ export default ({ env }) => {
       : defaultFromEmail;
 
   return {
+    ...buildUploadPluginConfig(env),
     email: {
       config: {
         provider: 'nodemailer',

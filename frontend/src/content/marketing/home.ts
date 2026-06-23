@@ -1,5 +1,6 @@
 import { GRADE_CARDS, HOME_FEATURES, HOME_KEY_FEATURES_SHOWCASE, HOME_TARGET_CARDS } from './common';
 import { HOME_FAQ, HOME_PROCESS } from './home-faq';
+import { HOME_PLANNER_COMPARISON } from './home-planner-comparison';
 import type { PageSeo } from './types';
 
 export const homeSeo: PageSeo = {
@@ -26,6 +27,7 @@ export const homeContent = {
     title: '계획 세우다 지치는 피로를 0%로 만듭니다',
     items: HOME_KEY_FEATURES_SHOWCASE,
   },
+  plannerComparison: HOME_PLANNER_COMPARISON,
   targetCards: HOME_TARGET_CARDS,
   valuesTitle: "Show Me The Plan이 지향하는 공부",
   featuresTitle: "필요한 것, 하나의 앱 안에",

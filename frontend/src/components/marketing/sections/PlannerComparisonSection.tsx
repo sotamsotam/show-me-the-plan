@@ -1,3 +1,4 @@
+import PlannerVsShowcase from '@/components/marketing/PlannerVsShowcase';
 import { MarketingSection } from '@/components/marketing/MarketingSection';
 import type { PlannerComparisonContent } from '@/content/marketing/types';
 
@@ -10,6 +11,7 @@ export default function PlannerComparisonSection({
 }: PlannerComparisonContent) {
   return (
     <MarketingSection title={title} variant="warm">
+      <PlannerVsShowcase />
       <div className="grid gap-5 sm:grid-cols-2 lg:gap-6">
         {items.map((item, index) => (
           <article key={item.title} className="mkt-card-elevated overflow-hidden">

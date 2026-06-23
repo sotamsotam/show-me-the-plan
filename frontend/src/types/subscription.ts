@@ -10,6 +10,7 @@ export const DEFAULT_MONTHLY_PLAN_CODE = 'student_monthly';
 export interface BillingBreakdown {
   planPrice: number;
   discountAmount: number;
+  pointAmountUsed: number;
   billedAmount: number;
   skipPgCharge: boolean;
 }
@@ -31,6 +32,8 @@ export interface SubscriptionSummary {
   hasBillingKey: boolean;
   plan: SubscriptionPlanSummary | null;
   nextBilling: BillingBreakdown | null;
+  pointBalance: number;
+  usePointsOnNextBilling: boolean;
 }
 
 export interface PlanInfo {

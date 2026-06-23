@@ -62,6 +62,7 @@ export async function POST(request: NextRequest) {
   const breakdown = subscriptionData.subscription?.nextBilling ?? {
     planPrice: plan.price,
     discountAmount: 0,
+    pointAmountUsed: 0,
     billedAmount: plan.price,
     skipPgCharge: false,
   };

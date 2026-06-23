@@ -59,6 +59,11 @@
     "overrides": {
       "type": "json"
     },
+    "attachments": {
+      "type": "media",
+      "multiple": true,
+      "allowedTypes": ["images"]
+    },
     "user": {
       "type": "relation",
       "relation": "manyToOne",

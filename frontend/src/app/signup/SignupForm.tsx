@@ -13,12 +13,21 @@ import {
 } from '@/types/consent';
 import {
   SCHOOL_LEVEL_OPTIONS,
+  type AccountInfo,
   type SchoolLevel,
   type SchoolSearchResult,
   type SignupProfile,
   isNeisStudent,
   isOtherStudent,
 } from '@/types/school';
+import { getDefaultDashboardPathFromAccount } from '@/lib/account-helpers';
+import { SERVICE_NAME } from '@/content/marketing/common';
+
+const inputClassName =
+  'w-full rounded-xl border border-gray-200 bg-gray-50/80 px-3.5 py-2.5 text-sm text-gray-900 outline-none transition-[border-color,box-shadow,background-color] placeholder:text-gray-400 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10';
+
+const submitButtonClassName =
+  'w-full rounded-xl bg-gradient-to-r from-[#1d4ed8] to-[#2d5080] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_8px_24px_rgba(29,78,216,0.28)] transition-[transform,opacity,box-shadow] hover:shadow-[0_10px_28px_rgba(29,78,216,0.36)] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50';
 
 export default function SignupForm() {
   const router = useRouter();
@@ -207,28 +216,61 @@ export default function SignupForm() {
       return;
     }
 
-    if (isManagerSignup) {
-      router.push('/dashboard/students');
-      router.refresh();
-      return;
+    try {
+      const profileRes = await fetch('/api/profile/me', { credentials: 'include' });
+      const profileData = await profileRes.json();
+
+      if (profileRes.ok) {
+        const account: AccountInfo = {
+          user: profileData.user ?? null,
+          role: profileData.role ?? null,
+          profile: profileData.profile ?? null,
+        };
+
+        router.push(getDefaultDashboardPathFromAccount(account));
+        router.refresh();
+        return;
+      }
+    } catch {
+      // fallback below
     }
 
-    router.push('/dashboard/todo');
+    router.push(isManagerSignup ? '/dashboard/pending' : '/dashboard/todo');
     router.refresh();
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <main className="flex flex-1 items-center justify-center px-4 py-12">
-        <div className="w-full max-w-lg rounded-xl border border-gray-200 bg-white p-8 shadow-sm dark:border-neutral-800 dark:bg-zinc-900">
-        <h1 className="mb-2 text-2xl font-semibold">회원가입</h1>
-        <p className="mb-6 text-sm text-gray-500 dark:text-gray-400">
-          14세 미만 학생의 경우 부모님 이메일을 사용해 주세요<br /> (비밀번호 분실시 이메일로 재설정되므로 실제 이메일을 사용해주세요)
-        </p>
+    <div className="relative flex min-h-screen flex-col overflow-hidden bg-[#092254]">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_20%_15%,rgba(29,78,216,0.12),transparent_50%),radial-gradient(ellipse_at_80%_85%,rgba(45,80,128,0.15),transparent_45%)]"
+      />
+
+      <main className="relative z-10 flex flex-1 items-center justify-center px-4 py-10 sm:py-14">
+        <div className="w-full max-w-lg animate-page-in">
+          <Link href="/" className="mb-8 flex justify-center sm:mb-10">
+            <img
+              src="/logo/logo_wide_pc_blue.png"
+              alt={SERVICE_NAME}
+              className="h-16 w-auto object-contain"
+            />
+          </Link>
+
+          <div className="rounded-2xl border border-white/10 bg-white p-7 shadow-[0_2px_8px_rgba(15,23,42,0.08),0_16px_48px_rgba(15,23,42,0.18)] sm:p-8">
+            <div className="mb-6 text-center">
+              <h1 className="text-xl font-bold tracking-tight text-gray-900 sm:text-2xl">
+                회원가입
+              </h1>
+              <p className="mt-1.5 text-sm leading-relaxed text-gray-500">
+                14세 미만 학생의 경우 부모님 이메일을 사용해 주세요.
+                <br />
+                비밀번호 분실 시 이메일로 재설정되므로 실제 이메일을 사용해 주세요.
+              </p>
+            </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="username" className="mb-1 block text-sm font-medium">
+            <label htmlFor="username" className="mb-1.5 block text-sm font-medium text-gray-700">
               닉네임
             </label>
             <input
@@ -238,12 +280,12 @@ export default function SignupForm() {
               onChange={(e) => setUsername(e.target.value)}
               required
               minLength={3}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 dark:border-neutral-700 dark:bg-zinc-800"
+              className={inputClassName}
             />
           </div>
 
           <div>
-            <label htmlFor="email" className="mb-1 block text-sm font-medium">
+            <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-gray-700">
               이메일
             </label>
             <input
@@ -252,13 +294,13 @@ export default function SignupForm() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 dark:border-neutral-700 dark:bg-zinc-800"
+              className={inputClassName}
             />
           </div>
 
           <div>
-            <label htmlFor="password" className="mb-1 block text-sm font-medium">
-              비밀번호 (최소6자리이상)
+            <label htmlFor="password" className="mb-1.5 block text-sm font-medium text-gray-700">
+              비밀번호 (최소 6자리 이상)
             </label>
             <PasswordInput
               id="password"
@@ -267,22 +309,22 @@ export default function SignupForm() {
               required
               minLength={6}
               autoComplete="new-password"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 dark:border-neutral-700 dark:bg-zinc-800"
+              className={inputClassName}
             />
           </div>
 
           <div>
-            <span className="mb-2 block text-sm font-medium">회원 구분</span>
+            <span className="mb-2 block text-sm font-medium text-gray-700">회원 구분</span>
             <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
               {SCHOOL_LEVEL_OPTIONS.map((option) => (
                 <label
                   key={option.value}
-                  className={`flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm sm:w-auto sm:justify-start ${
+                  className={`flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm transition-colors sm:w-auto sm:justify-start ${
                     option.value === 'manager' ? 'col-span-2 sm:col-span-1' : ''
                   } ${
                     schoolLevel === option.value
-                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-950'
-                      : 'border-gray-300 dark:border-neutral-700'
+                      ? 'border-blue-500 bg-blue-50 text-blue-900'
+                      : 'border-gray-200 bg-gray-50/80 text-gray-700 hover:border-gray-300'
                   } ${!option.enabled ? 'opacity-60' : ''}`}
                 >
                   <input
@@ -304,18 +346,18 @@ export default function SignupForm() {
           </div>
 
           {isManagerSignup ? (
-            <p className="rounded-lg bg-blue-50 px-4 py-3 text-sm text-blue-800 dark:bg-blue-950 dark:text-blue-200">
-              학생이 매니저로 승인 한 이후 부터 학생 학습스케쥴을 관리할 수 있습니다
+            <p className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+              학생이 매니저로 승인한 이후부터 학생 학습 스케줄을 관리할 수 있습니다.
             </p>
           ) : isOtherStudentSignup ? (
-            <p className="rounded-lg bg-blue-50 px-4 py-3 text-sm text-blue-800 dark:bg-blue-950 dark:text-blue-200">
+            <p className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
               재수생·자퇴생 등 학교에 다니지 않는 경우 선택해 주세요. 과목과 일정은
               직접 설정할 수 있습니다.
             </p>
           ) : isNeisStudentSignup ? (
             <>
               <div className="relative">
-                <label htmlFor="school" className="mb-1 block text-sm font-medium">
+                <label htmlFor="school" className="mb-1.5 block text-sm font-medium text-gray-700">
                   학교 검색
                 </label>
                 <input
@@ -331,19 +373,19 @@ export default function SignupForm() {
                     setClassName('');
                   }}
                   placeholder="학교명을 입력하세요 (2자 이상)"
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 dark:border-neutral-700 dark:bg-zinc-800"
+                  className={inputClassName}
                 />
                 {searchingSchools && (
                   <p className="mt-1 text-xs text-gray-400">검색 중...</p>
                 )}
                 {schoolResults.length > 0 && !selectedSchool && (
-                  <ul className="absolute z-10 mt-1 max-h-48 w-full overflow-auto rounded-lg border border-gray-200 bg-white shadow-lg dark:border-neutral-700 dark:bg-zinc-800">
+                  <ul className="absolute z-10 mt-1 max-h-48 w-full overflow-auto rounded-xl border border-gray-200 bg-white shadow-lg">
                     {schoolResults.map((school) => (
                       <li key={`${school.atptOfcdcScCode}-${school.sdSchulCode}`}>
                         <button
                           type="button"
                           onClick={() => handleSelectSchool(school)}
-                          className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-zinc-700"
+                          className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50"
                         >
                           <span className="font-medium">{school.schulNm}</span>
                           <span className="ml-2 text-xs text-gray-400">
@@ -358,7 +400,7 @@ export default function SignupForm() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label htmlFor="grade" className="mb-1 block text-sm font-medium">
+                  <label htmlFor="grade" className="mb-1.5 block text-sm font-medium text-gray-700">
                     학년
                   </label>
                   <select
@@ -367,7 +409,7 @@ export default function SignupForm() {
                     onChange={(e) => handleGradeChange(e.target.value)}
                     disabled={!selectedSchool || grades.length === 0}
                     required
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 disabled:opacity-50 dark:border-neutral-700 dark:bg-zinc-800"
+                    className={`${inputClassName} disabled:opacity-50`}
                   >
                     <option value="">선택</option>
                     {grades.map((g) => (
@@ -379,7 +421,7 @@ export default function SignupForm() {
                 </div>
 
                 <div>
-                  <label htmlFor="className" className="mb-1 block text-sm font-medium">
+                  <label htmlFor="className" className="mb-1.5 block text-sm font-medium text-gray-700">
                     반
                   </label>
                   <select
@@ -388,7 +430,7 @@ export default function SignupForm() {
                     onChange={(e) => setClassName(e.target.value)}
                     disabled={!grade || classes.length === 0}
                     required
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 disabled:opacity-50 dark:border-neutral-700 dark:bg-zinc-800"
+                    className={`${inputClassName} disabled:opacity-50`}
                   >
                     <option value="">선택</option>
                     {classes.map((c) => (
@@ -401,13 +443,15 @@ export default function SignupForm() {
               </div>
             </>
           ) : (
-            <p className="rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:bg-amber-950 dark:text-amber-200">
+            <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
               선택하신 회원 구분은 아직 지원하지 않습니다.
             </p>
           )}
 
           {error && (
-            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+            <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-600">
+              {error}
+            </p>
           )}
 
           <SignupConsentSection
@@ -422,21 +466,31 @@ export default function SignupForm() {
           <button
             type="submit"
             disabled={loading || !isSchoolSupported}
-            className="w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            className={submitButtonClassName}
           >
             {loading ? '가입 중...' : '회원가입'}
           </button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
+        <p className="mt-6 text-center text-sm text-gray-500">
           이미 계정이 있으신가요?{' '}
-          <Link href="/login" className="text-blue-600 hover:underline">
+          <Link
+            href="/login"
+            className="font-medium text-blue-600 transition-colors hover:text-blue-700 hover:underline"
+          >
             로그인
           </Link>
         </p>
+          </div>
+
+          <p className="mt-6 text-center text-xs leading-relaxed text-gray-400">
+            초·중·고 학생과 학부모(매니저)를 위한
+            <br className="sm:hidden" />
+            {' '}분량 중심 학습 계획·실행 관리 서비스
+          </p>
         </div>
       </main>
-      <SiteFooter />
+      <SiteFooter tone="dark" />
     </div>
   );
 }

@@ -8,6 +8,7 @@ import { decryptBillingSecret, encryptBillingSecret } from './billing-crypto';
 import {
   clearDiscountAfterOneTimeUse,
   getSubscriptionByUserId,
+  isPeriodActive,
   resolvePlanForSubscription,
 } from './subscription';
 import {
@@ -42,6 +43,8 @@ type SubscriptionRow = {
   overridePrice?: number | null;
   discountStartsAt?: string | Date | null;
   discountEndsAt?: string | Date | null;
+  pointBalance?: number | null;
+  usePointsOnNextBilling?: boolean | null;
   plan?: PlanRow | null;
   user?: { id: number } | number | null;
 };
@@ -52,6 +55,7 @@ export type PaymentSuccessInput = {
   pgPaymentId: string;
   planPrice: number;
   discountAmount: number;
+  pointAmountUsed?: number;
   amount: number;
   receiptUrl?: string | null;
   pgBillingKey?: string | null;
@@ -127,6 +131,7 @@ export async function getPaymentHistoryForUser(
     id: row.id,
     planPrice: row.planPrice,
     discountAmount: row.discountAmount,
+    pointAmountUsed: row.pointAmountUsed ?? 0,
     amount: row.amount,
     currency: row.currency,
     status: row.status,
@@ -182,6 +187,7 @@ async function createPaymentHistory(
       subscription: subscription.id,
       planPrice: input.planPrice,
       discountAmount: input.discountAmount,
+      pointAmountUsed: input.pointAmountUsed ?? 0,
       amount: input.amount,
       currency: 'KRW',
       status: 'succeeded',
@@ -207,9 +213,36 @@ export async function applyPaymentSuccess(
 
   const periodStart = now;
   const periodEnd = addPlanInterval(now, plan.interval);
-  const discountSnapshot = buildDiscountSnapshot(subscription);
+  const pointAmountUsed = Math.max(0, Math.round(input.pointAmountUsed ?? 0));
+
+  const existing = await strapi.db.query(PAYMENT_HISTORY_UID).findOne({
+    where: { pgPaymentId: input.pgPaymentId },
+  });
+
+  if (existing) {
+    return (await strapi.db.query(SUBSCRIPTION_UID).findOne({
+      where: { id: subscription.id },
+      populate: ['plan'],
+    })) as SubscriptionRow | null;
+  }
+
+  const discountSnapshot = buildDiscountSnapshot(subscription, pointAmountUsed);
 
   await createPaymentHistory(strapi, subscription, input, discountSnapshot);
+
+  const pointUpdate = subscription.usePointsOnNextBilling
+    ? {
+        ...(pointAmountUsed > 0
+          ? {
+              pointBalance: Math.max(
+                0,
+                Math.round(subscription.pointBalance ?? 0) - pointAmountUsed
+              ),
+            }
+          : {}),
+        usePointsOnNextBilling: false,
+      }
+    : {};
 
   const updated = (await strapi.db.query(SUBSCRIPTION_UID).update({
     where: { id: subscription.id },
@@ -220,6 +253,7 @@ export async function applyPaymentSuccess(
       currentPeriodEnd: periodEnd,
       cancelAtPeriodEnd: false,
       canceledAt: null,
+      ...pointUpdate,
       ...(input.pgBillingKey
         ? {
             pgBillingKey: encryptBillingSecret(input.pgBillingKey),
@@ -265,6 +299,7 @@ export async function applyFreePeriodGrant(
     pgPaymentId: fakePaymentId,
     planPrice: breakdown.planPrice,
     discountAmount: breakdown.discountAmount,
+    pointAmountUsed: breakdown.pointAmountUsed,
     amount: 0,
     paidAt: now,
   }, now);
@@ -293,6 +328,7 @@ export async function applyPaymentFailure(
         : {
             planPrice: 0,
             discountAmount: 0,
+            pointAmountUsed: 0,
             billedAmount: 0,
             skipPgCharge: true,
           };
@@ -302,6 +338,7 @@ export async function applyPaymentFailure(
           subscription: subscription.id,
           planPrice: breakdown.planPrice,
           discountAmount: breakdown.discountAmount,
+          pointAmountUsed: breakdown.pointAmountUsed,
           amount: breakdown.billedAmount,
           currency: 'KRW',
           status: 'failed',
@@ -336,6 +373,56 @@ export async function cancelSubscriptionAtPeriodEnd(
     data: {
       cancelAtPeriodEnd: true,
       canceledAt: now,
+    },
+    populate: ['plan'],
+  })) as SubscriptionRow;
+}
+
+export class ResumeSubscriptionError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ResumeSubscriptionError';
+  }
+}
+
+const RESUMABLE_STATUSES = new Set<SubscriptionStatus>([
+  'trialing',
+  'active',
+  'past_due',
+]);
+
+export async function resumeSubscriptionAfterCancel(
+  strapi: Core.Strapi,
+  userId: number,
+  now = new Date()
+): Promise<SubscriptionRow | null> {
+  const subscription = await getSubscriptionByUserId(strapi, userId);
+
+  if (!subscription) {
+    return null;
+  }
+
+  if (!subscription.cancelAtPeriodEnd) {
+    return subscription as SubscriptionRow;
+  }
+
+  if (!isPeriodActive(subscription, now)) {
+    throw new ResumeSubscriptionError(
+      '이용 기간이 종료되어 해지 예약을 취소할 수 없습니다.'
+    );
+  }
+
+  if (!subscription.status || !RESUMABLE_STATUSES.has(subscription.status)) {
+    throw new ResumeSubscriptionError(
+      '현재 구독 상태에서는 해지 예약을 취소할 수 없습니다.'
+    );
+  }
+
+  return (await strapi.db.query(SUBSCRIPTION_UID).update({
+    where: { id: subscription.id },
+    data: {
+      cancelAtPeriodEnd: false,
+      canceledAt: null,
     },
     populate: ['plan'],
   })) as SubscriptionRow;
@@ -408,6 +495,40 @@ export async function resolveCheckoutBreakdown(
 
 export function buildCustomerKey(userId: number): string {
   return `student-${userId}`;
+}
+
+export class ReservePointsError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ReservePointsError';
+  }
+}
+
+export async function reservePointsForNextBilling(
+  strapi: Core.Strapi,
+  userId: number
+): Promise<SubscriptionRow | null> {
+  const subscription = await getSubscriptionByUserId(strapi, userId);
+
+  if (!subscription) {
+    return null;
+  }
+
+  const pointBalance = Math.max(0, Math.round(subscription.pointBalance ?? 0));
+
+  if (pointBalance <= 0) {
+    throw new ReservePointsError('사용 가능한 포인트가 없습니다.');
+  }
+
+  if (subscription.usePointsOnNextBilling) {
+    return subscription as SubscriptionRow;
+  }
+
+  return (await strapi.db.query(SUBSCRIPTION_UID).update({
+    where: { id: subscription.id },
+    data: { usePointsOnNextBilling: true },
+    populate: ['plan'],
+  })) as SubscriptionRow;
 }
 
 export { DEFAULT_MONTHLY_PLAN_CODE };

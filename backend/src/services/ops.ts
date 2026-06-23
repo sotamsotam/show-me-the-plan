@@ -418,6 +418,12 @@ export async function getOpsSubscriptionDetail(strapi: Core.Strapi, userId: numb
           discountGrantedBy: subscription.discountGrantedBy ?? null,
         }
       : null,
+    points: subscription
+      ? {
+          pointBalance: Math.max(0, Math.round(subscription.pointBalance ?? 0)),
+          usePointsOnNextBilling: subscription.usePointsOnNextBilling === true,
+        }
+      : null,
     paymentHistory: paymentHistory.map((row) => ({
       id: row.id,
       amount: row.amount ?? null,
@@ -538,7 +544,9 @@ export async function previewOpsSubscriptionDiscount(
   }
 
   const merged = { ...subscription, ...input };
-  const nextBilling = resolveBillingAmount(plan.price, merged);
+  const nextBilling = resolveBillingAmount(plan.price, merged, new Date(), {
+    applyPoints: false,
+  });
 
   return {
     planPrice: plan.price,
@@ -583,6 +591,33 @@ export async function updateOpsSubscriptionDiscount(
 
   return {
     preview,
+    subscription: summary,
+  };
+}
+
+export async function updateOpsSubscriptionPoints(
+  strapi: Core.Strapi,
+  userId: number,
+  pointBalance: number
+) {
+  const subscription = await getSubscriptionByUserId(strapi, userId);
+  if (!subscription) {
+    return null;
+  }
+
+  if (!Number.isFinite(pointBalance) || !Number.isInteger(pointBalance) || pointBalance < 0) {
+    throw new Error('pointBalance must be a non-negative integer.');
+  }
+
+  await strapi.db.query(SUBSCRIPTION_UID).update({
+    where: { id: subscription.id },
+    data: { pointBalance },
+  });
+
+  const summary = await getSubscriptionSummaryForUser(strapi, userId);
+
+  return {
+    pointBalance,
     subscription: summary,
   };
 }

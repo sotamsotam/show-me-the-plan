@@ -1,6 +1,14 @@
 import { factories, type Core } from '@strapi/strapi';
 import { resolveOwnerFromContext } from '../../../services/manager-access';
 import {
+  assertAttachmentIdsAvailable,
+  buildAttachmentRelationData,
+  collectRemovedAttachmentIds,
+  deleteUploadFiles,
+  normalizeAttachmentIds,
+  uploadScheduleAttachmentFile,
+} from '../../../services/schedule-attachment';
+import {
   buildOccurrenceExclusionUpdate,
   buildOccurrenceMoveUpdate,
   buildOccurrenceOverrideUpdate,
@@ -18,6 +26,7 @@ import {
 } from '../../../services/user-schedule';
 
 const UID = 'api::user-schedule.user-schedule' as const;
+const SCHEDULE_POPULATE = { attachments: true } as const;
 
 function serializeSchedule(raw: Record<string, unknown>) {
   const schedule = toScheduleRecord(raw);
@@ -37,18 +46,30 @@ function serializeSchedule(raw: Record<string, unknown>) {
     endDate: schedule.endDate,
     excludedDates: schedule.excludedDates,
     overrides: schedule.overrides,
+    attachments: schedule.attachments,
   };
 }
 
 async function findOwnedSchedule(strapi: Core.Strapi, userId: number, id: number) {
   return strapi.db.query(UID).findOne({
     where: { id, user: userId },
+    populate: SCHEDULE_POPULATE,
   }) as Promise<Record<string, unknown> | null>;
 }
 
 function parseOccurrenceDate(raw: string): string | null {
   const date = raw.slice(0, 10);
   return /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : null;
+}
+
+function readUploadFile(ctx: { request: { files?: Record<string, unknown> } }) {
+  const incoming = ctx.request.files?.file;
+
+  if (Array.isArray(incoming)) {
+    return incoming[0] ?? null;
+  }
+
+  return incoming ?? null;
 }
 
 export default factories.createCoreController(UID, ({ strapi }) => ({
@@ -73,6 +94,7 @@ export default factories.createCoreController(UID, ({ strapi }) => ({
     const rows = await strapi.db.query(UID).findMany({
       where: { user: owner.userId },
       orderBy: { id: 'asc' },
+      populate: SCHEDULE_POPULATE,
     });
 
     const schedules = rows.map((row) => serializeSchedule(row as Record<string, unknown>));
@@ -83,6 +105,31 @@ export default factories.createCoreController(UID, ({ strapi }) => ({
     );
 
     return ctx.send({ schedules, events });
+  },
+
+  async uploadAttachment(ctx) {
+    const owner = await resolveOwnerFromContext(strapi, ctx);
+
+    if ('error' in owner) {
+      return owner.status === 401
+        ? ctx.unauthorized(owner.error)
+        : ctx.forbidden(owner.error);
+    }
+
+    const file = readUploadFile(ctx);
+
+    if (!file) {
+      return ctx.badRequest('file이 필요합니다.');
+    }
+
+    try {
+      const attachment = await uploadScheduleAttachmentFile(strapi, file);
+      return ctx.send({ attachment });
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : '이미지 업로드에 실패했습니다.';
+      return ctx.badRequest(message);
+    }
   },
 
   async create(ctx) {
@@ -101,11 +148,24 @@ export default factories.createCoreController(UID, ({ strapi }) => ({
       return ctx.badRequest(error);
     }
 
+    const attachmentIds =
+      body.attachmentIds !== undefined ? normalizeAttachmentIds(body.attachmentIds) : undefined;
+
+    if (attachmentIds && attachmentIds.length > 0) {
+      const availabilityError = await assertAttachmentIdsAvailable(strapi, attachmentIds);
+
+      if (availabilityError) {
+        return ctx.badRequest(availabilityError);
+      }
+    }
+
     const created = await strapi.db.query(UID).create({
       data: {
         ...buildScheduleData(body),
+        ...buildAttachmentRelationData(attachmentIds),
         user: owner.userId,
       },
+      populate: SCHEDULE_POPULATE,
     });
 
     return ctx.send({ schedule: serializeSchedule(created as Record<string, unknown>) });
@@ -154,6 +214,10 @@ export default factories.createCoreController(UID, ({ strapi }) => ({
       endDate: body.endDate ?? current.endDate ?? undefined,
       excludedDates: body.excludedDates ?? current.excludedDates,
       overrides: body.overrides ?? current.overrides,
+      attachmentIds:
+        body.attachmentIds !== undefined
+          ? normalizeAttachmentIds(body.attachmentIds)
+          : current.attachments.map((attachment) => attachment.id),
     };
 
     const fullError = validateScheduleInput(merged);
@@ -162,10 +226,36 @@ export default factories.createCoreController(UID, ({ strapi }) => ({
       return ctx.badRequest(fullError);
     }
 
+    const attachmentIds =
+      body.attachmentIds !== undefined ? normalizeAttachmentIds(body.attachmentIds) : undefined;
+
+    if (attachmentIds) {
+      const availabilityError = await assertAttachmentIdsAvailable(strapi, attachmentIds, {
+        excludeScheduleId: id,
+      });
+
+      if (availabilityError) {
+        return ctx.badRequest(availabilityError);
+      }
+    }
+
+    const removedAttachmentIds =
+      attachmentIds !== undefined
+        ? collectRemovedAttachmentIds(current.attachments, attachmentIds)
+        : [];
+
     const updated = await strapi.db.query(UID).update({
       where: { id },
-      data: buildScheduleData(merged),
+      data: {
+        ...buildScheduleData(merged),
+        ...buildAttachmentRelationData(attachmentIds),
+      },
+      populate: SCHEDULE_POPULATE,
     });
+
+    if (removedAttachmentIds.length > 0) {
+      await deleteUploadFiles(strapi, removedAttachmentIds);
+    }
 
     return ctx.send({ schedule: serializeSchedule(updated as Record<string, unknown>) });
   },
@@ -191,7 +281,14 @@ export default factories.createCoreController(UID, ({ strapi }) => ({
       return ctx.notFound('일정을 찾을 수 없습니다.');
     }
 
+    const schedule = toScheduleRecord(existing);
+    const attachmentIds = schedule.attachments.map((attachment) => attachment.id);
+
     await strapi.db.query(UID).delete({ where: { id } });
+
+    if (attachmentIds.length > 0) {
+      await deleteUploadFiles(strapi, attachmentIds);
+    }
 
     return ctx.send({ ok: true });
   },
@@ -227,6 +324,7 @@ export default factories.createCoreController(UID, ({ strapi }) => ({
     const updated = await strapi.db.query(UID).update({
       where: { id },
       data: buildOccurrenceExclusionUpdate(schedule, date),
+      populate: SCHEDULE_POPULATE,
     });
 
     return ctx.send({ schedule: serializeSchedule(updated as Record<string, unknown>) });
@@ -270,6 +368,7 @@ export default factories.createCoreController(UID, ({ strapi }) => ({
     const updated = await strapi.db.query(UID).update({
       where: { id },
       data: buildOccurrenceOverrideUpdate(schedule, date, body),
+      populate: SCHEDULE_POPULATE,
     });
 
     return ctx.send({ schedule: serializeSchedule(updated as Record<string, unknown>) });
@@ -320,6 +419,7 @@ export default factories.createCoreController(UID, ({ strapi }) => ({
     const updated = await strapi.db.query(UID).update({
       where: { id },
       data: buildOccurrenceMoveUpdate(schedule, fromDate, toDate, body),
+      populate: SCHEDULE_POPULATE,
     });
 
     return ctx.send({ schedule: serializeSchedule(updated as Record<string, unknown>) });

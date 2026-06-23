@@ -54,6 +54,7 @@ export const API_ALLOWED_WHEN_EXPIRED = [
   '/api/register',
   '/api/billing',
   '/api/subscription/me',
+  '/api/subscription/use-points',
   '/api/neis',
 ] as const;
 

@@ -66,6 +66,7 @@ export async function POST(request: NextRequest) {
         pgPaymentId: payment.paymentId,
         planPrice: candidate.breakdown.planPrice,
         discountAmount: candidate.breakdown.discountAmount,
+        pointAmountUsed: candidate.breakdown.pointAmountUsed,
         amount: candidate.breakdown.billedAmount,
         receiptUrl: payment.receiptUrl ?? null,
         pgBillingKey: candidate.billingKey,

@@ -16,10 +16,16 @@ import {
   toggleWeekday,
   WEEKDAY_OPTIONS,
   type RecurrenceType,
+  type ScheduleAttachment,
   type ScheduleCategory,
   type UserSchedule,
   type UserScheduleInput,
 } from '@/lib/user-schedule';
+import { uploadScheduleAttachmentFile } from '@/lib/schedule-attachment';
+import ScheduleAttachmentField, {
+  createPendingScheduleAttachment,
+  type PendingScheduleAttachment,
+} from '@/components/ScheduleAttachmentField';
 import { FormEvent, useEffect, useRef, useState } from 'react';
 import ResponsiveOverlay from '@/components/ResponsiveOverlay';
 import { useStudentApi } from '@/hooks/useStudentApi';
@@ -209,6 +215,10 @@ export default function UserScheduleForm({
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [attachments, setAttachments] = useState<ScheduleAttachment[]>([]);
+  const [pendingAttachments, setPendingAttachments] = useState<PendingScheduleAttachment[]>([]);
+  const pendingAttachmentsRef = useRef(pendingAttachments);
+  pendingAttachmentsRef.current = pendingAttachments;
 
   const showWeeklyFields =
     !isMonthAllDay &&
@@ -239,8 +249,62 @@ export default function UserScheduleForm({
     setValidUntil(defaults.validUntil);
     setDate(defaults.date);
     setEndDate(defaults.endDate ?? defaults.date);
+    setAttachments(schedule?.attachments ?? []);
+    setPendingAttachments((current) => {
+      for (const pending of current) {
+        if (pending.previewUrl.startsWith('blob:')) {
+          URL.revokeObjectURL(pending.previewUrl);
+        }
+      }
+
+      return [];
+    });
     setError('');
   }, [open, mode, schedule, initial, occurrenceDate]);
+
+  useEffect(() => {
+    return () => {
+      for (const pending of pendingAttachmentsRef.current) {
+        if (pending.previewUrl.startsWith('blob:')) {
+          URL.revokeObjectURL(pending.previewUrl);
+        }
+      }
+    };
+  }, []);
+
+  function handleAddAttachmentFile(file: File) {
+    setPendingAttachments((current) => [...current, createPendingScheduleAttachment(file)]);
+  }
+
+  function handleRemoveAttachment(attachmentId: number) {
+    setAttachments((current) => current.filter((attachment) => attachment.id !== attachmentId));
+  }
+
+  function handleRemovePendingAttachment(key: string) {
+    setPendingAttachments((current) => {
+      const target = current.find((pending) => pending.key === key);
+      if (target?.previewUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(target.previewUrl);
+      }
+
+      return current.filter((pending) => pending.key !== key);
+    });
+  }
+
+  async function resolveAttachmentIdsForSave(): Promise<number[] | undefined> {
+    if (!isMonthAllDay) {
+      return undefined;
+    }
+
+    const uploadedIds: number[] = [];
+
+    for (const pending of pendingAttachments) {
+      const uploaded = await uploadScheduleAttachmentFile(pending.file, withStudent);
+      uploadedIds.push(uploaded.id);
+    }
+
+    return [...attachments.map((attachment) => attachment.id), ...uploadedIds];
+  }
 
   useEffect(() => {
     if (allCheckboxRef.current) {
@@ -298,6 +362,8 @@ export default function UserScheduleForm({
     setLoading(true);
 
     try {
+      const attachmentIds = await resolveAttachmentIdsForSave();
+
       if (mode === 'occurrence') {
         if (!schedule || !occurrenceDate) {
           setError('일정 정보가 없습니다.');
@@ -341,6 +407,7 @@ export default function UserScheduleForm({
           payload.date = date;
           if (isMonthAllDay) {
             payload.endDate = endDate;
+            payload.attachmentIds = attachmentIds;
           }
         }
 
@@ -426,7 +493,7 @@ export default function UserScheduleForm({
               required
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="예: 가족 여행"
+              placeholder="예: 수행평가 일정, 가족 여행 등"
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-zinc-800"
             />
           </label>
@@ -583,6 +650,17 @@ export default function UserScheduleForm({
               </div>
             </>
           )}
+
+          {isMonthAllDay ? (
+            <ScheduleAttachmentField
+              attachments={attachments}
+              pendingAttachments={pendingAttachments}
+              onAddFile={handleAddAttachmentFile}
+              onRemoveAttachment={handleRemoveAttachment}
+              onRemovePending={handleRemovePendingAttachment}
+              disabled={loading || deleting}
+            />
+          ) : null}
 
           {!isMonthAllDay && (
           <div className="grid grid-cols-2 gap-3">

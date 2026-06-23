@@ -3,7 +3,18 @@ import { strapiFetch } from '@/lib/strapi';
 import type { AccountInfo } from '@/types/school';
 import type { NextRequest } from 'next/server';
 
-export { getAccountFlags, getDefaultDashboardPath } from '@/lib/account-helpers';
+export {
+  getAccountFlags,
+  getDefaultDashboardPath,
+  getDefaultDashboardPathFromAccount,
+  getDefaultDashboardPathFromSession,
+  getMarketingAppEntryFromSession,
+  getMarketingHomeUrl,
+  isMarketingHomeBypass,
+  isSafeInternalCallbackPath,
+  resolvePostLoginPath,
+  APP_ENTRY_PATH,
+} from '@/lib/account-helpers';
 
 export async function fetchAccountInfo(
   jwt?: string | null,

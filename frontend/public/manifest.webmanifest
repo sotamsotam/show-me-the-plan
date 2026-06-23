@@ -2,7 +2,7 @@
   "name": "Show Me The Plan",
   "short_name": "Show Plan",
   "description": "계획을 플레이하는 순간, 공부는 퀘스트가 된다.",
-  "start_url": "/",
+  "start_url": "/app",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",

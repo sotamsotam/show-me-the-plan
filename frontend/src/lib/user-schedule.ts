@@ -52,6 +52,16 @@ export interface ScheduleOccurrenceOverride {
   endTime: string;
 }
 
+export interface ScheduleAttachment {
+  id: number;
+  url: string;
+  name: string;
+  mime: string;
+  size: number;
+  width: number | null;
+  height: number | null;
+}
+
 export function isAllWeekdaysSelected(daysOfWeek: number[]): boolean {
   return ALL_WEEKDAYS.every((day) => daysOfWeek.includes(day));
 }
@@ -130,6 +140,7 @@ export interface UserSchedule {
   endDate: string | null;
   excludedDates: string[];
   overrides: Record<string, ScheduleOccurrenceOverride>;
+  attachments?: ScheduleAttachment[];
 }
 
 export interface ExpandedScheduleEvent {
@@ -143,6 +154,7 @@ export interface ExpandedScheduleEvent {
   recurrenceType: RecurrenceType;
   scheduleCategory: ScheduleCategory;
   hasOverride: boolean;
+  attachments?: ScheduleAttachment[];
 }
 
 export interface UserScheduleInput {
@@ -157,6 +169,7 @@ export interface UserScheduleInput {
   validUntil?: string;
   date?: string;
   endDate?: string | null;
+  attachmentIds?: number[];
 }
 
 export interface OccurrenceOverrideInput {
@@ -188,6 +201,7 @@ export function expandedEventsToCalendarEvents(
       date: event.date,
       hasOverride: event.hasOverride,
       allDay: event.allDay,
+      ...(event.attachments?.length ? { attachments: event.attachments } : {}),
     },
   }));
 }

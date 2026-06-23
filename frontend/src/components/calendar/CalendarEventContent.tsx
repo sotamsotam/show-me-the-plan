@@ -1,6 +1,8 @@
 'use client';
 
 import type { EventContentArg } from '@fullcalendar/core';
+import ScheduleAttachmentViewer from '@/components/ScheduleAttachmentViewer';
+import { readEventAttachments } from '@/lib/schedule-attachment';
 import type { StudyPlanSubject } from '@/lib/study-plan-todo';
 import { formatStudyPlanEventTitle, getSubjectLabel } from '@/lib/study-plan-todo';
 import type { ProfileSubjectsInput } from '@/lib/user-subject';
@@ -206,6 +208,26 @@ export function renderCalendarEventContent(
   }
 
   if (isMonthView) {
+    if (type === 'user') {
+      const eventInput = {
+        id: String(arg.event.id),
+        title: arg.event.title,
+        extendedProps: { ...arg.event.extendedProps },
+      };
+
+      if (readEventAttachments(eventInput).length > 0) {
+        return (
+          <ScheduleAttachmentViewer
+            event={eventInput}
+            title={title}
+            variant="calendar"
+            calendarInnerClassName="cal-event-inner--month"
+            calendarTriggerMode="icon"
+          />
+        );
+      }
+    }
+
     return (
       <div className="cal-event-inner cal-event-inner--month">
         <span className="cal-event-title">{title}</span>
@@ -214,6 +236,24 @@ export function renderCalendarEventContent(
   }
 
   if (isAllDayEvent(arg)) {
+    if (type === 'user') {
+      const eventInput = {
+        id: String(arg.event.id),
+        title: arg.event.title,
+        extendedProps: { ...arg.event.extendedProps },
+      };
+
+      if (readEventAttachments(eventInput).length > 0) {
+        return (
+          <ScheduleAttachmentViewer
+            event={eventInput}
+            title={title}
+            variant="calendar"
+          />
+        );
+      }
+    }
+
     return (
       <div className="cal-event-inner cal-event-inner--allday">
         <span className="cal-event-title">{title}</span>

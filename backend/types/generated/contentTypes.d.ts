@@ -421,6 +421,14 @@ export interface ApiPaymentHistoryPaymentHistory
         },
         number
       >;
+    pointAmountUsed: Schema.Attribute.Integer &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      > &
+      Schema.Attribute.DefaultTo<0>;
     publishedAt: Schema.Attribute.DateTime;
     receiptUrl: Schema.Attribute.String;
     status: Schema.Attribute.Enumeration<['succeeded', 'failed', 'refunded']> &
@@ -630,6 +638,14 @@ export interface ApiSubscriptionSubscription
     pgProvider: Schema.Attribute.Enumeration<['portone']> &
       Schema.Attribute.DefaultTo<'portone'>;
     plan: Schema.Attribute.Relation<'manyToOne', 'api::plan.plan'>;
+    pointBalance: Schema.Attribute.Integer &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      > &
+      Schema.Attribute.DefaultTo<0>;
     publishedAt: Schema.Attribute.DateTime;
     status: Schema.Attribute.Enumeration<
       ['trialing', 'active', 'past_due', 'canceled', 'expired']
@@ -640,6 +656,8 @@ export interface ApiSubscriptionSubscription
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    usePointsOnNextBilling: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<false>;
     user: Schema.Attribute.Relation<
       'oneToOne',
       'plugin::users-permissions.user'
@@ -731,6 +749,7 @@ export interface ApiUserScheduleUserSchedule
   };
   attributes: {
     allDay: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    attachments: Schema.Attribute.Media<'images', true>;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;

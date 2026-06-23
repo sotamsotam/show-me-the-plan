@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { FormEvent, useCallback, useEffect, useState } from 'react';
 import AccountDeletionSection from '@/components/AccountDeletionSection';
+import SubscriptionPointsSection from '@/components/billing/SubscriptionPointsSection';
+import { getMarketingHomeUrl } from '@/lib/account-helpers';
 import PasswordInput from '@/components/PasswordInput';
 import ProfileSubjectsSection from '@/components/ProfileSubjectsSection';
 import {
@@ -444,6 +446,18 @@ export default function SettingsForm() {
               ? `현재 이용 가능 (${account.subscription.status})`
               : '체험 또는 구독이 필요합니다.'}
           </p>
+          {account?.subscription ? (
+            <div className="mt-4">
+              <SubscriptionPointsSection
+                subscription={account.subscription}
+                onUpdated={(subscription) =>
+                  setAccount((current) =>
+                    current ? { ...current, subscription } : current
+                  )
+                }
+              />
+            </div>
+          ) : null}
           <Link
             href="/dashboard/settings/billing"
             className="mt-3 inline-block text-sm font-medium text-blue-700 underline dark:text-blue-300"
@@ -825,6 +839,13 @@ export default function SettingsForm() {
       <AccountDeletionSection />
 
       <p className="mt-8 text-center text-xs text-gray-400">
+        <Link
+          href={getMarketingHomeUrl()}
+          className="hover:text-gray-600 dark:hover:text-gray-300"
+        >
+          서비스 소개
+        </Link>
+        {' · '}
         <Link href="/legal/privacy" className="hover:text-gray-600 dark:hover:text-gray-300">
           개인정보 처리방침
         </Link>

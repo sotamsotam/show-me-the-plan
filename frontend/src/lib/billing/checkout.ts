@@ -61,6 +61,7 @@ export async function completeBillingCheckout(input: {
       pgPaymentId: payment.paymentId,
       planPrice: input.breakdown.planPrice,
       discountAmount: input.breakdown.discountAmount,
+      pointAmountUsed: input.breakdown.pointAmountUsed,
       amount: input.breakdown.billedAmount,
       receiptUrl: payment.receiptUrl ?? null,
       pgBillingKey: input.billingKey,

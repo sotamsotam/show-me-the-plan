@@ -91,6 +91,15 @@
     },
     "discountGrantedBy": {
       "type": "string"
+    },
+    "pointBalance": {
+      "type": "integer",
+      "default": 0,
+      "min": 0
+    },
+    "usePointsOnNextBilling": {
+      "type": "boolean",
+      "default": false
     }
   }
 }

@@ -405,13 +405,93 @@
   .marketing-site .mkt-hero-mobile,
   .marketing-site .mkt-hero-mobile-float,
   .marketing-site .mkt-hero-headline-line-in,
-  .marketing-site .mkt-hero-stagger {
+  .marketing-site .mkt-hero-stagger,
+  .marketing-site .mkt-planner-vs-badge,
+  .marketing-site .mkt-planner-vs-side {
     animation: none;
     opacity: 1;
     transform: none;
   }
 
+  .marketing-site .mkt-planner-phone-screen {
+    transition: none;
+  }
+
   .marketing-site .mkt-hero-headline-cursor {
     display: none;
   }
+}
+
+@keyframes mkt-planner-vs-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes mkt-planner-slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-3rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes mkt-planner-slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(3rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes mkt-planner-vs-badge-in {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.marketing-site .mkt-planner-vs-side {
+  opacity: 0;
+}
+
+.marketing-site .mkt-planner-vs-inview .mkt-planner-vs-from-left {
+  animation: mkt-planner-slide-in-left 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.marketing-site .mkt-planner-vs-inview .mkt-planner-vs-from-right {
+  animation: mkt-planner-slide-in-right 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.12s both;
+}
+
+.marketing-site .mkt-planner-vs-badge {
+  opacity: 0;
+}
+
+.marketing-site .mkt-planner-vs-inview .mkt-planner-vs-badge {
+  animation:
+    mkt-planner-vs-badge-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.2s both,
+    mkt-planner-vs-pulse 2.5s ease-in-out 0.85s infinite;
+}
+
+.marketing-site .mkt-planner-phone-screen {
+  position: absolute;
+  inset: 0;
 }

@@ -22,6 +22,7 @@ type PrepareResponse = {
   nextBilling: {
     planPrice: number;
     discountAmount: number;
+    pointAmountUsed: number;
     billedAmount: number;
     skipPgCharge: boolean;
   };
@@ -180,8 +181,16 @@ export default function BillingCheckoutClient() {
         </p>
         <div className="mt-4 space-y-2 text-sm text-gray-700 dark:text-gray-300">
           <p>정가: {formatKrw(prepare.nextBilling.planPrice)}</p>
-          {prepare.nextBilling.discountAmount > 0 ? (
-            <p>할인: -{formatKrw(prepare.nextBilling.discountAmount)}</p>
+          {prepare.nextBilling.discountAmount - prepare.nextBilling.pointAmountUsed > 0 ? (
+            <p>
+              할인: -
+              {formatKrw(
+                prepare.nextBilling.discountAmount - prepare.nextBilling.pointAmountUsed
+              )}
+            </p>
+          ) : null}
+          {prepare.nextBilling.pointAmountUsed > 0 ? (
+            <p>포인트: -{formatKrw(prepare.nextBilling.pointAmountUsed)}</p>
           ) : null}
           <p className="text-base font-semibold text-gray-900 dark:text-gray-100">
             결제 예정액: {formatKrw(prepare.nextBilling.billedAmount)} /{' '}

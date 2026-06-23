@@ -8,6 +8,7 @@ export type PaymentHistoryRow = {
   id: number;
   planPrice: number;
   discountAmount: number;
+  pointAmountUsed?: number;
   amount: number;
   status: string;
   paidAt?: string | null;
@@ -31,12 +32,13 @@ export default function PaymentHistoryTable({
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[640px] text-left text-sm">
+      <table className="w-full min-w-[720px] text-left text-sm">
         <thead className="border-b border-gray-200 text-gray-500 dark:border-neutral-700">
           <tr>
             <th className="px-3 py-2 font-medium">결제일</th>
             <th className="px-3 py-2 font-medium">정가</th>
             <th className="px-3 py-2 font-medium">할인</th>
+            <th className="px-3 py-2 font-medium">포인트</th>
             <th className="px-3 py-2 font-medium">실결제액</th>
             <th className="px-3 py-2 font-medium">상태</th>
             <th className="px-3 py-2 font-medium">영수증</th>
@@ -52,8 +54,13 @@ export default function PaymentHistoryTable({
               </td>
               <td className="px-3 py-3">{formatKrw(payment.planPrice)}</td>
               <td className="px-3 py-3 text-gray-600 dark:text-gray-400">
-                {payment.discountAmount > 0
-                  ? `-${formatKrw(payment.discountAmount)}`
+                {payment.discountAmount - (payment.pointAmountUsed ?? 0) > 0
+                  ? `-${formatKrw(payment.discountAmount - (payment.pointAmountUsed ?? 0))}`
+                  : '-'}
+              </td>
+              <td className="px-3 py-3 text-gray-600 dark:text-gray-400">
+                {(payment.pointAmountUsed ?? 0) > 0
+                  ? `-${formatKrw(payment.pointAmountUsed ?? 0)}`
                   : '-'}
               </td>
               <td className="px-3 py-3 font-medium text-gray-900 dark:text-gray-100">

@@ -11,7 +11,9 @@ export default function BillingDisclosure() {
         </li>
         <li>
           카드 등록 완료 후 <strong>매월 자동 갱신</strong>됩니다. 해지는{' '}
-          <strong>설정 → 구독 · 결제</strong>에서 &quot;해지 예약&quot;으로 가능합니다.
+          <strong>설정 → 구독 · 결제</strong>에서 &quot;해지 예약&quot;으로 가능하며,{' '}
+          <strong>이용 기간 종료 전</strong>까지 &quot;해지 예약 취소&quot;로 철회할 수
+          있습니다.
         </li>
         <li>
           체험 종료 후 구독하지 않으면 대시보드 이용이 제한됩니다. 구독·결제 관련

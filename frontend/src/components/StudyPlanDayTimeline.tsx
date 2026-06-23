@@ -3,6 +3,7 @@
 import { useMemo, type CSSProperties } from 'react';
 import type { EventInput } from '@fullcalendar/core';
 import { TimelineSkeleton } from '@/components/skeletons/MobileSkeletons';
+import ScheduleAttachmentViewer from '@/components/ScheduleAttachmentViewer';
 import { useProfileSubjectsContext } from '@/contexts/ProfileSubjectsContext';
 import {
   blocksToRowSegments,
@@ -316,15 +317,14 @@ function AllDayScheduleStrip({ events }: { events: EventInput[] }) {
         const isHoliday = type === 'school-holiday';
 
         return (
-          <span
+          <ScheduleAttachmentViewer
             key={String(event.id)}
-            className={`day-slot-allday-badge${
-              isExam ? ' day-slot-allday-exam' : isHoliday ? ' day-slot-allday-holiday' : ''
-            }`}
+            event={event}
             title={String(event.title ?? '')}
-          >
-            {String(event.title ?? '')}
-          </span>
+            badgeClassName={
+              isExam ? 'day-slot-allday-exam' : isHoliday ? 'day-slot-allday-holiday' : ''
+            }
+          />
         );
       })}
     </div>

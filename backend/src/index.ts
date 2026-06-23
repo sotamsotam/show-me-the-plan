@@ -17,6 +17,7 @@ import {
   previewOpsSubscriptionDiscount,
   rejectOpsManager,
   updateOpsSubscriptionDiscount,
+  updateOpsSubscriptionPoints,
 } from './services/ops';
 import { assertOpsInternalAccess } from './services/ops-internal-auth';
 
@@ -318,6 +319,16 @@ async function setupPermissions(strapi: Core.Strapi) {
   await ensureRolePermission(
     strapi,
     'authenticated',
+    'api::user-schedule.user-schedule.moveOccurrence'
+  );
+  await ensureRolePermission(
+    strapi,
+    'authenticated',
+    'api::user-schedule.user-schedule.uploadAttachment'
+  );
+  await ensureRolePermission(
+    strapi,
+    'authenticated',
     'api::study-plan-todo.study-plan-todo.findInRange'
   );
   await ensureRolePermission(
@@ -390,6 +401,8 @@ async function setupPermissions(strapi: Core.Strapi) {
     'api::user-schedule.user-schedule.remove',
     'api::user-schedule.user-schedule.updateOccurrence',
     'api::user-schedule.user-schedule.excludeOccurrence',
+    'api::user-schedule.user-schedule.moveOccurrence',
+    'api::user-schedule.user-schedule.uploadAttachment',
     'api::study-plan-todo.study-plan-todo.findInRange',
     'api::study-plan-todo.study-plan-todo.findTitles',
     'api::study-plan-todo.study-plan-todo.create',
@@ -419,6 +432,16 @@ async function setupPermissions(strapi: Core.Strapi) {
     strapi,
     'authenticated',
     'api::subscription.subscription.cancel'
+  );
+  await ensureRolePermission(
+    strapi,
+    'authenticated',
+    'api::subscription.subscription.resumeCancel'
+  );
+  await ensureRolePermission(
+    strapi,
+    'authenticated',
+    'api::subscription.subscription.usePoints'
   );
 }
 
@@ -711,6 +734,37 @@ function registerOpsRoutes(strapi: Core.Strapi) {
           ctx.body = result;
         } catch (error) {
           const message = error instanceof Error ? error.message : 'Invalid discount input';
+          return ctx.badRequest(message);
+        }
+      },
+      config: { auth: false },
+    },
+    {
+      method: 'PATCH',
+      path: '/api/ops/internal/subscriptions/:userId/points',
+      handler: async (ctx) => {
+        if (!assertOpsInternalAccess(ctx)) {
+          return;
+        }
+
+        const userId = Number(ctx.params.userId);
+        if (!Number.isFinite(userId) || userId <= 0) {
+          return ctx.badRequest('Invalid userId');
+        }
+
+        const body = (ctx.request.body ?? {}) as { pointBalance?: unknown };
+        const pointBalance = Number(body.pointBalance);
+
+        try {
+          const result = await updateOpsSubscriptionPoints(strapi, userId, pointBalance);
+
+          if (!result) {
+            return ctx.notFound('Subscription not found');
+          }
+
+          ctx.body = result;
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'Invalid point input';
           return ctx.badRequest(message);
         }
       },

@@ -27,6 +27,7 @@ export async function notifyPaymentSucceeded(body: {
   pgPaymentId: string;
   planPrice: number;
   discountAmount: number;
+  pointAmountUsed?: number;
   amount: number;
   receiptUrl?: string | null;
   pgBillingKey?: string | null;
@@ -101,6 +102,7 @@ export type RenewalCandidate = {
   breakdown: {
     planPrice: number;
     discountAmount: number;
+    pointAmountUsed: number;
     billedAmount: number;
     skipPgCharge: boolean;
   };

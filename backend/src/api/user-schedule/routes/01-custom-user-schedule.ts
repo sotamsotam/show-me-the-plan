@@ -10,6 +10,14 @@ export default {
     },
     {
       method: 'POST',
+      path: '/user-schedules/attachments/upload',
+      handler: 'user-schedule.uploadAttachment',
+      config: {
+        auth: {},
+      },
+    },
+    {
+      method: 'POST',
       path: '/user-schedules',
       handler: 'user-schedule.create',
       config: {

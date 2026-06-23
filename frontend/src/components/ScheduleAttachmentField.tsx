@@ -1,0 +1,209 @@
+'use client';
+
+import {
+  resolveScheduleAttachmentUrl,
+  SCHEDULE_ATTACHMENT_ACCEPT,
+  SCHEDULE_ATTACHMENT_MAX_COUNT,
+  validateScheduleAttachmentFile,
+} from '@/lib/schedule-attachment';
+import { prepareScheduleAttachmentFile } from '@/lib/resize-schedule-image';
+import { ScheduleAttachmentPickerIcon } from '@/components/ScheduleAttachmentBadgeIcon';
+import type { ScheduleAttachment } from '@/lib/user-schedule';
+import Image from 'next/image';
+import { ChangeEvent, useRef, useState } from 'react';
+
+export type PendingScheduleAttachment = {
+  key: string;
+  file: File;
+  previewUrl: string;
+};
+
+export function createPendingScheduleAttachment(file: File): PendingScheduleAttachment {
+  return {
+    key: `${file.name}-${file.size}-${file.lastModified}-${Math.random().toString(36).slice(2)}`,
+    file,
+    previewUrl: URL.createObjectURL(file),
+  };
+}
+
+interface ScheduleAttachmentFieldProps {
+  attachments: ScheduleAttachment[];
+  pendingAttachments: PendingScheduleAttachment[];
+  onAddFile: (file: File) => void;
+  onRemoveAttachment: (attachmentId: number) => void;
+  onRemovePending: (key: string) => void;
+  disabled?: boolean;
+}
+
+export default function ScheduleAttachmentField({
+  attachments,
+  pendingAttachments,
+  onAddFile,
+  onRemoveAttachment,
+  onRemovePending,
+  disabled = false,
+}: ScheduleAttachmentFieldProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [localError, setLocalError] = useState('');
+  const [processing, setProcessing] = useState(false);
+
+  const totalCount = attachments.length + pendingAttachments.length;
+  const canAddMore = totalCount < SCHEDULE_ATTACHMENT_MAX_COUNT;
+
+  async function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
+    const selectedFiles = Array.from(event.target.files ?? []);
+    event.target.value = '';
+
+    if (selectedFiles.length === 0) {
+      return;
+    }
+
+    const remainingSlots = SCHEDULE_ATTACHMENT_MAX_COUNT - totalCount;
+    if (remainingSlots <= 0) {
+      setLocalError(`첨부 이미지는 최대 ${SCHEDULE_ATTACHMENT_MAX_COUNT}장까지 등록할 수 있습니다.`);
+      return;
+    }
+
+    const filesToProcess = selectedFiles.slice(0, remainingSlots);
+    if (selectedFiles.length > remainingSlots) {
+      setLocalError(
+        `최대 ${SCHEDULE_ATTACHMENT_MAX_COUNT}장까지 등록할 수 있어 ${remainingSlots}장만 추가했습니다.`
+      );
+    } else {
+      setLocalError('');
+    }
+
+    setProcessing(true);
+
+    try {
+      for (const file of filesToProcess) {
+        const preparedFile = await prepareScheduleAttachmentFile(file);
+        const validationError = validateScheduleAttachmentFile(preparedFile);
+        if (validationError) {
+          setLocalError(validationError);
+          continue;
+        }
+
+        onAddFile(preparedFile);
+      }
+    } catch (error) {
+      setLocalError(
+        error instanceof Error ? error.message : '이미지 처리에 실패했습니다.'
+      );
+    } finally {
+      setProcessing(false);
+    }
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-sm text-gray-600 dark:text-gray-300">
+          첨부 이미지(수행평가 기준 프린트물 등)
+        </span>
+        <span className="text-xs text-gray-400 dark:text-gray-500">
+          최대 {SCHEDULE_ATTACHMENT_MAX_COUNT}장 · 자동 최적화 · 장당 5MB
+        </span>
+      </div>
+
+      {totalCount > 0 ? (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          {attachments.map((attachment) => (
+            <AttachmentPreviewCard
+              key={`saved-${attachment.id}`}
+              previewUrl={resolveScheduleAttachmentUrl(attachment.url)}
+              label={attachment.name}
+              disabled={disabled || processing}
+              onRemove={() => onRemoveAttachment(attachment.id)}
+            />
+          ))}
+
+          {pendingAttachments.map((pending) => (
+            <AttachmentPreviewCard
+              key={pending.key}
+              previewUrl={pending.previewUrl}
+              label={pending.file.name}
+              disabled={disabled || processing}
+              onRemove={() => onRemovePending(pending.key)}
+            />
+          ))}
+
+          {canAddMore ? (
+            <button
+              type="button"
+              disabled={disabled || processing}
+              onClick={() => inputRef.current?.click()}
+              className="flex aspect-[4/3] flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-gray-300 px-2 py-4 text-xs text-gray-500 transition-colors hover:border-amber-400 hover:bg-amber-50/40 hover:text-amber-700 disabled:opacity-50 dark:border-neutral-600 dark:text-gray-400 dark:hover:border-amber-500 dark:hover:bg-amber-950/20 dark:hover:text-amber-300"
+            >
+              <span className="text-xl leading-none" aria-hidden="true">
+                +
+              </span>
+              <span>{processing ? '최적화 중…' : '사진 추가'}</span>
+            </button>
+          ) : null}
+        </div>
+      ) : (
+        <button
+          type="button"
+          disabled={disabled || processing}
+          onClick={() => inputRef.current?.click()}
+          className="flex w-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-gray-300 px-4 py-6 text-sm text-gray-500 transition-colors hover:border-amber-400 hover:bg-amber-50/40 hover:text-amber-700 disabled:opacity-50 dark:border-neutral-600 dark:text-gray-400 dark:hover:border-amber-500 dark:hover:bg-amber-950/20 dark:hover:text-amber-300"
+        >
+          <ScheduleAttachmentPickerIcon className="h-7 w-7 text-amber-600 dark:text-amber-400" />
+          <span>{processing ? '이미지 최적화 중…' : '사진 촬영 또는 갤러리에서 선택'}</span>
+        </button>
+      )}
+
+      <input
+        ref={inputRef}
+        type="file"
+        accept={SCHEDULE_ATTACHMENT_ACCEPT}
+        multiple
+        className="hidden"
+        disabled={disabled || processing || !canAddMore}
+        onChange={handleFileChange}
+      />
+
+      {localError ? (
+        <p className="text-sm text-red-600 dark:text-red-400">{localError}</p>
+      ) : null}
+    </div>
+  );
+}
+
+function AttachmentPreviewCard({
+  previewUrl,
+  label,
+  disabled,
+  onRemove,
+}: {
+  previewUrl: string;
+  label: string;
+  disabled: boolean;
+  onRemove: () => void;
+}) {
+  return (
+    <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-neutral-700">
+      <div className="relative aspect-[4/3] w-full bg-gray-50 dark:bg-zinc-800">
+        <Image
+          src={previewUrl}
+          alt={label || '첨부 이미지 미리보기'}
+          fill
+          unoptimized
+          className="object-contain"
+        />
+      </div>
+      <div className="flex items-center justify-between gap-2 border-t border-gray-200 px-2 py-1.5 dark:border-neutral-700">
+        <p className="min-w-0 truncate text-[11px] text-gray-500 dark:text-gray-400">{label}</p>
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={onRemove}
+          className="shrink-0 text-[11px] font-medium text-red-600 hover:text-red-700 disabled:opacity-50 dark:text-red-400"
+        >
+          삭제
+        </button>
+      </div>
+    </div>
+  );
+}

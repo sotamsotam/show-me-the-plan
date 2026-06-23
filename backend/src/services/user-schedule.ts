@@ -8,6 +8,13 @@ import {
   shiftIsoDate,
   validateScheduleTimeRange,
 } from './schedule-time';
+import {
+  normalizeAttachmentIds,
+  normalizeScheduleAttachments,
+  SCHEDULE_ATTACHMENT_MAX_COUNT,
+  type ScheduleAttachment,
+  validateScheduleAttachmentPolicy,
+} from './schedule-attachment';
 
 export type RecurrenceType = 'weekly' | 'once';
 export type ScheduleCategory = 'managed' | 'academy' | 'fixed' | 'other';
@@ -47,6 +54,7 @@ export interface UserScheduleInput {
   endDate?: string | null;
   excludedDates?: string[];
   overrides?: Record<string, ScheduleOccurrenceOverride>;
+  attachmentIds?: number[];
 }
 
 export interface UserScheduleRecord {
@@ -64,6 +72,7 @@ export interface UserScheduleRecord {
   endDate: string | null;
   excludedDates: string[];
   overrides: Record<string, ScheduleOccurrenceOverride>;
+  attachments: ScheduleAttachment[];
 }
 
 export interface ExpandedScheduleEvent {
@@ -77,6 +86,7 @@ export interface ExpandedScheduleEvent {
   recurrenceType: RecurrenceType;
   scheduleCategory: ScheduleCategory;
   hasOverride: boolean;
+  attachments?: ScheduleAttachment[];
 }
 
 const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -228,6 +238,7 @@ export function toScheduleRecord(raw: Record<string, unknown>): UserScheduleReco
     endDate: normalizeDateValue(raw.endDate),
     excludedDates: normalizeExcludedDates(raw.excludedDates),
     overrides: normalizeOverrides(raw.overrides),
+    attachments: normalizeScheduleAttachments(raw.attachments),
   };
 }
 
@@ -538,6 +549,23 @@ export function validateScheduleInput(
     }
   }
 
+  if (has('attachmentIds')) {
+    const attachmentIds = normalizeAttachmentIds(input.attachmentIds);
+
+    if (!partial || has('allDay')) {
+      const attachmentError = validateScheduleAttachmentPolicy({
+        allDay: input.allDay === true,
+        attachmentIds,
+      });
+
+      if (attachmentError) {
+        return attachmentError;
+      }
+    } else if (attachmentIds.length > SCHEDULE_ATTACHMENT_MAX_COUNT) {
+      return `첨부 이미지는 최대 ${SCHEDULE_ATTACHMENT_MAX_COUNT}장까지 등록할 수 있습니다.`;
+    }
+  }
+
   return null;
 }
 
@@ -622,6 +650,9 @@ function buildExpandedEvent(
   endTime: string,
   hasOverride: boolean
 ): ExpandedScheduleEvent {
+  const attachments =
+    schedule.allDay && schedule.attachments.length > 0 ? schedule.attachments : undefined;
+
   const base = {
     id: `user-${schedule.id}-${date}`,
     scheduleId: schedule.id,
@@ -630,6 +661,7 @@ function buildExpandedEvent(
     recurrenceType: schedule.recurrenceType,
     scheduleCategory: schedule.scheduleCategory,
     hasOverride,
+    ...(attachments ? { attachments } : {}),
   };
 
   if (schedule.allDay) {

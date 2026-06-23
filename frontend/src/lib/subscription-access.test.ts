@@ -17,7 +17,7 @@ describe('buildSubscriptionSession', () => {
       cancelAtPeriodEnd: false,
       hasBillingKey: false,
       plan: null,
-      nextBilling: { planPrice: 4900, discountAmount: 0, billedAmount: 4900, skipPgCharge: false },
+      nextBilling: { planPrice: 4900, discountAmount: 0, pointAmountUsed: 0, billedAmount: 4900, skipPgCharge: false },
     });
 
     expect(session).toMatchObject({
@@ -56,6 +56,7 @@ describe('access path helpers', () => {
 
   it('allows billing API when expired', () => {
     expect(isApiAllowedWhenExpired('/api/billing/checkout/prepare')).toBe(true);
+    expect(isApiAllowedWhenExpired('/api/subscription/use-points')).toBe(true);
     expect(isApiAllowedWhenExpired('/api/user-schedules')).toBe(false);
   });
 });

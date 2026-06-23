@@ -8,9 +8,15 @@ export type SubscriptionDiscountFields = {
   discountEndsAt?: Date | string | null;
 };
 
+export type SubscriptionPointFields = {
+  pointBalance?: number | null;
+  usePointsOnNextBilling?: boolean | null;
+};
+
 export type BillingBreakdown = {
   planPrice: number;
   discountAmount: number;
+  pointAmountUsed: number;
   billedAmount: number;
   skipPgCharge: boolean;
 };
@@ -20,6 +26,7 @@ export type DiscountSnapshot = {
   discountFixedAmount?: number | null;
   overridePrice?: number | null;
   discountApplyOnce?: boolean | null;
+  pointAmountUsed?: number | null;
 };
 
 function toDate(value: Date | string | null | undefined): Date | null {
@@ -49,33 +56,20 @@ function isDiscountActive(
   return true;
 }
 
-export function resolveBillingAmount(
+function resolveAmountAfterDiscount(
   planPrice: number,
   subscription: SubscriptionDiscountFields,
-  now = new Date()
-): BillingBreakdown {
-  const normalizedPlanPrice = Math.max(0, Math.round(planPrice));
-
+  now: Date
+): number {
   if (!isDiscountActive(subscription, now)) {
-    return {
-      planPrice: normalizedPlanPrice,
-      discountAmount: 0,
-      billedAmount: normalizedPlanPrice,
-      skipPgCharge: normalizedPlanPrice === 0,
-    };
+    return planPrice;
   }
 
   if (subscription.overridePrice != null) {
-    const billedAmount = Math.max(0, Math.round(subscription.overridePrice));
-    return {
-      planPrice: normalizedPlanPrice,
-      discountAmount: normalizedPlanPrice - billedAmount,
-      billedAmount,
-      skipPgCharge: billedAmount === 0,
-    };
+    return Math.max(0, Math.round(subscription.overridePrice));
   }
 
-  let billedAmount = normalizedPlanPrice;
+  let billedAmount = planPrice;
 
   if (subscription.discountPercent != null && subscription.discountPercent > 0) {
     billedAmount = Math.round(billedAmount * (1 - subscription.discountPercent / 100));
@@ -85,22 +79,70 @@ export function resolveBillingAmount(
     billedAmount = Math.max(0, billedAmount - Math.round(subscription.discountFixedAmount));
   }
 
+  return billedAmount;
+}
+
+function applyPointDiscount(
+  planPrice: number,
+  amountAfterDiscount: number,
+  subscription: SubscriptionPointFields,
+  applyPoints: boolean
+): BillingBreakdown {
+  const pointBalance = Math.max(0, Math.round(subscription.pointBalance ?? 0));
+  const shouldUsePoints =
+    applyPoints && subscription.usePointsOnNextBilling === true && pointBalance > 0;
+
+  let pointAmountUsed = 0;
+  let billedAmount = amountAfterDiscount;
+
+  if (shouldUsePoints && billedAmount > 0) {
+    pointAmountUsed = Math.min(pointBalance, billedAmount);
+    billedAmount -= pointAmountUsed;
+  }
+
   return {
-    planPrice: normalizedPlanPrice,
-    discountAmount: normalizedPlanPrice - billedAmount,
+    planPrice,
+    discountAmount: planPrice - billedAmount,
+    pointAmountUsed,
     billedAmount,
     skipPgCharge: billedAmount === 0,
   };
 }
 
+export function resolveBillingAmount(
+  planPrice: number,
+  subscription: SubscriptionDiscountFields & SubscriptionPointFields,
+  now = new Date(),
+  options?: { applyPoints?: boolean }
+): BillingBreakdown {
+  const normalizedPlanPrice = Math.max(0, Math.round(planPrice));
+  const applyPoints = options?.applyPoints !== false;
+  const amountAfterDiscount = resolveAmountAfterDiscount(
+    normalizedPlanPrice,
+    subscription,
+    now
+  );
+
+  return applyPointDiscount(
+    normalizedPlanPrice,
+    amountAfterDiscount,
+    subscription,
+    applyPoints
+  );
+}
+
 export function buildDiscountSnapshot(
-  subscription: SubscriptionDiscountFields & { discountApplyOnce?: boolean | null }
+  subscription: SubscriptionDiscountFields & {
+    discountApplyOnce?: boolean | null;
+  },
+  pointAmountUsed = 0
 ): DiscountSnapshot {
   return {
     discountPercent: subscription.discountPercent ?? null,
     discountFixedAmount: subscription.discountFixedAmount ?? null,
     overridePrice: subscription.overridePrice ?? null,
     discountApplyOnce: subscription.discountApplyOnce ?? null,
+    pointAmountUsed: pointAmountUsed > 0 ? pointAmountUsed : null,
   };
 }
 

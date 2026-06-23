@@ -7,6 +7,10 @@ import {
   cancelSubscriptionAtPeriodEnd,
   getPaymentHistoryForUser,
   listRenewalCandidates,
+  reservePointsForNextBilling,
+  ReservePointsError,
+  resumeSubscriptionAfterCancel,
+  ResumeSubscriptionError,
   saveBillingKey,
   type PaymentSuccessInput,
 } from '../../../services/subscription-billing';
@@ -37,6 +41,35 @@ export default factories.createCoreController(
       }
 
       return ctx.send({ subscription: summary });
+    },
+
+    async usePoints(ctx) {
+      const user = ctx.state.user;
+
+      if (!user) {
+        return ctx.unauthorized('로그인이 필요합니다.');
+      }
+
+      if (!(await isStudentUser(strapi, user.id))) {
+        return ctx.forbidden('학생 계정만 포인트를 사용할 수 있습니다.');
+      }
+
+      try {
+        const updated = await reservePointsForNextBilling(strapi, user.id);
+
+        if (!updated) {
+          return ctx.notFound('구독 정보를 찾을 수 없습니다.');
+        }
+
+        const summary = await getSubscriptionSummaryForUser(strapi, user.id);
+        return ctx.send({ subscription: summary });
+      } catch (error) {
+        if (error instanceof ReservePointsError) {
+          return ctx.badRequest(error.message);
+        }
+
+        throw error;
+      }
     },
 
     async paymentHistory(ctx) {
@@ -75,6 +108,35 @@ export default factories.createCoreController(
       return ctx.send({ subscription: summary });
     },
 
+    async resumeCancel(ctx) {
+      const user = ctx.state.user;
+
+      if (!user) {
+        return ctx.unauthorized('로그인이 필요합니다.');
+      }
+
+      if (!(await isStudentUser(strapi, user.id))) {
+        return ctx.forbidden('학생 계정만 구독을 관리할 수 있습니다.');
+      }
+
+      try {
+        const updated = await resumeSubscriptionAfterCancel(strapi, user.id);
+
+        if (!updated) {
+          return ctx.notFound('구독 정보를 찾을 수 없습니다.');
+        }
+
+        const summary = await getSubscriptionSummaryForUser(strapi, user.id);
+        return ctx.send({ subscription: summary });
+      } catch (error) {
+        if (error instanceof ResumeSubscriptionError) {
+          return ctx.badRequest(error.message);
+        }
+
+        throw error;
+      }
+    },
+
     async internalPaymentSucceeded(ctx) {
       const denied = assertBillingInternalAccess(ctx);
       if (!denied) {
@@ -100,6 +162,8 @@ export default factories.createCoreController(
         pgPaymentId: String(body.pgPaymentId),
         planPrice: Number(body.planPrice),
         discountAmount: Number(body.discountAmount),
+        pointAmountUsed:
+          body.pointAmountUsed == null ? 0 : Number(body.pointAmountUsed),
         amount: Number(body.amount),
         receiptUrl: body.receiptUrl ?? null,
         pgBillingKey: body.pgBillingKey ?? null,

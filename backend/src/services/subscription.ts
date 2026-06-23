@@ -36,6 +36,8 @@ type SubscriptionRow = {
   discountNote?: string | null;
   discountGrantedAt?: string | Date | null;
   discountGrantedBy?: string | null;
+  pointBalance?: number | null;
+  usePointsOnNextBilling?: boolean | null;
   plan?: {
     id: number;
     code?: string;
@@ -238,6 +240,8 @@ export type SubscriptionSummary = {
     interval: string;
   } | null;
   nextBilling: BillingBreakdown | null;
+  pointBalance: number;
+  usePointsOnNextBilling: boolean;
 };
 
 export async function getSubscriptionSummaryForUser(
@@ -284,6 +288,8 @@ export async function getSubscriptionSummaryForUser(
         }
       : null,
     nextBilling,
+    pointBalance: Math.max(0, Math.round(subscription.pointBalance ?? 0)),
+    usePointsOnNextBilling: subscription.usePointsOnNextBilling === true,
   };
 }
 

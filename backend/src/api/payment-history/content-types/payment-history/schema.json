@@ -27,6 +27,11 @@
       "required": true,
       "min": 0
     },
+    "pointAmountUsed": {
+      "type": "integer",
+      "default": 0,
+      "min": 0
+    },
     "amount": {
       "type": "integer",
       "required": true,

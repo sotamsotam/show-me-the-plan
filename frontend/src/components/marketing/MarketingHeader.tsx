@@ -1,17 +1,27 @@
 import MarketingCtaButton from '@/components/marketing/MarketingCtaButton';
 import MarketingMobileNav from '@/components/marketing/MarketingMobileNav';
 import { authOptions } from '@/lib/auth';
+import {
+  getDefaultDashboardPathFromSession,
+  getMarketingAppEntryFromSession,
+} from '@/lib/account-helpers';
 import { NAV_LINKS, SERVICE_NAME } from '@/content/marketing/common';
 import { getServerSession } from 'next-auth';
 import Link from 'next/link';
 
 export default async function MarketingHeader() {
   const session = await getServerSession(authOptions);
+  const appEntry = session?.user
+    ? getMarketingAppEntryFromSession(session.user)
+    : null;
+  const logoHref = session?.user
+    ? getDefaultDashboardPathFromSession(session.user)
+    : '/';
 
   return (
     <header className="sticky top-0 z-50 border-b border-mkt-border bg-mkt-surface shadow-sm">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 pt-3 pb-4 sm:px-6 sm:pt-4 sm:pb-5">
-        <Link href="/" className="flex shrink-0 items-center">
+        <Link href={logoHref} className="flex shrink-0 items-center">
           <img
             src="/logo/logo_wide_pc.png"
             alt={SERVICE_NAME}
@@ -32,10 +42,10 @@ export default async function MarketingHeader() {
         </nav>
 
         <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-          {session?.user ? (
+          {session?.user && appEntry ? (
             <MarketingCtaButton
-              label="오늘의 스터디플랜"
-              href="/dashboard/todo"
+              label={appEntry.label}
+              href={appEntry.href}
               variant="primary"
               size="md"
             />
