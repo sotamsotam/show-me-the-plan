@@ -1,5 +1,6 @@
 import { GRADE_CARDS, HOME_FEATURES, HOME_KEY_FEATURES_SHOWCASE, HOME_TARGET_CARDS } from './common';
 import { HOME_FAQ, HOME_PROCESS } from './home-faq';
+import { HOME_KIOSK_MODE } from './home-kiosk-mode';
 import { HOME_PLANNER_COMPARISON } from './home-planner-comparison';
 import type { PageSeo } from './types';
 
@@ -37,6 +38,7 @@ export const homeContent = {
   })),
   gradesTitle: "우리 학년에 맞는 이야기",
   grades: GRADE_CARDS,
+  kioskMode: HOME_KIOSK_MODE,
   process: HOME_PROCESS,
   faq: HOME_FAQ,
   bottomCta: {

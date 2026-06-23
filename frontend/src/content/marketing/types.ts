@@ -167,6 +167,15 @@ export type VideoInsightContent = {
   };
 };
 
+export type KioskModeContent = {
+  title: string;
+  paragraphs: readonly string[];
+  youtube: {
+    videoId: string;
+    title?: string;
+  };
+};
+
 export type PlannerComparisonItem = {
   title: string;
   paper: string;

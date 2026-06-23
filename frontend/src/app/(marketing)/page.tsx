@@ -2,6 +2,7 @@ import FaqSection from '@/components/marketing/sections/FaqSection';
 import FeatureGridSection from '@/components/marketing/sections/FeatureGridSection';
 import GradeCardsSection from '@/components/marketing/sections/GradeCardsSection';
 import HeroSection from '@/components/marketing/sections/HeroSection';
+import KioskModeSection from '@/components/marketing/sections/KioskModeSection';
 import KeyFeaturesShowcaseSection from '@/components/marketing/sections/KeyFeaturesShowcaseSection';
 import MarketingCtaSection from '@/components/marketing/sections/MarketingCtaSection';
 import PlannerComparisonSection from '@/components/marketing/sections/PlannerComparisonSection';
@@ -66,6 +67,7 @@ export default async function HomePage({
         title={homeContent.gradesTitle}
         items={homeContent.grades}
       />
+      <KioskModeSection {...homeContent.kioskMode} />
       <FaqSection
         eyebrow={homeContent.faq.eyebrow}
         title={homeContent.faq.title}
