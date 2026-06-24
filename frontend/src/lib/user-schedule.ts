@@ -14,7 +14,7 @@ export const SCHEDULE_CATEGORY_OPTIONS = [
 export const SCHEDULE_CATEGORY_OPTIONS_FOR_CREATE = [
   // { value: 'managed' as const, label: '공부 가능시간' },
   { value: 'academy' as const, label: '학원 수업시간' },
-  { value: 'fixed' as const, label: '고정시간 (예: 학업 외 예체능학원시간)' },
+  { value: 'fixed' as const, label: '고정시간 (예: 학업 외 예체능학원 시간 등)' },
   { value: 'other' as const, label: '기타' },
 ] as const;
 
