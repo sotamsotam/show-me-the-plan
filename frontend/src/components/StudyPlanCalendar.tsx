@@ -17,11 +17,9 @@ import timeGridPlugin from '@fullcalendar/timegrid';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNeisTimetableEnabled } from '@/hooks/useNeisTimetableEnabled';
 import { useStudentApi } from '@/hooks/useStudentApi';
-import {
-  buildStudyPlanTodosSearchParams,
-  normalizeStudyPlanTodos,
-  STUDY_PLAN_TODO_INCLUDE,
-} from '@/lib/study-plan-todo-api';
+import { useStudyPlanTodosInRange } from '@/hooks/useStudyPlanTodosInRange';
+import { useUserSchedulesInRange } from '@/hooks/useUserSchedulesInRange';
+import { invalidateStudyPlanTodos } from '@/lib/dashboard-data-invalidation';
 import StudyPlanOccurrenceChooser from '@/components/StudyPlanOccurrenceChooser';
 import StudyPlanTodoForm, {
   buildInitialFromSelection,
@@ -268,14 +266,42 @@ export default function StudyPlanCalendar() {
   const [activeViewType, setActiveViewType] = useState(() =>
     resolveDefaultCalendarView(getIsMobileViewport())
   );
-  const [scheduleEvents, setScheduleEvents] = useState<EventInput[]>([]);
-  const [expandedTodoEvents, setExpandedTodoEvents] = useState<ExpandedStudyPlanTodoEvent[]>([]);
-  const [studyPlanTodos, setStudyPlanTodos] = useState<StudyPlanTodo[]>([]);
+  const [scheduleRange, setScheduleRange] = useState<{ start: string; end: string } | null>(
+    null
+  );
+  const [timetableEvents, setTimetableEvents] = useState<EventInput[]>([]);
   const [draftEvent, setDraftEvent] = useState<DraftSlot | null>(null);
   const [editSession, setEditSession] = useState<StudyPlanEditSession | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [timetableLoading, setTimetableLoading] = useState(false);
+  const [timetableError, setTimetableError] = useState('');
   const [savingDrag, setSavingDrag] = useState(false);
   const [error, setError] = useState('');
+  const {
+    events: userScheduleEvents,
+    isLoading: userSchedulesLoading,
+    error: userSchedulesError,
+  } = useUserSchedulesInRange({
+    start: scheduleRange?.start ?? '',
+    end: scheduleRange?.end ?? '',
+    enabled: Boolean(scheduleRange),
+  });
+  const {
+    todos: studyPlanTodos,
+    expandedEvents: expandedTodoEvents,
+    isLoading: studyPlanTodosLoading,
+    error: studyPlanTodosError,
+    refetch: refetchStudyPlanTodos,
+  } = useStudyPlanTodosInRange({
+    start: scheduleRange?.start ?? '',
+    end: scheduleRange?.end ?? '',
+    enabled: Boolean(scheduleRange),
+  });
+  const scheduleEvents = useMemo(
+    () => [...timetableEvents, ...userScheduleEvents],
+    [timetableEvents, userScheduleEvents]
+  );
+  const loading = timetableLoading || userSchedulesLoading || studyPlanTodosLoading;
+  const loadError = timetableError || userSchedulesError || studyPlanTodosError;
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState<StudyPlanTodoFormMode>('create');
   const [chooserOpen, setChooserOpen] = useState(false);
@@ -451,99 +477,77 @@ export default function StudyPlanCalendar() {
     setFormMode('create');
   }, []);
 
-  const fetchCalendarData = useCallback(async (start: Date, end: Date) => {
-    const fetchId = ++fetchIdRef.current;
-    setLoading(true);
-    setError('');
-    currentRangeRef.current = { start, end };
+  const fetchTimetableEvents = useCallback(
+    async (start: Date, end: Date) => {
+      const fetchId = ++fetchIdRef.current;
+      setTimetableLoading(true);
+      setTimetableError('');
+      currentRangeRef.current = { start, end };
+      setScheduleRange({
+        start: formatIsoDate(start),
+        end: formatIsoDate(end),
+      });
 
-    const scheduleParams = new URLSearchParams({
-      start: formatIsoDate(start),
-      end: formatIsoDate(end),
-    });
-    const todoParams = buildStudyPlanTodosSearchParams({
-      start: formatIsoDate(start),
-      end: formatIsoDate(end),
-      include: STUDY_PLAN_TODO_INCLUDE.calendar,
-    });
+      const params = new URLSearchParams({
+        start: formatIsoDate(start),
+        end: formatIsoDate(end),
+      });
 
-    try {
-      const shouldFetchTimetable = !neisProfileLoading && usesNeisTimetable;
-      const timetablePromise = shouldFetchTimetable
-        ? fetch(withStudent(`/api/timetable?${scheduleParams}`), { credentials: 'include' })
-        : Promise.resolve(
-            new Response(JSON.stringify({ events: [] }), {
-              status: 200,
-              headers: { 'Content-Type': 'application/json' },
-            })
-          );
+      try {
+        const shouldFetchTimetable = !neisProfileLoading && usesNeisTimetable;
 
-      const [timetableRes, userRes, todoRes] = await Promise.all([
-        timetablePromise,
-        fetch(withStudent(`/api/user-schedules?${scheduleParams}`), { credentials: 'include' }),
-        fetch(withStudent(`/api/study-plan-todos?${todoParams}`), { credentials: 'include' }),
-      ]);
+        if (!shouldFetchTimetable) {
+          if (fetchId === fetchIdRef.current) {
+            setTimetableEvents([]);
+          }
+          return;
+        }
 
-      const timetableData = await timetableRes.json();
-      const userData = await userRes.json();
-      const todoData = await todoRes.json();
+        const timetableRes = await fetch(withStudent(`/api/timetable?${params}`), {
+          credentials: 'include',
+        });
+        const timetableData = await timetableRes.json();
 
-      if (fetchId !== fetchIdRef.current) {
-        return;
+        if (fetchId !== fetchIdRef.current) {
+          return;
+        }
+
+        if (!timetableRes.ok) {
+          setTimetableEvents([]);
+          setTimetableError(timetableData.error ?? '시간표를 불러오지 못했습니다.');
+          return;
+        }
+
+        setTimetableEvents(timetableData.events ?? []);
+      } catch {
+        if (fetchId === fetchIdRef.current) {
+          setTimetableEvents([]);
+          setTimetableError('시간표를 불러오지 못했습니다.');
+        }
+      } finally {
+        if (fetchId === fetchIdRef.current) {
+          setTimetableLoading(false);
+        }
       }
-
-      const nextScheduleEvents: EventInput[] = [
-        ...(timetableRes.ok ? (timetableData.events ?? []) : []),
-        ...(userRes.ok ? (userData.events ?? []) : []),
-      ];
-
-      setScheduleEvents(nextScheduleEvents);
-      setExpandedTodoEvents(todoRes.ok ? (todoData.expandedEvents ?? []) : []);
-      setStudyPlanTodos(todoRes.ok ? normalizeStudyPlanTodos(todoData.todos) : []);
-
-      const errors: string[] = [];
-
-      if (shouldFetchTimetable && !timetableRes.ok) {
-        errors.push(timetableData.error ?? '시간표를 불러오지 못했습니다.');
-      }
-
-      if (!userRes.ok) {
-        errors.push(userData.error ?? '일정을 불러오지 못했습니다.');
-      }
-
-      if (!todoRes.ok) {
-        errors.push(todoData.error ?? '스터디 플랜을 불러오지 못했습니다.');
-      }
-
-      setError(errors[0] ?? '');
-    } catch {
-      if (fetchId === fetchIdRef.current) {
-        setScheduleEvents([]);
-        setExpandedTodoEvents([]);
-        setStudyPlanTodos([]);
-        setError('데이터를 불러오지 못했습니다.');
-      }
-    } finally {
-      if (fetchId === fetchIdRef.current) {
-        setLoading(false);
-      }
-    }
-  }, [withStudent, neisProfileLoading, usesNeisTimetable]);
+    },
+    [withStudent, neisProfileLoading, usesNeisTimetable]
+  );
 
   useEffect(() => {
     lastRangeKeyRef.current = null;
     if (currentRangeRef.current) {
-      fetchCalendarData(currentRangeRef.current.start, currentRangeRef.current.end);
+      void fetchTimetableEvents(
+        currentRangeRef.current.start,
+        currentRangeRef.current.end
+      );
     }
-  }, [studentUserId, fetchCalendarData]);
+  }, [studentUserId, fetchTimetableEvents]);
 
   const refreshCalendar = useCallback(() => {
     lastRangeKeyRef.current = null;
-
-    if (currentRangeRef.current) {
-      fetchCalendarData(currentRangeRef.current.start, currentRangeRef.current.end);
-    }
-  }, [fetchCalendarData]);
+    invalidateStudyPlanTodos(studentUserId);
+    void refetchStudyPlanTodos(true);
+  }, [refetchStudyPlanTodos, studentUserId]);
 
   const handleDatesSet = useCallback(
     (arg: DatesSetArg) => {
@@ -558,9 +562,9 @@ export default function StudyPlanCalendar() {
       }
 
       lastRangeKeyRef.current = rangeKey;
-      fetchCalendarData(arg.start, arg.end);
+      void fetchTimetableEvents(arg.start, arg.end);
     },
-    [fetchCalendarData]
+    [fetchTimetableEvents]
   );
 
   const handleFormClose = useCallback(() => {
@@ -1083,9 +1087,9 @@ export default function StudyPlanCalendar() {
 
   return (
     <div className="space-y-4">
-      {error && (
+      {(error || loadError) && (
         <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">
-          {error}
+          {error || loadError}
         </div>
       )}
 

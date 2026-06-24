@@ -5,6 +5,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useExamCountdown } from '@/hooks/useExamCountdown';
 import { useNeisTimetableEnabled } from '@/hooks/useNeisTimetableEnabled';
 import { useStudentApi } from '@/hooks/useStudentApi';
+import { useStudyPlanTodosInRange } from '@/hooks/useStudyPlanTodosInRange';
+import { useUserSchedulesInRange } from '@/hooks/useUserSchedulesInRange';
 import StudyPlanDayTimeline from '@/components/StudyPlanDayTimeline';
 import DayStudyTimeProgress from '@/components/DayStudyTimeProgress';
 import MobileFab from '@/components/MobileFab';
@@ -17,6 +19,7 @@ import {
   ProgressCardSkeleton,
   TimelineSkeleton,
 } from '@/components/skeletons/MobileSkeletons';
+import { invalidateStudyPlanTodos } from '@/lib/dashboard-data-invalidation';
 import {
   calculateExecutedStudyMinutes,
   calculatePlannedStudyMinutes,
@@ -26,13 +29,7 @@ import {
   filterEventsByDate,
   getExecutionRecord,
   type ExpandedStudyPlanTodoEvent,
-  type StudyPlanTodo,
 } from '@/lib/study-plan-todo';
-import {
-  buildStudyPlanTodosSearchParams,
-  fetchStudyPlanTodosInRange,
-  STUDY_PLAN_TODO_INCLUDE,
-} from '@/lib/study-plan-todo-api';
 import { getMonthRange, getTodayIsoDate } from '@/lib/user-schedule';
 
 const MOBILE_MEDIA_QUERY = '(max-width: 640px)';
@@ -45,16 +42,16 @@ export default function StudyPlanTodoPage() {
   const { withStudent, studentUserId } = useStudentApi();
   const { usesNeisTimetable, loading: neisProfileLoading } = useNeisTimetableEnabled();
   const [selectedDate, setSelectedDate] = useState(getTodayIsoDate);
+  const monthRange = useMemo(() => getMonthRange(selectedDate), [selectedDate]);
   const referenceYmd = useMemo(
     () => selectedDate.replaceAll('-', ''),
     [selectedDate]
   );
   const { countdown } = useExamCountdown({ referenceYmd });
   const [viewMode, setViewMode] = useState<DayViewMode>('combined');
-  const [events, setEvents] = useState<ExpandedStudyPlanTodoEvent[]>([]);
-  const [todos, setTodos] = useState<StudyPlanTodo[]>([]);
-  const [scheduleEvents, setScheduleEvents] = useState<EventInput[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [timetableEvents, setTimetableEvents] = useState<EventInput[]>([]);
+  const [timetableLoading, setTimetableLoading] = useState(false);
+  const [timetableError, setTimetableError] = useState('');
   const [error, setError] = useState('');
   const [isMobile, setIsMobile] = useState(getIsMobileViewport);
   const [modalOpen, setModalOpen] = useState(false);
@@ -64,7 +61,30 @@ export default function StudyPlanTodoPage() {
     null
   );
   const fetchIdRef = useRef(0);
-  const loadedRangeRef = useRef<{ start: string; end: string } | null>(null);
+  const {
+    todos,
+    expandedEvents: events,
+    isLoading: studyPlanTodosLoading,
+    error: studyPlanTodosError,
+    refetch: refetchStudyPlanTodos,
+  } = useStudyPlanTodosInRange({
+    start: monthRange.start,
+    end: monthRange.end,
+  });
+  const {
+    events: userScheduleEvents,
+    isLoading: userSchedulesLoading,
+    error: userSchedulesError,
+  } = useUserSchedulesInRange({
+    start: monthRange.start,
+    end: monthRange.end,
+  });
+  const scheduleEvents = useMemo(
+    () => [...timetableEvents, ...userScheduleEvents],
+    [timetableEvents, userScheduleEvents]
+  );
+  const loading = timetableLoading || studyPlanTodosLoading || userSchedulesLoading;
+  const loadError = timetableError || studyPlanTodosError || userSchedulesError;
 
   const todosById = useMemo(
     () => new Map(todos.map((todo) => [todo.id, todo])),
@@ -94,112 +114,57 @@ export default function StudyPlanTodoPage() {
     return getExecutionRecord(todosById.get(selectedEvent.todoId), selectedEvent.date);
   }, [selectedEvent, todosById]);
 
-  const fetchPageData = useCallback(async (date: string, force = false) => {
-    const { start, end } = getMonthRange(date);
-
-    if (
-      !force &&
-      loadedRangeRef.current?.start === start &&
-      loadedRangeRef.current?.end === end
-    ) {
-      return;
-    }
-
+  const fetchTimetableEvents = useCallback(async () => {
     const fetchId = ++fetchIdRef.current;
-    setLoading(true);
-    setError('');
+    setTimetableLoading(true);
+    setTimetableError('');
 
-    const scheduleParams = new URLSearchParams({ start, end });
-    const todoParams = buildStudyPlanTodosSearchParams({
-      start,
-      end,
-      include: STUDY_PLAN_TODO_INCLUDE.withExecutions,
+    const params = new URLSearchParams({
+      start: monthRange.start,
+      end: monthRange.end,
     });
 
     try {
       const shouldFetchTimetable = !neisProfileLoading && usesNeisTimetable;
-      const timetablePromise = shouldFetchTimetable
-        ? fetch(withStudent(`/api/timetable?${scheduleParams}`), { credentials: 'include' })
-        : Promise.resolve(
-            new Response(JSON.stringify({ events: [] }), {
-              status: 200,
-              headers: { 'Content-Type': 'application/json' },
-            })
-          );
 
-      const [todoResult, timetableRes, userRes] = await Promise.all([
-        fetchStudyPlanTodosInRange(withStudent(`/api/study-plan-todos?${todoParams}`)),
-        timetablePromise,
-        fetch(withStudent(`/api/user-schedules?${scheduleParams}`), { credentials: 'include' }),
-      ]);
+      if (!shouldFetchTimetable) {
+        if (fetchId === fetchIdRef.current) {
+          setTimetableEvents([]);
+        }
+        return;
+      }
+
+      const timetableRes = await fetch(withStudent(`/api/timetable?${params}`), {
+        credentials: 'include',
+      });
       const timetableData = await timetableRes.json();
-      const userData = await userRes.json();
 
       if (fetchId !== fetchIdRef.current) {
         return;
       }
 
-      const errors: string[] = [];
-
-      if (!todoResult.ok) {
-        setEvents([]);
-        setTodos([]);
-        errors.push(todoResult.error);
-      } else {
-        setEvents(todoResult.data.expandedEvents ?? []);
-        setTodos(todoResult.data.todos ?? []);
+      if (!timetableRes.ok) {
+        setTimetableEvents([]);
+        setTimetableError(timetableData.error ?? '시간표를 불러오지 못했습니다.');
+        return;
       }
 
-      const nextScheduleEvents: EventInput[] = [
-        ...(timetableRes.ok ? (timetableData.events ?? []) : []),
-        ...(userRes.ok ? (userData.events ?? []) : []),
-      ];
-      setScheduleEvents(nextScheduleEvents);
-
-      if (shouldFetchTimetable && !timetableRes.ok) {
-        errors.push(timetableData.error ?? '시간표를 불러오지 못했습니다.');
-      }
-
-      if (!userRes.ok) {
-        errors.push(userData.error ?? '일정을 불러오지 못했습니다.');
-      }
-
-      setError(errors[0] ?? '');
-      loadedRangeRef.current = { start, end };
+      setTimetableEvents(timetableData.events ?? []);
     } catch {
-      if (fetchId !== fetchIdRef.current) {
-        return;
+      if (fetchId === fetchIdRef.current) {
+        setTimetableEvents([]);
+        setTimetableError('시간표를 불러오지 못했습니다.');
       }
-
-      setEvents([]);
-      setTodos([]);
-      setScheduleEvents([]);
-      setError('데이터를 불러오지 못했습니다.');
     } finally {
       if (fetchId === fetchIdRef.current) {
-        setLoading(false);
+        setTimetableLoading(false);
       }
     }
-  }, [withStudent, neisProfileLoading, usesNeisTimetable]);
+  }, [monthRange.end, monthRange.start, neisProfileLoading, usesNeisTimetable, withStudent]);
 
   useEffect(() => {
-    loadedRangeRef.current = null;
-    fetchPageData(selectedDate, true);
-  }, [selectedDate, studentUserId, fetchPageData]);
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia(MOBILE_MEDIA_QUERY);
-    const handleChange = () => {
-      setIsMobile(mediaQuery.matches);
-    };
-
-    handleChange();
-    mediaQuery.addEventListener('change', handleChange);
-
-    return () => {
-      mediaQuery.removeEventListener('change', handleChange);
-    };
-  }, []);
+    void fetchTimetableEvents();
+  }, [fetchTimetableEvents, studentUserId]);
 
   const openCreateForm = useCallback(() => {
     setFormInitial({
@@ -220,8 +185,8 @@ export default function StudyPlanTodoPage() {
   }
 
   function handleSaved() {
-    loadedRangeRef.current = null;
-    fetchPageData(selectedDate, true);
+    invalidateStudyPlanTodos(studentUserId);
+    void refetchStudyPlanTodos(true);
   }
 
   function handleFormClose() {
@@ -234,9 +199,9 @@ export default function StudyPlanTodoPage() {
 
   return (
     <div className="mx-auto w-full">
-      {error && (
+      {(error || loadError) && (
         <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300">
-          {error}
+          {error || loadError}
         </p>
       )}
 

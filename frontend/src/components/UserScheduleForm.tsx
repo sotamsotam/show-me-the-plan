@@ -12,6 +12,7 @@ import {
   isAllWeekdaysSelected,
   resolveOccurrenceFields,
   SCHEDULE_CATEGORY_OPTIONS,
+  SCHEDULE_CATEGORY_OPTIONS_FOR_CREATE,
   toggleAllWeekdays,
   toggleWeekday,
   WEEKDAY_OPTIONS,
@@ -101,7 +102,10 @@ function buildDefaults(
 
   return {
     title: schedule?.title ?? initial?.title ?? '',
-    scheduleCategory: schedule?.scheduleCategory ?? initial?.scheduleCategory ?? 'managed',
+    scheduleCategory:
+      schedule?.scheduleCategory ??
+      initial?.scheduleCategory ??
+      (mode === 'create' ? 'academy' : 'managed'),
     allDay: schedule?.allDay ?? initial?.allDay ?? false,
     startTime:
       schedule?.startTime ??
@@ -203,7 +207,7 @@ export default function UserScheduleForm({
   const isOccurrence = mode === 'occurrence';
   const allCheckboxRef = useRef<HTMLInputElement>(null);
   const [title, setTitle] = useState('');
-  const [scheduleCategory, setScheduleCategory] = useState<ScheduleCategory>('managed');
+  const [scheduleCategory, setScheduleCategory] = useState<ScheduleCategory>('academy');
   const [startTime, setStartTime] = useState('16:00');
   const [endTime, setEndTime] = useState('18:00');
   const [recurrenceType, setRecurrenceType] = useState<RecurrenceType>('once');
@@ -507,7 +511,10 @@ export default function UserScheduleForm({
                 onChange={(e) => setScheduleCategory(e.target.value as ScheduleCategory)}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-zinc-800"
               >
-                {SCHEDULE_CATEGORY_OPTIONS.map((option) => (
+                {(mode === 'create'
+                  ? SCHEDULE_CATEGORY_OPTIONS_FOR_CREATE
+                  : SCHEDULE_CATEGORY_OPTIONS
+                ).map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}
                   </option>

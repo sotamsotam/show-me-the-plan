@@ -14,11 +14,7 @@ import {
   withStudentUserId,
   type ManagedStudent,
 } from '@/lib/manager-student';
-import {
-  buildStudyPlanTodosSearchParams,
-  normalizeStudyPlanTodos,
-  STUDY_PLAN_TODO_INCLUDE,
-} from '@/lib/study-plan-todo-api';
+import { getStudyPlanTodosInRange } from '@/lib/cached-study-plan-todos';
 import { toExclusiveApiRangeEnd } from '@/lib/study-stats';
 import {
   formatOccurrenceDateLabel,
@@ -44,29 +40,24 @@ async function fetchStudentDailyData(
   studentUserId: number,
   date: string
 ): Promise<StudentDailyTodoData> {
-  const params = buildStudyPlanTodosSearchParams({
-    start: date,
-    end: toExclusiveApiRangeEnd(date),
-    include: STUDY_PLAN_TODO_INCLUDE.withExecutions,
-  });
+  const apiEnd = toExclusiveApiRangeEnd(date);
 
-  const res = await fetch(
-    withStudentUserId(`/api/study-plan-todos?${params}`, studentUserId),
-    { credentials: 'include' }
-  );
-  const data = await res.json();
+  try {
+    const data = await getStudyPlanTodosInRange(
+      { start: date, end: apiEnd, studentUserId },
+      (url) => withStudentUserId(url, studentUserId)
+    );
 
-  if (!res.ok) {
-    throw new Error(data.error ?? 'TODO 데이터를 불러오지 못했습니다.');
+    return buildStudentDailyTodoData(
+      data.expandedEvents ?? [],
+      buildTodosById(data.todos),
+      date
+    );
+  } catch (loadError) {
+    throw new Error(
+      loadError instanceof Error ? loadError.message : 'TODO 데이터를 불러오지 못했습니다.'
+    );
   }
-
-  const todos = normalizeStudyPlanTodos(data.todos);
-
-  return buildStudentDailyTodoData(
-    data.expandedEvents ?? [],
-    buildTodosById(todos),
-    date
-  );
 }
 
 export default function ManagerOverviewDashboard() {

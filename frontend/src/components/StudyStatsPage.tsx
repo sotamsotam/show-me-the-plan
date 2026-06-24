@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo } from 'react';
 import StudyPeriodRangeSelector from '@/components/StudyPeriodRangeSelector';
 import AchievementLevelSection from '@/components/study-stats/AchievementLevelSection';
 import AchievementSummaryCards from '@/components/study-stats/AchievementSummaryCards';
@@ -20,8 +20,8 @@ import SubjectQualityChart from '@/components/study-stats/SubjectQualityChart';
 import WeekdayPatternChart from '@/components/study-stats/WeekdayPatternChart';
 import WeeklyTrendChart from '@/components/study-stats/WeeklyTrendChart';
 import { useProfileSubjectsContext } from '@/contexts/ProfileSubjectsContext';
-import { useStudentApi } from '@/hooks/useStudentApi';
 import { useStudyPeriodRange } from '@/hooks/useStudyPeriodRange';
+import { useStudyPlanTodosInRange } from '@/hooks/useStudyPlanTodosInRange';
 import {
   resolveCurrentStudyPeriodOption,
   resolvePreviousMatchingStudyPeriodOption,
@@ -46,16 +46,9 @@ import {
   aggregateWeekdayPatterns,
   aggregateWeeklyAchievementTrend,
   isPerformanceStatsRangeValid,
-  isValidDateRange,
   resolveEffectiveStatsRange,
   toExclusiveApiRangeEnd,
 } from '@/lib/study-stats';
-import type { ExpandedStudyPlanTodoEvent, StudyPlanTodo } from '@/lib/study-plan-todo';
-import {
-  buildStudyPlanTodosSearchParams,
-  fetchStudyPlanTodosInRange,
-  STUDY_PLAN_TODO_INCLUDE,
-} from '@/lib/study-plan-todo-api';
 
 const EMPTY_STATS = {
   bySubjectPlanned: [],
@@ -134,7 +127,6 @@ function resolveFetchRange(
 }
 
 export default function StudyStatsPage() {
-  const { withStudent, studentUserId } = useStudentApi();
   const { subjects: profileSubjects } = useProfileSubjectsContext();
   const {
     rangeStart,
@@ -148,11 +140,6 @@ export default function StudyStatsPage() {
     handleRangeStartChange,
     handleRangeEndChange,
   } = useStudyPeriodRange();
-  const [events, setEvents] = useState<ExpandedStudyPlanTodoEvent[]>([]);
-  const [todos, setTodos] = useState<StudyPlanTodo[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const fetchIdRef = useRef(0);
 
   const effectiveRange = useMemo(() => {
     if (rangeError) {
@@ -208,6 +195,28 @@ export default function StudyStatsPage() {
       previousRange?.end ?? null
     );
   }, [rangeStart, rangeEnd, previousRange, rangeError]);
+
+  const fetchRangeApi = useMemo(() => {
+    if (!fetchRange) {
+      return null;
+    }
+
+    return {
+      start: fetchRange.start,
+      end: toExclusiveApiRangeEnd(fetchRange.end),
+    };
+  }, [fetchRange]);
+
+  const {
+    todos,
+    expandedEvents: events,
+    isLoading: loading,
+    error,
+  } = useStudyPlanTodosInRange({
+    start: fetchRangeApi?.start ?? '',
+    end: fetchRangeApi?.end ?? '',
+    enabled: Boolean(fetchRangeApi),
+  });
 
   const todosById = useMemo(
     () => new Map(todos.map((todo) => [todo.id, todo])),
@@ -418,65 +427,6 @@ export default function StudyStatsPage() {
           ),
     [events, todosById, performanceStart, performanceEnd, performanceValid]
   );
-
-  const fetchStats = useCallback(
-    async (start: string, end: string) => {
-      if (!isValidDateRange(start, end)) {
-        return;
-      }
-
-      const fetchId = ++fetchIdRef.current;
-      setLoading(true);
-      setError('');
-
-      const params = buildStudyPlanTodosSearchParams({
-        start,
-        end: toExclusiveApiRangeEnd(end),
-        include: STUDY_PLAN_TODO_INCLUDE.withExecutions,
-      });
-
-      try {
-        const result = await fetchStudyPlanTodosInRange(
-          withStudent(`/api/study-plan-todos?${params}`)
-        );
-
-        if (fetchId !== fetchIdRef.current) {
-          return;
-        }
-
-        if (!result.ok) {
-          setEvents([]);
-          setTodos([]);
-          setError(result.error);
-          return;
-        }
-
-        setEvents(result.data.expandedEvents ?? []);
-        setTodos(result.data.todos ?? []);
-      } catch {
-        if (fetchId !== fetchIdRef.current) {
-          return;
-        }
-
-        setEvents([]);
-        setTodos([]);
-        setError('데이터를 불러오지 못했습니다.');
-      } finally {
-        if (fetchId === fetchIdRef.current) {
-          setLoading(false);
-        }
-      }
-    },
-    [withStudent]
-  );
-
-  useEffect(() => {
-    if (!fetchRange) {
-      return;
-    }
-
-    fetchStats(fetchRange.start, fetchRange.end);
-  }, [fetchRange, studentUserId, fetchStats]);
 
   const isLoading = loading && !rangeError;
   const showPerformanceStats = performanceValid && !rangeError;

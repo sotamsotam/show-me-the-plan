@@ -10,6 +10,14 @@ export const SCHEDULE_CATEGORY_OPTIONS = [
   { value: 'other' as const, label: '기타' },
 ] as const;
 
+/** 일정 추가 폼용 — '공부 가능시간'은 삭제하지 않고 주석으로만 미노출 */
+export const SCHEDULE_CATEGORY_OPTIONS_FOR_CREATE = [
+  // { value: 'managed' as const, label: '공부 가능시간' },
+  { value: 'academy' as const, label: '학원 수업시간' },
+  { value: 'fixed' as const, label: '고정시간 (예: 학업 외 예체능학원시간)' },
+  { value: 'other' as const, label: '기타' },
+] as const;
+
 export function scheduleCategoryEventClassName(scheduleCategory: ScheduleCategory): string {
   return `user-event-${scheduleCategory}`;
 }

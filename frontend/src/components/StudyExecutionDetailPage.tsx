@@ -1,22 +1,15 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo } from 'react';
 import StudyExecutionDetailTable from '@/components/study-execution-detail/StudyExecutionDetailTable';
 import StudyPeriodRangeSelector from '@/components/StudyPeriodRangeSelector';
 import { useProfileSubjectsContext } from '@/contexts/ProfileSubjectsContext';
-import { useStudentApi } from '@/hooks/useStudentApi';
 import { useStudyPeriodRange } from '@/hooks/useStudyPeriodRange';
+import { useStudyPlanTodosInRange } from '@/hooks/useStudyPlanTodosInRange';
 import { buildStudyExecutionDetailGroups } from '@/lib/study-execution-detail';
 import { isValidDateRange, toExclusiveApiRangeEnd } from '@/lib/study-stats';
-import type { ExpandedStudyPlanTodoEvent, StudyPlanTodo } from '@/lib/study-plan-todo';
-import {
-  buildStudyPlanTodosSearchParams,
-  fetchStudyPlanTodosInRange,
-  STUDY_PLAN_TODO_INCLUDE,
-} from '@/lib/study-plan-todo-api';
 
 export default function StudyExecutionDetailPage() {
-  const { withStudent, studentUserId } = useStudentApi();
   const { subjects: profileSubjects } = useProfileSubjectsContext();
   const {
     rangeStart,
@@ -30,11 +23,18 @@ export default function StudyExecutionDetailPage() {
     handleRangeStartChange,
     handleRangeEndChange,
   } = useStudyPeriodRange();
-  const [events, setEvents] = useState<ExpandedStudyPlanTodoEvent[]>([]);
-  const [todos, setTodos] = useState<StudyPlanTodo[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const fetchIdRef = useRef(0);
+  const apiRangeEnd = useMemo(() => toExclusiveApiRangeEnd(rangeEnd), [rangeEnd]);
+  const rangeIsValid = !rangeError && isValidDateRange(rangeStart, rangeEnd);
+  const {
+    todos,
+    expandedEvents: events,
+    isLoading: loading,
+    error,
+  } = useStudyPlanTodosInRange({
+    start: rangeStart,
+    end: apiRangeEnd,
+    enabled: rangeIsValid,
+  });
 
   const todosById = useMemo(
     () => new Map(todos.map((todo) => [todo.id, todo])),
@@ -54,65 +54,6 @@ export default function StudyExecutionDetailPage() {
           ),
     [events, todosById, rangeStart, rangeEnd, rangeError, profileSubjects]
   );
-
-  const fetchData = useCallback(
-    async (start: string, end: string) => {
-      if (!isValidDateRange(start, end)) {
-        return;
-      }
-
-      const fetchId = ++fetchIdRef.current;
-      setLoading(true);
-      setError('');
-
-      const params = buildStudyPlanTodosSearchParams({
-        start,
-        end: toExclusiveApiRangeEnd(end),
-        include: STUDY_PLAN_TODO_INCLUDE.withExecutions,
-      });
-
-      try {
-        const result = await fetchStudyPlanTodosInRange(
-          withStudent(`/api/study-plan-todos?${params}`)
-        );
-
-        if (fetchId !== fetchIdRef.current) {
-          return;
-        }
-
-        if (!result.ok) {
-          setEvents([]);
-          setTodos([]);
-          setError(result.error);
-          return;
-        }
-
-        setEvents(result.data.expandedEvents ?? []);
-        setTodos(result.data.todos ?? []);
-      } catch {
-        if (fetchId !== fetchIdRef.current) {
-          return;
-        }
-
-        setEvents([]);
-        setTodos([]);
-        setError('데이터를 불러오지 못했습니다.');
-      } finally {
-        if (fetchId === fetchIdRef.current) {
-          setLoading(false);
-        }
-      }
-    },
-    [withStudent]
-  );
-
-  useEffect(() => {
-    if (rangeError) {
-      return;
-    }
-
-    fetchData(rangeStart, rangeEnd);
-  }, [rangeStart, rangeEnd, rangeError, studentUserId, fetchData]);
 
   const isEmpty = !loading && !rangeError && subjectGroups.length === 0;
 
