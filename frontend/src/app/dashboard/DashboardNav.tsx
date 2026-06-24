@@ -58,7 +58,7 @@ function navLinkClass(active: boolean, compact = false) {
   const padding = compact ? 'px-3 py-1.5' : 'px-3 py-2';
   return `${padding} rounded-lg text-sm font-medium transition-colors ${
     active
-      ? 'bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300'
+      ? 'bg-[#1b76e0] text-white'
       : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-zinc-800 dark:hover:text-gray-100'
   }`;
 }
@@ -166,7 +166,7 @@ export default function DashboardNav({
   return (
     <>
       <header
-        className={`sticky top-0 z-30 border-b border-gray-200 bg-white/95 pt-[env(safe-area-inset-top)] backdrop-blur-md transition-shadow duration-200 dark:border-neutral-800 dark:bg-zinc-900/95 ${
+        className={`sticky top-0 z-30 border-b border-gray-200 bg-white pt-[env(safe-area-inset-top)] transition-shadow duration-200 dark:border-neutral-800 dark:bg-zinc-900 ${
           isScrolled ? 'shadow-md dark:shadow-black/40' : 'shadow-none'
         }`}
       >

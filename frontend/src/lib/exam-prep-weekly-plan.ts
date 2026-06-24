@@ -223,6 +223,16 @@ export function validateExamPrepWeeklyPlansInput(
   return { plans };
 }
 
+export function areExamPrepWeeklyPlansEqual(
+  left: ExamPrepWeeklyPlans,
+  right: ExamPrepWeeklyPlans
+): boolean {
+  return (
+    JSON.stringify(resolveExamPrepWeeklyPlans(left)) ===
+    JSON.stringify(resolveExamPrepWeeklyPlans(right))
+  );
+}
+
 export function getExamPrepWeeklyPlanContent(
   plans: ExamPrepWeeklyPlans,
   roundSlot: ExamRoundSlot,

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { createDefaultExamPrepWeeksByRound } from './exam-countdown';
 import {
+  areExamPrepWeeklyPlansEqual,
   resolveExamPrepWeeklyPlans,
   validateExamPrepWeeklyPlansInput,
 } from './exam-prep-weekly-plan';
@@ -26,6 +27,30 @@ describe('resolveExamPrepWeeklyPlans', () => {
         },
       },
     });
+  });
+});
+
+describe('areExamPrepWeeklyPlansEqual', () => {
+  it('treats normalized plans as equal', () => {
+    const left = resolveExamPrepWeeklyPlans({
+      'sem1-r2': { weeks: { '4': { korean: '  1회독  ' } } },
+    });
+    const right = resolveExamPrepWeeklyPlans({
+      'sem1-r2': { weeks: { '4': { korean: '1회독' } } },
+    });
+
+    expect(areExamPrepWeeklyPlansEqual(left, right)).toBe(true);
+  });
+
+  it('detects changed content', () => {
+    const left = resolveExamPrepWeeklyPlans({
+      'sem1-r2': { weeks: { '4': { korean: '1회독' } } },
+    });
+    const right = resolveExamPrepWeeklyPlans({
+      'sem1-r2': { weeks: { '4': { korean: '2회독' } } },
+    });
+
+    expect(areExamPrepWeeklyPlansEqual(left, right)).toBe(false);
   });
 });
 

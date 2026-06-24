@@ -72,6 +72,38 @@ describe('buildNeisVacationSuggestions', () => {
       winter: null,
     });
   });
+
+  it('returns null winter when only past winter exists during mid-year', () => {
+    expect(
+      buildNeisVacationSuggestions(
+        [
+          { date: '20260203', title: '겨울방학' },
+          { date: '20260210', title: '개학' },
+        ],
+        '20260624'
+      )
+    ).toEqual({
+      summer: null,
+      winter: null,
+    });
+  });
+
+  it('selects next-year January winter start during mid-year when December is missing', () => {
+    expect(
+      buildNeisVacationSuggestions(
+        [
+          { date: '20260203', title: '겨울방학' },
+          { date: '20260210', title: '개학' },
+          { date: '20270120', title: '겨울방학' },
+          { date: '20270228', title: '개학' },
+        ],
+        '20260624'
+      )
+    ).toEqual({
+      summer: null,
+      winter: { start: '20270120', end: '20270227' },
+    });
+  });
 });
 
 describe('validateVacationPeriodSettingsInput', () => {

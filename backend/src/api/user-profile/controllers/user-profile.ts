@@ -1815,10 +1815,11 @@ export default factories.createCoreController(
         return ctx.unauthorized('로그인이 필요합니다.');
       }
 
-      const { start = '', end = '', studentUserId } = ctx.query as {
+      const { start = '', end = '', studentUserId, refresh } = ctx.query as {
         start?: string;
         end?: string;
         studentUserId?: string;
+        refresh?: string;
       };
 
       if (!start || !end) {
@@ -1849,15 +1850,19 @@ export default factories.createCoreController(
 
       try {
         const { fromDate, toDate } = isoDateRangeToYmd(String(start), String(end));
-        const { entries, scheduleEvents } = await getSchoolTimetableBundle({
-          schoolLevel: profile.schoolLevel,
-          atptOfcdcScCode: profile.atptOfcdcScCode,
-          sdSchulCode: profile.sdSchulCode,
-          grade: profile.grade,
-          className: profile.className,
-          fromDate,
-          toDate,
-        });
+        const shouldRefresh = refresh === 'true' || refresh === '1';
+        const { entries, scheduleEvents } = await getSchoolTimetableBundle(
+          {
+            schoolLevel: profile.schoolLevel,
+            atptOfcdcScCode: profile.atptOfcdcScCode,
+            sdSchulCode: profile.sdSchulCode,
+            grade: profile.grade,
+            className: profile.className,
+            fromDate,
+            toDate,
+          },
+          { refresh: shouldRefresh }
+        );
 
         return ctx.send({
           profile: {

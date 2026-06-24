@@ -25,6 +25,10 @@ export async function GET(request: NextRequest) {
     new URLSearchParams({ start, end }),
     request
   );
+  const refresh = request.nextUrl.searchParams.get('refresh');
+  if (refresh === 'true') {
+    params.set('refresh', 'true');
+  }
   const res = await strapiFetch(`/api/user-profiles/timetable?${params}`, { jwt });
   const data = await res.json();
 

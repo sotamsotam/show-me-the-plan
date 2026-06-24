@@ -484,8 +484,8 @@ export default function StudyStatsPage() {
   return (
     <div className="mx-auto w-full">
       <div className="mb-6">
-        <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">공부통계</h1>
-        <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+        <h1 className="text-xl font-semibold text-white">공부통계</h1>
+        <p className="mt-1 text-sm text-[#e2feff]">
           선택한 기간의 공부계획과 실행 시간을 과목별·전체로 비교합니다.
         </p>
       </div>

@@ -1,5 +1,6 @@
 import {
   buildTimetableCacheKey,
+  deleteCachedTimetableBundle,
   getCachedTimetableBundle,
   getTimetableCacheTtlMs,
   isNeisCacheEnabled,
@@ -576,7 +577,8 @@ async function fetchSchoolTimetableFromNeis(
 }
 
 export async function getSchoolTimetableBundle(
-  params: SchoolTimetableParams
+  params: SchoolTimetableParams,
+  options?: { refresh?: boolean }
 ): Promise<SchoolTimetableBundle> {
   if (!isNeisCacheEnabled()) {
     return fetchSchoolTimetableFromNeis(params);
@@ -584,12 +586,17 @@ export async function getSchoolTimetableBundle(
 
   const { ay, sem } = getAcademicYearAndSemester(params.fromDate);
   const cacheKey = buildTimetableCacheKey({ ...params, ay, sem });
-  const cached = getCachedTimetableBundle(cacheKey);
 
-  if (cached !== null) {
-    recordTimetableCacheHit();
-    logTimetableCacheEvent('hit', params);
-    return cached;
+  if (options?.refresh) {
+    deleteCachedTimetableBundle(cacheKey);
+  } else {
+    const cached = getCachedTimetableBundle(cacheKey);
+
+    if (cached !== null) {
+      recordTimetableCacheHit();
+      logTimetableCacheEvent('hit', params);
+      return cached;
+    }
   }
 
   recordTimetableCacheMiss();

@@ -321,6 +321,34 @@ export function shouldPreferNeisSuggestionOverSaved(
   return false;
 }
 
+export function isStaleSavedWinterVacation(
+  saved: VacationPeriodRange,
+  referenceYmd: string = todayYmdLocal()
+): boolean {
+  const refMonth = Number(referenceYmd.slice(4, 6));
+  const refYear = referenceYmd.slice(0, 4);
+  const savedStartMonth = Number(saved.start.slice(4, 6));
+  const savedStartYear = saved.start.slice(0, 4);
+
+  if (refMonth >= 3 && refMonth <= 11) {
+    if (saved.end < referenceYmd) {
+      return true;
+    }
+
+    if (savedStartMonth <= 2 && savedStartYear === refYear) {
+      return true;
+    }
+  }
+
+  if (refMonth === 12 && saved.end < referenceYmd) {
+    if (savedStartMonth <= 2 && savedStartYear === refYear) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 function applyNeisSuggestionToSlotInputs(
   inputs: SlotDateInputs,
   slot: VacationPeriodSlot,
@@ -355,7 +383,11 @@ export function buildSlotDateInputsFromSettingsAndSuggestions(
   const inputs = createEmptySlotDateInputs();
 
   for (const slot of VACATION_PERIOD_SLOTS) {
-    const saved = savedSettings[slot];
+    const savedRaw = savedSettings[slot];
+    const saved =
+      slot === 'winter' && savedRaw && isStaleSavedWinterVacation(savedRaw, referenceYmd)
+        ? null
+        : savedRaw;
     const suggestion = suggestions[slot];
 
     if (saved && !shouldPreferNeisSuggestionOverSaved(slot, saved, suggestion, referenceYmd)) {

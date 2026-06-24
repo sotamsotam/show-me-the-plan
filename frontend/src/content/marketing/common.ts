@@ -39,6 +39,7 @@ export const HOME_KEY_FEATURES_SHOWCASE = [
     titleAccent: "내 일정표에 자동으로 반영",
     description:
       "직접 입력할 필요가 없습니다. 시험 D-day 역산, 방학·평소 복습루틴까지 학교 일정에 맞춰 주차별로 공부 계획을 손쉽게 세웁니다.",
+    detailLabel: '자세히 보기',
     icon: "calendar" as const,
     screen: {
       src: "/images/pc_plan.jpg",
@@ -51,6 +52,7 @@ export const HOME_KEY_FEATURES_SHOWCASE = [
     titleAccent: "루틴한 공부는 한번만 입력하세요",
     description:
       '"번거롭게 매번 입력할 필요가 없습니다. 학원숙제, 단어암기, 수업복습 등 루틴한 공부는 한번만 입력하세요.',
+    detailLabel: '자세히 보기',
     icon: "checklist" as const,
     screen: {
       src: "/images/mobile_todo.jpg",
@@ -63,6 +65,7 @@ export const HOME_KEY_FEATURES_SHOWCASE = [
     titleAccent: "저장 후 다음시험에 자동 적용 ",
     description:
       "중간고사, 기말고사 등 이전 시험계획을 불러와서 더 나은계획으로 업그레이드 하면서 바로 적용하세요",
+    detailLabel: '자세히 보기',
     icon: "timetable" as const,
     screen: {
       src: "/images/main_pc.png",

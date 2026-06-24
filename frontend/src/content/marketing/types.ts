@@ -35,6 +35,8 @@ export type KeyFeatureShowcaseItem = {
   title: string;
   titleAccent: string;
   description: string;
+  detailLabel?: string;
+  detailHref?: string;
   icon?: 'calendar' | 'checklist' | 'timetable' | 'timeline' | 'chart' | 'users';
   screen: KeyFeatureShowcaseScreen;
 };

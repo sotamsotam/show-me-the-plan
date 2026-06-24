@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   buildTimetableCacheKey,
+  deleteCachedTimetableBundle,
   getCachedTimetable,
   getTimetableCacheMaxEntries,
   getTimetableCacheStats,
@@ -85,6 +86,16 @@ describe('neis-cache', () => {
     setCachedTimetable(key, [], 60_000);
 
     expect(getCachedTimetable(key)).toEqual([]);
+  });
+
+  it('deletes a cached entry by key', () => {
+    const key = buildTimetableCacheKey(baseParams);
+    setCachedTimetable(key, sampleEntries, 60_000);
+
+    expect(getCachedTimetable(key)).toEqual(sampleEntries);
+    expect(deleteCachedTimetableBundle(key)).toBe(true);
+    expect(getCachedTimetable(key)).toBeNull();
+    expect(deleteCachedTimetableBundle(key)).toBe(false);
   });
 
   it('respects NEIS_CACHE_ENABLED=false', () => {

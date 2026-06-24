@@ -191,6 +191,35 @@ function isWinterStartMonth(ymd: string): boolean {
   return month === 12 || month <= 2;
 }
 
+function isWinterSeasonStartForReference(startYmd: string, referenceYmd: string): boolean {
+  const refYear = Number(referenceYmd.slice(0, 4));
+  const refMonth = Number(referenceYmd.slice(4, 6));
+  const startYear = Number(startYmd.slice(0, 4));
+  const startMonth = Number(startYmd.slice(4, 6));
+
+  if (refMonth >= 3 && refMonth <= 11) {
+    if (startYear === refYear && startMonth === 12) {
+      return true;
+    }
+
+    if (startYear === refYear + 1 && startMonth <= 2) {
+      return true;
+    }
+
+    return false;
+  }
+
+  if (refMonth === 12) {
+    return startYear === refYear && startMonth === 12;
+  }
+
+  if (startYear === refYear - 1 && startMonth === 12) {
+    return true;
+  }
+
+  return startYear === refYear && startMonth <= 2;
+}
+
 function selectSummerVacationStart(
   sorted: SchoolHolidayEventInput[],
   fallbackStarts: SchoolHolidayEventInput[]
@@ -221,51 +250,45 @@ function selectWinterVacationStart(
     return undefined;
   }
 
-  const refYear = referenceYmd.slice(0, 4);
+  const seasonCandidates = candidates.filter((holiday) =>
+    isWinterSeasonStartForReference(holiday.date, referenceYmd)
+  );
+
+  if (seasonCandidates.length === 0) {
+    return undefined;
+  }
+
   const refMonth = Number(referenceYmd.slice(4, 6));
 
   if (refMonth >= 3 && refMonth <= 11) {
-    const decemberSameYear = candidates.find(
-      (holiday) => holiday.date.startsWith(refYear) && holiday.date.slice(4, 6) === '12'
-    );
-    if (decemberSameYear) {
-      return decemberSameYear;
-    }
-
-    const upcoming = candidates.find((holiday) => holiday.date >= referenceYmd);
-    if (upcoming) {
-      return upcoming;
-    }
+    return seasonCandidates
+      .filter((holiday) => holiday.date >= referenceYmd)
+      .sort((left, right) => left.date.localeCompare(right.date))[0];
   }
 
   if (refMonth === 12) {
-    const decemberCandidates = candidates.filter(
-      (holiday) => holiday.date.startsWith(refYear) && holiday.date.slice(4, 6) === '12'
-    );
-    const started = decemberCandidates.find((holiday) => holiday.date <= referenceYmd);
+    const started = seasonCandidates
+      .filter((holiday) => holiday.date <= referenceYmd)
+      .sort((left, right) => right.date.localeCompare(left.date))[0];
     if (started) {
       return started;
     }
-    if (decemberCandidates[0]) {
-      return decemberCandidates[0];
-    }
+
+    return seasonCandidates.sort((left, right) => left.date.localeCompare(right.date))[0];
   }
 
   if (refMonth <= 2) {
-    const currentSeason = candidates
+    const currentSeason = seasonCandidates
       .filter((holiday) => holiday.date <= referenceYmd)
       .sort((left, right) => right.date.localeCompare(left.date))[0];
     if (currentSeason) {
       return currentSeason;
     }
+
+    return seasonCandidates.find((holiday) => holiday.date >= referenceYmd);
   }
 
-  const upcoming = candidates.find((holiday) => holiday.date >= referenceYmd);
-  if (upcoming) {
-    return upcoming;
-  }
-
-  return candidates[candidates.length - 1];
+  return undefined;
 }
 
 function buildVacationSuggestion(

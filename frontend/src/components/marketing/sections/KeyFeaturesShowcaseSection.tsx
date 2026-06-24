@@ -1,3 +1,4 @@
+import MarketingCtaButton from '@/components/marketing/MarketingCtaButton';
 import type { KeyFeatureShowcaseItem, KeyFeatureShowcaseScreen } from '@/content/marketing/types';
 import Image from 'next/image';
 
@@ -48,6 +49,14 @@ function ShowcaseCard({ item }: { item: KeyFeatureShowcaseItem }) {
           <p className="mt-4 text-[0.9375rem] leading-relaxed text-mkt-text-muted sm:mt-5 sm:text-base lg:text-[1.0625rem]">
             {item.description}
           </p>
+
+          <div className="mt-6">
+            <MarketingCtaButton
+              label={item.detailLabel ?? '자세히 보기'}
+              href={item.detailHref}
+              variant="secondary"
+            />
+          </div>
         </div>
 
         <div className="lg:pl-2">

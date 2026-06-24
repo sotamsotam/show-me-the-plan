@@ -465,8 +465,8 @@ export default function RegularWeeklyPlanForm() {
     return (
       <section className="w-full space-y-4">
         <div>
-          <h2 className="text-lg font-medium">평소기간 주차별 공부계획</h2>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          <h2 className="text-lg font-medium text-white">평소기간 주차별 공부계획</h2>
+          <p className="mt-1 text-sm text-[#e2feff]">
             평소 기간별·주차별 공부 목표를 입력하면 스터디 플랜 캘린더에서 확인할 수 있습니다.
           </p>
         </div>
@@ -493,8 +493,8 @@ export default function RegularWeeklyPlanForm() {
   return (
     <section className="weekly-plan-settings-page w-full min-w-0 max-w-full space-y-4">
       <div className="shrink-0">
-          <h2 className="text-lg font-medium">평소기간 주차별 공부계획</h2>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          <h2 className="text-lg font-medium text-white">평소기간 주차별 공부계획</h2>
+          <p className="mt-1 text-sm text-[#e2feff]">
             평소 기간별·주차별 공부 목표를 입력하면 스터디 플랜 캘린더에서 확인할 수 있습니다.
           </p>
       </div>

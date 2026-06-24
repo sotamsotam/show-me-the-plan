@@ -358,10 +358,10 @@ export default function ExamPrepSettingsForm() {
 
   if (!loaded) {
     return (
-      <section className="w-full space-y-4">
-        <div>
-          <h2 className="text-lg font-medium">시험기간 설정</h2>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+      <section className="weekly-plan-settings-page w-full space-y-4">
+        <div className="shrink-0">
+          <h2 className="text-lg font-medium text-white">시험기간 설정</h2>
+          <p className="mt-1 text-sm text-[#e2feff]">
             시험 준비 기간을 설정하면 스케줄·스터디 플랜 캘린더에 D-day가 표시됩니다.
           </p>
         </div>
@@ -384,10 +384,10 @@ export default function ExamPrepSettingsForm() {
   }
 
   return (
-    <section className="w-full space-y-4">
-      <div>
-        <h2 className="text-lg font-medium">시험기간 설정</h2>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+    <section className="weekly-plan-settings-page w-full space-y-4">
+      <div className="shrink-0">
+        <h2 className="text-lg font-medium text-white">시험기간 설정</h2>
+        <p className="mt-1 text-sm text-[#e2feff]">
           회차별 시험 기간과 준비 시작 시점을 설정하면 스케줄·스터디 플랜 캘린더에 D-day가
           표시됩니다.
           {usesNeisTimetable
@@ -398,14 +398,17 @@ export default function ExamPrepSettingsForm() {
 
       <form
         onSubmit={handleSubmit}
-        className="space-y-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-zinc-900"
+        className="weekly-plan-form flex min-h-0 flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-zinc-900"
       >
-        <p className="text-sm text-gray-500 dark:text-gray-400">
-          학교시험공지 일정이 부정확하면
-          시험 시작일·종료일을 직접 수정해 저장할 수 있습니다.
-        </p>
+        <div className="shrink-0 p-6 pb-0">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            학교시험공지 일정이 부정확하면
+            시험 시작일·종료일을 직접 수정해 저장할 수 있습니다.
+          </p>
+        </div>
 
-        <div className="space-y-6">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-6">
+          <div className="space-y-6">
           {EXAM_ROUND_SLOTS.map((slot) => {
             const hint = usesNeisTimetable
               ? formatSuggestionHint(slot, neisSuggestions[slot])
@@ -526,8 +529,10 @@ export default function ExamPrepSettingsForm() {
               </fieldset>
             );
           })}
+          </div>
         </div>
 
+        <div className="shrink-0 space-y-4 border-t border-gray-200 p-6 dark:border-neutral-800">
         {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
         {success && (
           <p className="text-sm text-green-600 dark:text-green-400">{success}</p>
@@ -540,6 +545,7 @@ export default function ExamPrepSettingsForm() {
         >
           {saving ? '저장 중...' : '시험기간 저장'}
         </button>
+        </div>
       </form>
     </section>
   );

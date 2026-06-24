@@ -64,18 +64,35 @@ const SUBJECT_ACCENT_COLORS: Record<LegacyStudyPlanSubject, string> = {
   other: 'bg-gray-500',
 };
 
+const SUBJECT_BADGE_MD_STYLES =
+  'md:border md:bg-white md:shadow-sm dark:md:bg-zinc-900 dark:md:shadow-sm';
+
+const SUBJECT_BADGE_MD_BORDER_STYLES: Record<LegacyStudyPlanSubject, string> = {
+  korean: 'md:border-red-200 dark:md:border-red-800/50',
+  english: 'md:border-blue-200 dark:md:border-blue-800/50',
+  math: 'md:border-violet-200 dark:md:border-violet-800/50',
+  social: 'md:border-amber-200 dark:md:border-amber-800/50',
+  science: 'md:border-cyan-200 dark:md:border-cyan-800/50',
+  ethics: 'md:border-pink-200 dark:md:border-pink-800/50',
+  tech_home: 'md:border-lime-200 dark:md:border-lime-800/50',
+  info: 'md:border-sky-200 dark:md:border-sky-800/50',
+  history: 'md:border-yellow-200 dark:md:border-yellow-800/50',
+  chinese: 'md:border-rose-200 dark:md:border-rose-800/50',
+  other: 'md:border-gray-300 dark:md:border-neutral-600',
+};
+
 const SUBJECT_BADGE_STYLES: Record<LegacyStudyPlanSubject, string> = {
-  korean: 'bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300',
-  english: 'bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300',
-  math: 'bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300',
-  social: 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300',
-  science: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-300',
-  ethics: 'bg-pink-100 text-pink-700 dark:bg-pink-950/40 dark:text-pink-300',
-  tech_home: 'bg-lime-100 text-lime-700 dark:bg-lime-950/40 dark:text-lime-300',
-  info: 'bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300',
-  history: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-950/40 dark:text-yellow-300',
-  chinese: 'bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300',
-  other: 'bg-gray-100 text-gray-700 dark:bg-zinc-800/70 dark:text-gray-300',
+  korean: `bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300 ${SUBJECT_BADGE_MD_STYLES} ${SUBJECT_BADGE_MD_BORDER_STYLES.korean}`,
+  english: `bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 ${SUBJECT_BADGE_MD_STYLES} ${SUBJECT_BADGE_MD_BORDER_STYLES.english}`,
+  math: `bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300 ${SUBJECT_BADGE_MD_STYLES} ${SUBJECT_BADGE_MD_BORDER_STYLES.math}`,
+  social: `bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 ${SUBJECT_BADGE_MD_STYLES} ${SUBJECT_BADGE_MD_BORDER_STYLES.social}`,
+  science: `bg-cyan-100 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-300 ${SUBJECT_BADGE_MD_STYLES} ${SUBJECT_BADGE_MD_BORDER_STYLES.science}`,
+  ethics: `bg-pink-100 text-pink-700 dark:bg-pink-950/40 dark:text-pink-300 ${SUBJECT_BADGE_MD_STYLES} ${SUBJECT_BADGE_MD_BORDER_STYLES.ethics}`,
+  tech_home: `bg-lime-100 text-lime-700 dark:bg-lime-950/40 dark:text-lime-300 ${SUBJECT_BADGE_MD_STYLES} ${SUBJECT_BADGE_MD_BORDER_STYLES.tech_home}`,
+  info: `bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300 ${SUBJECT_BADGE_MD_STYLES} ${SUBJECT_BADGE_MD_BORDER_STYLES.info}`,
+  history: `bg-yellow-100 text-yellow-800 dark:bg-yellow-950/40 dark:text-yellow-300 ${SUBJECT_BADGE_MD_STYLES} ${SUBJECT_BADGE_MD_BORDER_STYLES.history}`,
+  chinese: `bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 ${SUBJECT_BADGE_MD_STYLES} ${SUBJECT_BADGE_MD_BORDER_STYLES.chinese}`,
+  other: `bg-gray-100 text-gray-700 dark:bg-zinc-800/70 dark:text-gray-300 ${SUBJECT_BADGE_MD_STYLES} ${SUBJECT_BADGE_MD_BORDER_STYLES.other}`,
 };
 
 const SUBJECT_ROW_STYLES: Record<LegacyStudyPlanSubject, string> = {

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   buildSlotDateInputsFromSettingsAndSuggestions,
+  isStaleSavedWinterVacation,
   shouldPreferNeisSuggestionOverSaved,
 } from './vacation-period-settings';
 
@@ -59,6 +60,25 @@ describe('buildSlotDateInputsFromSettingsAndSuggestions', () => {
 
     expect(inputs.winter.end).toBe('');
   });
+
+  it('clears stale saved winter during mid-year when NEIS has no upcoming winter', () => {
+    const inputs = buildSlotDateInputsFromSettingsAndSuggestions(
+      {
+        summer: null,
+        winter: { start: '20260203', end: '20260228' },
+      },
+      {
+        summer: null,
+        winter: null,
+      },
+      '20260624'
+    );
+
+    expect(inputs.winter).toEqual({
+      start: '',
+      end: '',
+    });
+  });
 });
 
 describe('shouldPreferNeisSuggestionOverSaved', () => {
@@ -71,5 +91,25 @@ describe('shouldPreferNeisSuggestionOverSaved', () => {
         '20260617'
       )
     ).toBe(true);
+  });
+});
+
+describe('isStaleSavedWinterVacation', () => {
+  it('treats ended winter as stale during mid-year', () => {
+    expect(
+      isStaleSavedWinterVacation(
+        { start: '20260203', end: '20260228' },
+        '20260624'
+      )
+    ).toBe(true);
+  });
+
+  it('keeps current winter during January', () => {
+    expect(
+      isStaleSavedWinterVacation(
+        { start: '20260120', end: '20260209' },
+        '20260201'
+      )
+    ).toBe(false);
   });
 });

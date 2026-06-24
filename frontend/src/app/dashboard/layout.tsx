@@ -16,7 +16,7 @@ export default async function DashboardLayout({
   const isStudent = isAnyStudent(account?.profile?.schoolLevel);
 
   return (
-    <div className="flex h-dvh min-w-0 flex-col overflow-hidden">
+    <div data-dashboard-app className="flex h-dvh min-w-0 flex-col overflow-hidden bg-[#092254]">
       <DashboardNav
         account={account}
         isPendingManager={isPendingManager}
@@ -31,7 +31,8 @@ export default async function DashboardLayout({
         <DashboardShell>
           <DashboardPageTransition>
             <div
-              className={`flex min-h-0 w-full flex-1 flex-col overflow-y-auto px-4 md:px-[50px] md:pb-0 ${
+              data-dashboard-scroll
+              className={`flex min-h-0 w-full flex-1 flex-col overflow-y-auto bg-[#092254] px-4 md:px-[50px] md:pb-0 ${
                 isPendingManager
                   ? 'pb-[env(safe-area-inset-bottom)]'
                   : 'pb-[calc(3.5rem+env(safe-area-inset-bottom))]'

@@ -205,8 +205,8 @@ export default function VacationPeriodSettingsForm() {
     return (
       <section className="w-full space-y-4">
         <div>
-          <h2 className="text-lg font-medium">방학기간 설정</h2>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          <h2 className="text-lg font-medium text-white">방학기간 설정</h2>
+          <p className="mt-1 text-sm text-[#e2feff]">
             여름·겨울 방학 기간을 입력하면 주차별 공부계획에 반영됩니다.
           </p>
         </div>
@@ -231,8 +231,8 @@ export default function VacationPeriodSettingsForm() {
   return (
     <section className="w-full space-y-4">
       <div>
-        <h2 className="text-lg font-medium">방학기간 설정</h2>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        <h2 className="text-lg font-medium text-white">방학기간 설정</h2>
+        <p className="mt-1 text-sm text-[#e2feff]">
           여름·겨울 방학 기간을 입력하면 주차별 공부계획과 스터디 플랜에 반영됩니다.
           {usesNeisTimetable
             ? ' 학교공지의 학사일정에 방학·개학일이 있으면 초기값으로 채워집니다.'

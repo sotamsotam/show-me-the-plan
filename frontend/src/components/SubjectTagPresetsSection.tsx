@@ -94,16 +94,16 @@ export default function SubjectTagPresetsSection() {
   }
 
   return (
-    <section className="space-y-4">
-      <div>
-        <h2 className="text-lg font-medium">과목별 태그 설정</h2>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+    <section className="weekly-plan-settings-page w-full space-y-4">
+      <div className="shrink-0">
+        <h2 className="text-lg font-medium text-white">과목별 태그 설정</h2>
+        <p className="mt-1 text-sm text-[#e2feff]">
           과목별 교재명·공부방법을 등록하면 스터디 플랜 추가 시 제목을 빠르게
           작성할 수 있습니다. 태그는 추가·삭제 시 자동으로 저장됩니다. 과목
           추가·삭제는{' '}
           <Link
             href="/dashboard/settings"
-            className="text-blue-600 underline-offset-2 hover:underline dark:text-blue-400"
+            className="text-yellow-400 underline-offset-2 hover:underline hover:text-yellow-300"
           >
             내정보 수정
           </Link>
@@ -118,15 +118,15 @@ export default function SubjectTagPresetsSection() {
           등록된 과목이 없습니다.{' '}
           <Link
             href="/dashboard/settings"
-            className="text-blue-600 underline-offset-2 hover:underline dark:text-blue-400"
+            className="text-yellow-400 underline-offset-2 hover:underline hover:text-yellow-300"
           >
             내정보 수정
           </Link>
           에서 학교 정보를 등록하거나 과목을 추가해 주세요.
         </div>
       ) : (
-        <div className="space-y-4">
-          <ul className="space-y-3">
+        <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
+          <ul className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain">
             {draftSubjects.map((subject, index) => (
               <li
                 key={subject.id || `tag-${index}-${subject.label}`}
@@ -158,17 +158,19 @@ export default function SubjectTagPresetsSection() {
             ))}
           </ul>
 
-          {(loadError || saveError) && (
-            <p className="text-sm text-red-600 dark:text-red-400">
-              {saveError || loadError}
-            </p>
-          )}
-          {saving && (
-            <p className="text-sm text-gray-500 dark:text-gray-400">저장 중...</p>
-          )}
-          {!saving && saveSuccess && (
-            <p className="text-sm text-green-600 dark:text-green-400">{saveSuccess}</p>
-          )}
+          <div className="shrink-0 space-y-2">
+            {(loadError || saveError) && (
+              <p className="text-sm text-red-600 dark:text-red-400">
+                {saveError || loadError}
+              </p>
+            )}
+            {saving && (
+              <p className="text-sm text-gray-500 dark:text-gray-400">저장 중...</p>
+            )}
+            {!saving && saveSuccess && (
+              <p className="text-sm text-green-600 dark:text-green-400">{saveSuccess}</p>
+            )}
+          </div>
         </div>
       )}
     </section>

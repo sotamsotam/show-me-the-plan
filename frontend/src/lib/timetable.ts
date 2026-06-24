@@ -126,3 +126,7 @@ export function timetableToCalendarEvents(
     ...entriesToCalendarEvents(entries, schoolLevel),
   ];
 }
+
+export function isNeisSchoolCalendarEventType(type: unknown): boolean {
+  return type === 'school' || type === 'school-exam' || type === 'school-holiday';
+}

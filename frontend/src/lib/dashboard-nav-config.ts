@@ -1,7 +1,7 @@
 export const STUDENT_DESKTOP_NAV_ITEMS = [
   { href: '/dashboard/todo', label: 'TODO', exact: false },
-  { href: '/dashboard/schedule', label: '스케줄', exact: false },
-  { href: '/dashboard/study-plan', label: '스터디 플랜', exact: false },
+  { href: '/dashboard/schedule', label: '일상 스케줄', exact: false },
+  { href: '/dashboard/study-plan', label: '공부계획 스케줄', exact: false },
   { href: '/dashboard/study-execution-detail', label: '공부현황', exact: false },
   { href: '/dashboard/study-stats', label: '공부통계', exact: false },
   { href: '/dashboard/preferences', label: '설정', exact: false },
@@ -9,8 +9,8 @@ export const STUDENT_DESKTOP_NAV_ITEMS = [
 
 export const STUDENT_TAB_ITEMS = [
   { href: '/dashboard/todo', label: 'TODO', shortLabel: 'TODO' },
-  { href: '/dashboard/schedule', label: '스케줄', shortLabel: '스케줄' },
-  { href: '/dashboard/study-plan', label: '스터디 플랜', shortLabel: '플랜' },
+  { href: '/dashboard/schedule', label: '일상 스케줄', shortLabel: '일상' },
+  { href: '/dashboard/study-plan', label: '공부계획 스케줄', shortLabel: '공부계획' },
   { href: '/dashboard/study-execution-detail', label: '공부현황', shortLabel: '현황' },
 ] as const;
 
@@ -32,8 +32,8 @@ export const MORE_ROUTE_PREFIXES = [
 
 const PAGE_TITLE_ENTRIES: Array<{ prefix: string; title: string; exact?: boolean }> = [
   { prefix: '/dashboard/todo', title: 'TODO' },
-  { prefix: '/dashboard/schedule', title: '스케줄' },
-  { prefix: '/dashboard/study-plan', title: '스터디 플랜' },
+  { prefix: '/dashboard/schedule', title: '일상 스케줄' },
+  { prefix: '/dashboard/study-plan', title: '공부계획 스케줄' },
   { prefix: '/dashboard/study-execution-detail', title: '공부현황' },
   { prefix: '/dashboard/study-stats', title: '공부통계' },
   { prefix: '/dashboard/preferences', title: '설정' },

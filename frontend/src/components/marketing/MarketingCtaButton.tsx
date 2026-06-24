@@ -15,7 +15,7 @@ const variantClasses: Record<ButtonVariant, string> = {
 
 type MarketingCtaButtonProps = {
   label: string;
-  href: string;
+  href?: string;
   variant?: ButtonVariant;
   className?: string;
   size?: 'md' | 'lg';
@@ -33,11 +33,14 @@ export default function MarketingCtaButton({
       ? 'rounded-full px-8 py-4 text-base font-bold'
       : 'rounded-full px-6 py-3 text-sm font-bold';
 
+  const combinedClassName = `inline-flex items-center justify-center transition-all duration-200 ${sizeClasses} ${variantClasses[variant]} ${className}`;
+
+  if (!href) {
+    return <span className={combinedClassName}>{label}</span>;
+  }
+
   return (
-    <Link
-      href={href}
-      className={`inline-flex items-center justify-center transition-all duration-200 ${sizeClasses} ${variantClasses[variant]} ${className}`}
-    >
+    <Link href={href} className={combinedClassName}>
       {label}
     </Link>
   );

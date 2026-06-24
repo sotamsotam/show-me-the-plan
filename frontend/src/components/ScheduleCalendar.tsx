@@ -67,6 +67,7 @@ import {
   extractSchoolHolidayEvents,
   resolveVacationPeriods,
 } from '@/lib/school-term-periods';
+import { isNeisSchoolCalendarEventType } from '@/lib/timetable';
 
 const CALENDAR_PLUGINS = [dayGridPlugin, timeGridPlugin, listPlugin, interactionPlugin];
 
@@ -115,6 +116,9 @@ function buildRangeKey(arg: DatesSetArg): string {
 function isEditableUserEvent(extendedProps: Record<string, unknown>): boolean {
   return extendedProps.type === 'user';
 }
+
+const SCHOOL_TIMETABLE_REFRESH_MESSAGE =
+  '학교에서 공지한 시간표일정을 갱신하시겠습니까?\n일정이 맞지 않는 경우 갱신해 주세요.';
 
 function mergeEventClassNames(
   classNames: EventInput['classNames'],
@@ -374,7 +378,11 @@ export default function ScheduleCalendar() {
     return [...visibleEvents, draftToEventInput(draftEvent)];
   }, [fetchedEvents, draftEvent, editSession, currentViewType, isListView]);
 
-  const fetchSchedules = useCallback(async (start: Date, end: Date) => {
+  const fetchSchedules = useCallback(async (
+    start: Date,
+    end: Date,
+    options?: { refreshTimetable?: boolean }
+  ) => {
     const fetchId = ++fetchIdRef.current;
     setLoading(true);
     setError('');
@@ -384,6 +392,10 @@ export default function ScheduleCalendar() {
       start: formatIsoDate(start),
       end: formatIsoDate(end),
     });
+
+    if (options?.refreshTimetable) {
+      params.set('refresh', 'true');
+    }
 
     try {
       const shouldFetchTimetable = !neisProfileLoading && usesNeisTimetable;
@@ -457,6 +469,17 @@ export default function ScheduleCalendar() {
     lastRangeKeyRef.current = null;
     if (currentRangeRef.current) {
       fetchSchedules(currentRangeRef.current.start, currentRangeRef.current.end);
+    }
+  }, [fetchSchedules]);
+
+  const refreshSchoolTimetable = useCallback(() => {
+    lastRangeKeyRef.current = null;
+    if (currentRangeRef.current) {
+      fetchSchedules(
+        currentRangeRef.current.start,
+        currentRangeRef.current.end,
+        { refreshTimetable: true }
+      );
     }
   }, [fetchSchedules]);
 
@@ -646,6 +669,19 @@ export default function ScheduleCalendar() {
         return;
       }
 
+      if (isNeisSchoolCalendarEventType(arg.event.extendedProps.type)) {
+        if (!usesNeisTimetable) {
+          return;
+        }
+
+        if (!confirm(SCHOOL_TIMETABLE_REFRESH_MESSAGE)) {
+          return;
+        }
+
+        refreshSchoolTimetable();
+        return;
+      }
+
       if (!isEditableUserEvent(arg.event.extendedProps)) {
         return;
       }
@@ -742,7 +778,15 @@ export default function ScheduleCalendar() {
 
       startEditSession(eventId, scheduleId, editScope, occurrenceDate);
     },
-    [openEditFormFromEvent, openFormFromDraft, startEditSession, userSchedules]
+    [
+      openEditFormFromEvent,
+      openFormFromDraft,
+      openMonthAllDayCreateForm,
+      refreshSchoolTimetable,
+      startEditSession,
+      userSchedules,
+      usesNeisTimetable,
+    ]
   );
 
   const handleDeleteOccurrence = useCallback(async () => {

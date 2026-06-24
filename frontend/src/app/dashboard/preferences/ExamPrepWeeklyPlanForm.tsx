@@ -7,6 +7,7 @@ import ExamPrepTemplateLoadModal from '@/app/dashboard/preferences/ExamPrepTempl
 import ExamPrepTemplateSaveModal from '@/app/dashboard/preferences/ExamPrepTemplateSaveModal';
 import ExcelIcon from '@/components/ExcelIcon';
 import { useStudentApi } from '@/hooks/useStudentApi';
+import { useUnsavedChangesWarning } from '@/hooks/useUnsavedChangesWarning';
 import {
   resolveEffectiveExamRoundPreview,
   resolveExamPeriodSettings,
@@ -14,6 +15,7 @@ import {
 import {
   createEmptyExamPrepWeeklyPlans,
   MAX_EXAM_PREP_WEEKLY_PLAN_CONTENT_LENGTH,
+  areExamPrepWeeklyPlansEqual,
   resolveExamPrepWeeklyPlans,
   type ExamPrepWeeklyPlans,
   type ExamPrepWeeklyPlansContextResponse,
@@ -50,6 +52,9 @@ import {
   type ParseExamPrepExcelResult,
 } from '@/lib/exam-prep-weekly-plan-excel';
 import type { UserSubject } from '@/lib/user-subject';
+
+const UNSAVED_EXAM_PREP_WEEKLY_PLAN_MESSAGE =
+  '작성내용이 저장되지 않았습니다. 저장하시려면 공부계획 저장 버튼을 눌러주세요. 저장 없이 이동하시겠습니까?';
 
 function formatExamDateRange(firstDay: string, lastDay: string): string {
   const format = (ymd: string) =>
@@ -110,6 +115,9 @@ export default function ExamPrepWeeklyPlanForm() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [draftPlans, setDraftPlans] = useState<ExamPrepWeeklyPlans>(
+    createEmptyExamPrepWeeklyPlans()
+  );
+  const [savedPlans, setSavedPlans] = useState<ExamPrepWeeklyPlans>(
     createEmptyExamPrepWeeklyPlans()
   );
   const [examPrepWeeksByRound, setExamPrepWeeksByRound] = useState<ExamPrepWeeksByRound>(
@@ -192,6 +200,13 @@ export default function ExamPrepWeeklyPlanForm() {
     [draftPlans, selectedRoundSlot]
   );
 
+  const hasUnsavedChanges = useMemo(
+    () => loaded && !areExamPrepWeeklyPlansEqual(savedPlans, draftPlans),
+    [draftPlans, loaded, savedPlans]
+  );
+
+  useUnsavedChangesWarning(hasUnsavedChanges, UNSAVED_EXAM_PREP_WEEKLY_PLAN_MESSAGE);
+
   const loadTemplates = useCallback(async () => {
     setTemplatesLoading(true);
     setTemplatesLoadingError('');
@@ -254,7 +269,9 @@ export default function ExamPrepWeeklyPlanForm() {
       setExamPrepWeeksByRound(settings);
       setExamRoundPreview(preview);
       setSubjects(data.subjects ?? []);
-      setDraftPlans(resolveExamPrepWeeklyPlans(data.examPrepWeeklyPlans));
+      const plans = resolveExamPrepWeeklyPlans(data.examPrepWeeklyPlans);
+      setDraftPlans(plans);
+      setSavedPlans(plans);
       setSelectedRoundSlot(resolveNearestScheduledRoundSlot(preview));
       setLoaded(true);
     } catch {
@@ -556,7 +573,9 @@ export default function ExamPrepWeeklyPlanForm() {
         return;
       }
 
-      setDraftPlans(resolveExamPrepWeeklyPlans(data.examPrepWeeklyPlans));
+      const plans = resolveExamPrepWeeklyPlans(data.examPrepWeeklyPlans);
+      setDraftPlans(plans);
+      setSavedPlans(plans);
       setSuccess('시험기간 주차별 공부계획이 저장되었습니다.');
     } catch {
       setError('주차별 공부계획 저장에 실패했습니다.');
@@ -577,8 +596,8 @@ export default function ExamPrepWeeklyPlanForm() {
     return (
       <section className="w-full space-y-4">
         <div>
-          <h2 className="text-lg font-medium">시험기간 주차별 공부계획</h2>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          <h2 className="text-lg font-medium text-white">시험기간 주차별 공부계획</h2>
+          <p className="mt-1 text-sm text-[#e2feff]">
             회차별·주차별 공부 목표를 입력하면 스터디 플랜 캘린더에서 확인할 수 있습니다.
           </p>
         </div>
@@ -603,8 +622,8 @@ export default function ExamPrepWeeklyPlanForm() {
   return (
     <section className="weekly-plan-settings-page w-full min-w-0 max-w-full space-y-4">
       <div className="shrink-0">
-        <h2 className="text-lg font-medium">시험기간 주차별 공부계획</h2>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        <h2 className="text-lg font-medium text-white">시험기간 주차별 공부계획</h2>
+        <p className="mt-1 text-sm text-[#e2feff]">
           회차별·주차별 공부 목표를 입력하면 스터디 플랜 캘린더에서 확인할 수 있습니다.
         </p>
       </div>

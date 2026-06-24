@@ -119,8 +119,8 @@ export default function StudyExecutionDetailPage() {
   return (
     <div className="mx-auto w-full">
       <div className="mb-6">
-        <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">공부현황</h1>
-        <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+        <h1 className="text-xl font-semibold text-white">공부현황</h1>
+        <p className="mt-1 text-sm text-[#e2feff]">
           선택한 기간의 스터디 플랜 실행 내역을 과목별로 확인합니다.
         </p>
       </div>

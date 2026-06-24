@@ -112,6 +112,10 @@ body:has(.marketing-site) {
   color: #111827;
 }
 
+body:has([data-dashboard-app]) {
+  background: #092254;
+}
+
 @media (prefers-color-scheme: dark) {
   body:has(.marketing-site) {
     background: #ffffff;
@@ -1573,6 +1577,11 @@ body:has(.marketing-site) {
 
   .weekly-plan-settings-page .weekly-plan-table-wrap {
     min-height: calc(12rem + 4rem);
+  }
+
+  [data-dashboard-scroll]:has([data-preferences-layout]) {
+    padding-left: 0;
+    padding-right: 0;
   }
 }
 

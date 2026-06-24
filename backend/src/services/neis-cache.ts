@@ -91,6 +91,10 @@ export function getCachedTimetableBundle(key: string): TimetableCacheBundle | nu
   return entry.data;
 }
 
+export function deleteCachedTimetableBundle(key: string): boolean {
+  return timetableCache.delete(key);
+}
+
 export function getCachedTimetable(key: string): TimetableEntry[] | null {
   return getCachedTimetableBundle(key)?.entries ?? null;
 }
