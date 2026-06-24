@@ -203,6 +203,38 @@ export type DedicatedDeviceContent = {
   description: string;
 };
 
+export type StudyPlannerStoryPainPoint = {
+  quote: string;
+  reason: string;
+};
+
+export type StudyPlannerStoryContent = {
+  hookLead: string;
+  hookTitle: string;
+  question: string;
+  painPoints: StudyPlannerStoryPainPoint[];
+  resolutionTitle: string;
+  resolutionBody: string;
+};
+
+export type PcMobileShowcaseFeature = {
+  title: string;
+  points?: string[];
+};
+
+export type PcMobileShowcaseScreen = {
+  pc: { src: string; alt: string };
+  mobile: { src: string; alt: string };
+};
+
+export type PcMobileShowcaseContent = {
+  title: string;
+  lead: string;
+  cardHeadline: string;
+  features: PcMobileShowcaseFeature[];
+  screen: PcMobileShowcaseScreen;
+};
+
 export type LandingPageContent = {
   seo: PageSeo;
   hero: HeroContent;

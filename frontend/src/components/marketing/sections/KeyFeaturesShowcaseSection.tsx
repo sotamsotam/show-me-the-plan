@@ -1,4 +1,5 @@
 import MarketingCtaButton from '@/components/marketing/MarketingCtaButton';
+import ShowcaseFatigueTitle from '@/components/marketing/ShowcaseFatigueTitle';
 import type { KeyFeatureShowcaseItem, KeyFeatureShowcaseScreen } from '@/content/marketing/types';
 import Image from 'next/image';
 
@@ -86,11 +87,7 @@ export default function KeyFeaturesShowcaseSection({
                 {eyebrow}
               </p>
             ) : null}
-            {title ? (
-              <h2 className="mt-3 text-[1.625rem] font-bold leading-[1.35] tracking-[-0.02em] text-white sm:mt-4 sm:text-3xl lg:text-[2.125rem]">
-                {title}
-              </h2>
-            ) : null}
+            {title ? <ShowcaseFatigueTitle title={title} /> : null}
           </div>
         ) : null}
         <div className="mkt-showcase-stack flex flex-col gap-6 sm:gap-8">

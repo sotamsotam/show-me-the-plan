@@ -7,7 +7,9 @@ import KioskModeSection from '@/components/marketing/sections/KioskModeSection';
 import KeyFeaturesShowcaseSection from '@/components/marketing/sections/KeyFeaturesShowcaseSection';
 import MarketingCtaSection from '@/components/marketing/sections/MarketingCtaSection';
 import PlannerComparisonSection from '@/components/marketing/sections/PlannerComparisonSection';
+import PcMobileShowcaseSection from '@/components/marketing/sections/PcMobileShowcaseSection';
 import ProcessSection from '@/components/marketing/sections/ProcessSection';
+import StudyPlannerStorySection from '@/components/marketing/sections/StudyPlannerStorySection';
 import TargetSplitSection from '@/components/marketing/sections/TargetSplitSection';
 import ValueCardsSection from '@/components/marketing/sections/ValueCardsSection';
 import { CORE_VALUES, homeContent, homeSeo } from '@/content/marketing';
@@ -61,12 +63,14 @@ export default async function HomePage({
   return (
     <>
       <HeroSection hero={homeContent.hero} showDefaultBadges animateHeadline />
+      <StudyPlannerStorySection {...homeContent.studyPlannerStory} />
       <KeyFeaturesShowcaseSection
         eyebrow={homeContent.keyFeaturesShowcase.eyebrow}
         title={homeContent.keyFeaturesShowcase.title}
         items={homeContent.keyFeaturesShowcase.items}
       />
       <PlannerComparisonSection {...homeContent.plannerComparison} />
+      <PcMobileShowcaseSection {...homeContent.pcMobileShowcase} />
       <TargetSplitSection items={homeContent.targetCards} />
       <ValueCardsSection
         eyebrow="핵심 가치"
