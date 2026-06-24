@@ -25,6 +25,21 @@ export function getOpsInternalSecret(): string | null {
   return secret || null;
 }
 
+/** fetch/undici header values must be ISO-8859-1 (ByteString). */
+export function toAsciiHeaderValue(value: string): string | undefined {
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    return undefined;
+  }
+
+  if (/^[\u0000-\u00FF]*$/.test(trimmed)) {
+    return trimmed;
+  }
+
+  return encodeURIComponent(trimmed);
+}
+
 export async function fetchOpsInternal<T>(
   path: string,
   init?: RequestInit & { operatorLabel?: string }
@@ -38,6 +53,9 @@ export async function fetchOpsInternal<T>(
   }
 
   const url = `${strapiUrl.replace(/\/$/, '')}${path.startsWith('/') ? path : `/${path}`}`;
+  const operatorHeader = operatorLabel
+    ? toAsciiHeaderValue(operatorLabel)
+    : undefined;
 
   const res = await fetch(url, {
     ...requestInit,
@@ -45,7 +63,7 @@ export async function fetchOpsInternal<T>(
     headers: {
       'Content-Type': 'application/json',
       'x-ops-internal-secret': secret,
-      ...(operatorLabel ? { 'x-ops-operator': operatorLabel } : {}),
+      ...(operatorHeader ? { 'x-ops-operator': operatorHeader } : {}),
       ...(requestInit.headers ?? {}),
     },
   });

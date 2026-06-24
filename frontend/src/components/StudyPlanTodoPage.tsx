@@ -20,6 +20,8 @@ import {
   TimelineSkeleton,
 } from '@/components/skeletons/MobileSkeletons';
 import { invalidateStudyPlanTodos } from '@/lib/dashboard-data-invalidation';
+import { fetchTodoDayStampsInRange, type TodoDayStamp } from '@/lib/todo-day-stamp';
+import { findTodoDayStampForDate } from '@/lib/todo-day-stamp-helpers';
 import {
   calculateExecutedStudyMinutes,
   calculatePlannedStudyMinutes,
@@ -60,7 +62,9 @@ export default function StudyPlanTodoPage() {
   const [selectedEvent, setSelectedEvent] = useState<ExpandedStudyPlanTodoEvent | null>(
     null
   );
+  const [dayStamp, setDayStamp] = useState<TodoDayStamp | null>(null);
   const fetchIdRef = useRef(0);
+  const stampFetchIdRef = useRef(0);
   const {
     todos,
     expandedEvents: events,
@@ -166,6 +170,31 @@ export default function StudyPlanTodoPage() {
     void fetchTimetableEvents();
   }, [fetchTimetableEvents, studentUserId]);
 
+  useEffect(() => {
+    const fetchId = ++stampFetchIdRef.current;
+
+    async function loadDayStamps() {
+      const result = await fetchTodoDayStampsInRange({
+        start: monthRange.start,
+        end: monthRange.end,
+        studentUserId,
+      });
+
+      if (fetchId !== stampFetchIdRef.current) {
+        return;
+      }
+
+      if (!result.ok) {
+        setDayStamp(null);
+        return;
+      }
+
+      setDayStamp(findTodoDayStampForDate(result.stamps, selectedDate) ?? null);
+    }
+
+    void loadDayStamps();
+  }, [monthRange.end, monthRange.start, selectedDate, studentUserId]);
+
   const openCreateForm = useCallback(() => {
     setFormInitial({
       date: selectedDate,
@@ -211,6 +240,7 @@ export default function StudyPlanTodoPage() {
           onSelectedDateChange={setSelectedDate}
           events={events}
           todosById={todosById}
+          dayStamp={dayStamp}
           examCountdown={countdown}
           loading={loading}
           onTodoClick={handleTodoClick}

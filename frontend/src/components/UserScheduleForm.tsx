@@ -4,6 +4,7 @@ import {
   ALL_DAY_END_TIME,
   ALL_DAY_START_TIME,
   crossesMidnight,
+  resolveStudyDayDate,
   validateScheduleTimeRange,
 } from '@/lib/schedule-time';
 import { isAllDayCalendarSelection, inclusiveEndFromAllDaySelection } from '@/lib/calendar-event-range';
@@ -134,12 +135,12 @@ function buildDefaults(
 }
 
 export function buildInitialFromSelection(start: Date, end: Date): UserScheduleFormInitial {
-  const date = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}-${String(start.getDate()).padStart(2, '0')}`;
+  const calendarDate = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}-${String(start.getDate()).padStart(2, '0')}`;
 
   if (isAllDayCalendarSelection(start, end)) {
     return {
       recurrenceType: 'once',
-      date,
+      date: calendarDate,
       endDate: inclusiveEndFromAllDaySelection(start, end),
       allDay: true,
       monthAllDay: true,
@@ -149,11 +150,13 @@ export function buildInitialFromSelection(start: Date, end: Date): UserScheduleF
     };
   }
 
+  const startTime = formatTimeInput(start);
+
   // FullCalendar may end on the next calendar day; HH:mm with end < start means next-day end.
   return {
     recurrenceType: 'once',
-    date,
-    startTime: formatTimeInput(start),
+    date: resolveStudyDayDate(calendarDate, startTime),
+    startTime,
     endTime: formatTimeInput(end),
     daysOfWeek: [start.getDay()],
   };
@@ -408,7 +411,9 @@ export default function UserScheduleForm({
           payload.validFrom = validFrom;
           payload.validUntil = validUntil;
         } else {
-          payload.date = date;
+          payload.date = isMonthAllDay
+            ? date
+            : resolveStudyDayDate(date, resolvedStartTime);
           if (isMonthAllDay) {
             payload.endDate = endDate;
             payload.attachmentIds = attachmentIds;

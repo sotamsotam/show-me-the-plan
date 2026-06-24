@@ -19,7 +19,13 @@ import {
   updateOpsSubscriptionDiscount,
   updateOpsSubscriptionPoints,
 } from './services/ops';
-import { assertOpsInternalAccess } from './services/ops-internal-auth';
+import { assertOpsInternalAccess, readOpsOperatorLabel } from './services/ops-internal-auth';
+import {
+  findAllReviewsForOps,
+  updateReviewFeaturedOnHomeForOps,
+  updateReviewReplyForOps,
+  updateReviewStatusForOps,
+} from './services/user-review';
 
 async function ensureManagerRole(strapi: Core.Strapi) {
   const existing = await strapi.db
@@ -366,6 +372,61 @@ async function setupPermissions(strapi: Core.Strapi) {
     'authenticated',
     'api::study-plan-todo.study-plan-todo.updateExecution'
   );
+  await ensureRolePermission(
+    strapi,
+    'authenticated',
+    'api::todo-day-stamp.todo-day-stamp.findInRange'
+  );
+  await ensureRolePermission(
+    strapi,
+    'public',
+    'api::user-review.user-review.findPublished'
+  );
+  await ensureRolePermission(
+    strapi,
+    'public',
+    'api::user-review.user-review.findHomeFeatured'
+  );
+  await ensureRolePermission(
+    strapi,
+    'authenticated',
+    'api::user-review.user-review.findMine'
+  );
+  await ensureRolePermission(
+    strapi,
+    'authenticated',
+    'api::user-review.user-review.findOps'
+  );
+  await ensureRolePermission(
+    strapi,
+    'authenticated',
+    'api::user-review.user-review.create'
+  );
+  await ensureRolePermission(
+    strapi,
+    'authenticated',
+    'api::user-review.user-review.update'
+  );
+  await ensureRolePermission(
+    strapi,
+    'authenticated',
+    'api::user-review.user-review.remove'
+  );
+  await ensureRolePermission(
+    strapi,
+    'authenticated',
+    'api::user-review.user-review.updateReply'
+  );
+  await ensureRolePermission(
+    strapi,
+    'authenticated',
+    'api::user-review.user-review.updateStatus'
+  );
+  await ensureRolePermission(
+    strapi,
+    'authenticated',
+    'api::user-review.user-review.updateFeaturedOnHome'
+  );
 
   await ensureManagerRole(strapi);
 
@@ -411,6 +472,12 @@ async function setupPermissions(strapi: Core.Strapi) {
     'api::study-plan-todo.study-plan-todo.updateOccurrence',
     'api::study-plan-todo.study-plan-todo.excludeOccurrence',
     'api::study-plan-todo.study-plan-todo.updateExecution',
+    'api::todo-day-stamp.todo-day-stamp.findInRange',
+    'api::todo-day-stamp.todo-day-stamp.upsertForDate',
+    'api::user-review.user-review.findMine',
+    'api::user-review.user-review.create',
+    'api::user-review.user-review.update',
+    'api::user-review.user-review.remove',
   ];
 
   for (const action of managerActions) {
@@ -711,10 +778,7 @@ function registerOpsRoutes(strapi: Core.Strapi) {
           return ctx.badRequest('Invalid userId');
         }
 
-        const grantedBy =
-          typeof ctx.request.headers['x-ops-operator'] === 'string'
-            ? ctx.request.headers['x-ops-operator']
-            : 'ops';
+        const grantedBy = readOpsOperatorLabel(ctx.request.headers['x-ops-operator']);
 
         try {
           const input = normalizeOpsDiscountInput(
@@ -845,6 +909,110 @@ function registerOpsRoutes(strapi: Core.Strapi) {
         }
 
         ctx.body = result;
+      },
+      config: { auth: false },
+    },
+    {
+      method: 'GET',
+      path: '/api/user-reviews/internal/ops',
+      handler: async (ctx) => {
+        if (!assertOpsInternalAccess(ctx)) {
+          return;
+        }
+
+        ctx.body = { reviews: await findAllReviewsForOps(strapi) };
+      },
+      config: { auth: false },
+    },
+    {
+      method: 'PUT',
+      path: '/api/user-reviews/internal/:id/reply',
+      handler: async (ctx) => {
+        if (!assertOpsInternalAccess(ctx)) {
+          return;
+        }
+
+        const id = Number(ctx.params.id);
+        if (!Number.isInteger(id) || id <= 0) {
+          return ctx.badRequest('유효하지 않은 후기 ID입니다.');
+        }
+
+        const body = (ctx.request.body ?? {}) as Record<string, unknown>;
+        const operatorUserId = Number(body.operatorUserId);
+
+        if (!Number.isInteger(operatorUserId) || operatorUserId <= 0) {
+          return ctx.badRequest('operatorUserId is required');
+        }
+
+        const { operatorUserId: _operatorUserId, ...replyBody } = body;
+        const result = await updateReviewReplyForOps(
+          strapi,
+          id,
+          replyBody,
+          operatorUserId
+        );
+
+        if ('error' in result) {
+          return result.status === 404
+            ? ctx.notFound(result.error)
+            : ctx.badRequest(result.error);
+        }
+
+        ctx.body = { review: result.review };
+      },
+      config: { auth: false },
+    },
+    {
+      method: 'PUT',
+      path: '/api/user-reviews/internal/:id/status',
+      handler: async (ctx) => {
+        if (!assertOpsInternalAccess(ctx)) {
+          return;
+        }
+
+        const id = Number(ctx.params.id);
+        if (!Number.isInteger(id) || id <= 0) {
+          return ctx.badRequest('유효하지 않은 후기 ID입니다.');
+        }
+
+        const result = await updateReviewStatusForOps(strapi, id, ctx.request.body);
+
+        if ('error' in result) {
+          return result.status === 404
+            ? ctx.notFound(result.error)
+            : ctx.badRequest(result.error);
+        }
+
+        ctx.body = { review: result.review };
+      },
+      config: { auth: false },
+    },
+    {
+      method: 'PUT',
+      path: '/api/user-reviews/internal/:id/home-featured',
+      handler: async (ctx) => {
+        if (!assertOpsInternalAccess(ctx)) {
+          return;
+        }
+
+        const id = Number(ctx.params.id);
+        if (!Number.isInteger(id) || id <= 0) {
+          return ctx.badRequest('유효하지 않은 후기 ID입니다.');
+        }
+
+        const result = await updateReviewFeaturedOnHomeForOps(
+          strapi,
+          id,
+          ctx.request.body
+        );
+
+        if ('error' in result) {
+          return result.status === 404
+            ? ctx.notFound(result.error)
+            : ctx.badRequest(result.error);
+        }
+
+        ctx.body = { review: result.review };
       },
       config: { auth: false },
     },

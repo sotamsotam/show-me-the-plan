@@ -44,7 +44,7 @@ export default function DashboardPageContent() {
   if (loading) {
     return (
       <main className="flex w-full items-center justify-center py-12">
-        <p className="text-sm text-gray-500">불러오는 중...</p>
+        <p className="text-sm text-gray-300">불러오는 중...</p>
       </main>
     );
   }
@@ -57,8 +57,8 @@ export default function DashboardPageContent() {
     return (
       <main className="w-full py-8 md:py-12">
         <div className="mb-6">
-          <h1 className="mb-1 text-2xl font-semibold">학생별 공부현황</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <h1 className="mb-1 text-2xl font-semibold text-white">학생별 공부현황</h1>
+          <p className="text-sm text-gray-300">
             {session?.user?.username ?? account?.user?.username ?? '매니저'}님, 연결된
             학생들의 TODO 실행 현황을 확인할 수 있습니다.
           </p>
@@ -69,7 +69,7 @@ export default function DashboardPageContent() {
         <div className="mt-6">
           <Link
             href="/dashboard/students"
-            className="inline-block rounded-lg border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50 dark:border-neutral-700 dark:hover:bg-zinc-800"
+            className="inline-flex items-center rounded-lg bg-[#1b76e0] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#1668c7]"
           >
             학생별 관리
           </Link>

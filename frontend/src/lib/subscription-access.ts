@@ -82,5 +82,7 @@ export function isPublicApiPath(pathname: string): boolean {
   if (pathname.startsWith('/api/billing/webhooks/')) return true;
   if (pathname.startsWith('/api/billing/cron/')) return true;
   if (pathname.startsWith('/api/neis')) return true;
+  if (pathname === '/api/user-reviews') return true;
+  if (pathname === '/api/user-reviews/home-featured') return true;
   return false;
 }

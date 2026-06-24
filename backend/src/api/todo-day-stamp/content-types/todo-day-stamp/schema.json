@@ -1,0 +1,40 @@
+{
+  "kind": "collectionType",
+  "collectionName": "todo_day_stamps",
+  "info": {
+    "singularName": "todo-day-stamp",
+    "pluralName": "todo-day-stamps",
+    "displayName": "Todo Day Stamp",
+    "description": "Manager confirmation stamp for a student's study day TODO"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "student": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "required": true
+    },
+    "manager": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "required": true
+    },
+    "date": {
+      "type": "date",
+      "required": true
+    },
+    "message": {
+      "type": "string",
+      "required": true,
+      "maxLength": 12
+    },
+    "stampedAt": {
+      "type": "datetime",
+      "required": true
+    }
+  }
+}

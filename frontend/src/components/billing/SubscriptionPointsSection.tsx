@@ -1,8 +1,12 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { formatKrw } from '@/lib/billing/format';
 import type { SubscriptionSummary } from '@/types/subscription';
+
+const REVIEW_POINTS_EVENT_MESSAGE =
+  '우수리뷰 선정시 바로 사용하실 수 있는 10,000P 를 적립해 드립니다. 리뷰를 작성 하시겠습니까?';
 
 export default function SubscriptionPointsSection({
   subscription,
@@ -11,6 +15,7 @@ export default function SubscriptionPointsSection({
   subscription: SubscriptionSummary;
   onUpdated?: (subscription: SubscriptionSummary) => void;
 }) {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -42,6 +47,14 @@ export default function SubscriptionPointsSection({
     }
   }
 
+  function handleReviewPointsEvent() {
+    if (!window.confirm(REVIEW_POINTS_EVENT_MESSAGE)) {
+      return;
+    }
+
+    router.push('/reviews#write');
+  }
+
   const pointBalance = subscription.pointBalance ?? 0;
   const promoDiscount =
     (subscription.nextBilling?.discountAmount ?? 0) -
@@ -49,10 +62,20 @@ export default function SubscriptionPointsSection({
 
   return (
     <div className="space-y-3">
-      <p className="text-sm text-blue-800 dark:text-blue-200">
-        보유 포인트: <span className="font-semibold">{pointBalance.toLocaleString('ko-KR')}P</span>
-        <span className="text-blue-700/80 dark:text-blue-300/80"> (1P = 1원)</span>
-      </p>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <p className="text-sm text-blue-800 dark:text-blue-200">
+          보유 포인트:{' '}
+          <span className="font-semibold">{pointBalance.toLocaleString('ko-KR')}P</span>
+          <span className="text-blue-700/80 dark:text-blue-300/80"> (1P = 1원)</span>
+        </p>
+        <button
+          type="button"
+          onClick={handleReviewPointsEvent}
+          className="inline-flex shrink-0 items-center rounded-full border border-amber-300/80 bg-gradient-to-r from-amber-50 to-orange-50 px-2.5 py-0.5 text-xs font-semibold tracking-tight text-amber-900 shadow-sm transition hover:border-amber-400 hover:from-amber-100 hover:to-orange-100 active:scale-[0.98] dark:border-amber-700 dark:from-amber-950/90 dark:to-orange-950/90 dark:text-amber-100 dark:hover:from-amber-900 dark:hover:to-orange-900"
+        >
+          리뷰작성 포인트 적립 이벤트
+        </button>
+      </div>
 
       {subscription.usePointsOnNextBilling && subscription.nextBilling ? (
         <div className="rounded-lg border border-blue-200 bg-white/70 p-3 text-sm text-blue-900 dark:border-blue-800 dark:bg-blue-950/50 dark:text-blue-100">

@@ -2,6 +2,7 @@ import FaqSection from '@/components/marketing/sections/FaqSection';
 import FeatureGridSection from '@/components/marketing/sections/FeatureGridSection';
 import GradeCardsSection from '@/components/marketing/sections/GradeCardsSection';
 import HeroSection from '@/components/marketing/sections/HeroSection';
+import HomeFeaturedReviewsSection from '@/components/marketing/sections/HomeFeaturedReviewsSection';
 import KioskModeSection from '@/components/marketing/sections/KioskModeSection';
 import KeyFeaturesShowcaseSection from '@/components/marketing/sections/KeyFeaturesShowcaseSection';
 import MarketingCtaSection from '@/components/marketing/sections/MarketingCtaSection';
@@ -15,6 +16,8 @@ import {
   getDefaultDashboardPathFromSession,
   isMarketingHomeBypass,
 } from '@/lib/account-helpers';
+import type { HomeFeaturedReview } from '@/lib/user-review';
+import { strapiFetch } from '@/lib/strapi';
 import type { Metadata } from 'next';
 import { getServerSession } from 'next-auth';
 import Link from 'next/link';
@@ -24,6 +27,23 @@ export const metadata: Metadata = {
   title: homeSeo.title,
   description: homeSeo.description,
 };
+
+async function loadHomeFeaturedReviews(): Promise<HomeFeaturedReview[]> {
+  try {
+    const res = await strapiFetch('/api/user-reviews/home-featured', {
+      cache: 'no-store',
+    });
+
+    if (!res.ok) {
+      return [];
+    }
+
+    const data = await res.json();
+    return (data as { reviews?: HomeFeaturedReview[] }).reviews ?? [];
+  } catch {
+    return [];
+  }
+}
 
 export default async function HomePage({
   searchParams,
@@ -35,6 +55,8 @@ export default async function HomePage({
   if (session?.user && !isMarketingHomeBypass(searchParams)) {
     redirect(getDefaultDashboardPathFromSession(session.user));
   }
+
+  const homeFeaturedReviews = await loadHomeFeaturedReviews();
 
   return (
     <>
@@ -68,6 +90,7 @@ export default async function HomePage({
         items={homeContent.grades}
       />
       <KioskModeSection {...homeContent.kioskMode} />
+      <HomeFeaturedReviewsSection reviews={homeFeaturedReviews} />
       <FaqSection
         eyebrow={homeContent.faq.eyebrow}
         title={homeContent.faq.title}

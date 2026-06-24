@@ -1,4 +1,5 @@
 import type { EventInput } from '@fullcalendar/core';
+import { resolveStudyDayDate } from '@/lib/schedule-time';
 import { formatIsoDate } from '@/lib/user-schedule';
 
 export function isAllDayCalendarEvent(event: EventInput): boolean {
@@ -74,9 +75,12 @@ export function parseAllDayEventDateRange(
 
 /** Map FullCalendar event instants to schedule date + HH:mm fields (study-day model). */
 export function parseEventDateTimeRange(start: Date, end: Date): ParsedEventDateTimeRange {
+  const calendarDate = formatIsoDate(start);
+  const startTime = formatTimeFromDate(start);
+
   return {
-    date: formatIsoDate(start),
-    startTime: formatTimeFromDate(start),
+    date: resolveStudyDayDate(calendarDate, startTime),
+    startTime,
     endTime: formatTimeFromDate(end),
   };
 }

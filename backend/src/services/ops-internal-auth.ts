@@ -23,3 +23,15 @@ export function assertOpsInternalAccess(ctx: OpsInternalContext): boolean {
 
   return true;
 }
+
+export function readOpsOperatorLabel(header: unknown): string {
+  if (typeof header !== 'string' || !header.trim()) {
+    return 'ops';
+  }
+
+  try {
+    return decodeURIComponent(header);
+  } catch {
+    return header;
+  }
+}

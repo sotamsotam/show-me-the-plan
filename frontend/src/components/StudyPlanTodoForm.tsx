@@ -1,6 +1,6 @@
 'use client';
 
-import { crossesMidnight, validateScheduleTimeRange } from '@/lib/schedule-time';
+import { crossesMidnight, resolveStudyDayDate, validateScheduleTimeRange } from '@/lib/schedule-time';
 import {
   formatOccurrenceDateLabel,
   isAllWeekdaysSelected,
@@ -109,11 +109,14 @@ function buildDefaults(
 }
 
 export function buildInitialFromSelection(start: Date, end: Date): StudyPlanTodoFormInitial {
+  const calendarDate = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}-${String(start.getDate()).padStart(2, '0')}`;
+  const startTime = formatTimeInput(start);
+
   // FullCalendar may end on the next calendar day; HH:mm with end < start means next-day end.
   return {
     recurrenceType: 'once',
-    date: `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}-${String(start.getDate()).padStart(2, '0')}`,
-    startTime: formatTimeInput(start),
+    date: resolveStudyDayDate(calendarDate, startTime),
+    startTime,
     endTime: formatTimeInput(end),
     daysOfWeek: [start.getDay()],
   };
@@ -348,7 +351,7 @@ export default function StudyPlanTodoForm({
           payload.validFrom = validFrom;
           payload.validUntil = validUntil;
         } else {
-          payload.date = date;
+          payload.date = resolveStudyDayDate(date, startTime);
         }
 
         const res = await fetch(

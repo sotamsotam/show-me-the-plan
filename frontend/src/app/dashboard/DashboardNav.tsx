@@ -12,7 +12,7 @@ import {
   STUDENT_DESKTOP_NAV_ITEMS,
 } from '@/lib/dashboard-nav-config';
 import type { AccountInfo } from '@/types/school';
-import { isApprovedManager, isPendingManager, isNeisStudent, isOtherStudent, SCHOOL_LEVEL_LABEL } from '@/types/school';
+import { isApprovedManager, isPendingManager, isNeisStudent, isOtherStudent, isAnyStudent, SCHOOL_LEVEL_LABEL } from '@/types/school';
 import SignOutButton from './SignOutButton';
 
 interface DashboardNavProps {
@@ -149,6 +149,23 @@ export default function DashboardNav({
   const userLabel = formatUserLabel(account, session?.user.username);
   const pageTitle = getDashboardPageTitle(pathname);
   const showMobileBottomNav = !pendingManager;
+  const showBillingBadge =
+    !pendingManager &&
+    !approvedManager &&
+    Boolean(activeAccount?.profile && isAnyStudent(activeAccount.profile.schoolLevel));
+
+  const billingBadgeClassName =
+    'inline-flex shrink-0 items-center rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-800 shadow-sm transition hover:border-blue-300 hover:bg-blue-100 active:scale-[0.98] dark:border-blue-700 dark:bg-blue-950/90 dark:text-blue-100 dark:hover:border-blue-600 dark:hover:bg-blue-900';
+
+  const renderBillingBadge = (className = '') =>
+    showBillingBadge ? (
+      <Link
+        href="/dashboard/settings/billing"
+        className={`${billingBadgeClassName}${className ? ` ${className}` : ''}`}
+      >
+        구독관리
+      </Link>
+    ) : null;
 
   const renderDesktopNav = (className: string, compact = false) => (
     <nav className={className} aria-label="주 메뉴">
@@ -213,6 +230,7 @@ export default function DashboardNav({
                 <SettingsIcon />
               </Link>
               <div className="hidden items-center gap-2 md:flex">
+                {renderBillingBadge()}
                 <Link
                   href="/dashboard/settings"
                   className="inline-flex items-center justify-center rounded-lg p-2 text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-zinc-800 dark:hover:text-gray-100"

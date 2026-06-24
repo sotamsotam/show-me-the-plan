@@ -82,6 +82,23 @@ describe('createRangeQueryCache', () => {
     expect(cache.read('42:2026-06-01:2026-06-30')).toBe('42');
   });
 
+  it('invalidates namespaced cache keys for the matching student prefix', async () => {
+    const cache = createRangeQueryCache<string>();
+    const fetcher = vi
+      .fn()
+      .mockImplementation(async (label: string) => label);
+    const selfKey = buildRangeCacheKey(null, '2026-06-01', '2026-06-30', 'study-plan-todos');
+    const otherKey = buildRangeCacheKey(42, '2026-06-01', '2026-06-30', 'study-plan-todos');
+
+    await cache.getOrFetch(selfKey, 'self', () => fetcher('self'));
+    await cache.getOrFetch(otherKey, '42', () => fetcher('42'));
+
+    cache.invalidateByStudentPrefix('self');
+
+    expect(cache.read(selfKey)).toBeUndefined();
+    expect(cache.read(otherKey)).toBe('42');
+  });
+
   it('evicts the oldest entry per student when max entries is exceeded', async () => {
     const cache = createRangeQueryCache<string>({ maxEntriesPerStudent: 2 });
     const fetcher = vi.fn(async (value: string) => value);

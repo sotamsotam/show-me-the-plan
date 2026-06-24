@@ -4,6 +4,7 @@ import {
   durationBetweenIso,
   durationBetweenTimes,
   isoToDayOffset,
+  resolveStudyDayDateFromIso,
   toDayOffsetMinutes,
 } from '@/lib/schedule-time';
 import {
@@ -134,14 +135,27 @@ export function isExecutedOnTimeline(
   );
 }
 
-export function getEventDate(event: EventInput): string {
-  const date = event.extendedProps?.date;
-
-  if (typeof date === 'string' && date.length >= 10) {
-    return date.slice(0, 10);
+export function isAllDayScheduleEvent(event: EventInput): boolean {
+  if (event.allDay) {
+    return true;
   }
 
-  return String(event.start).slice(0, 10);
+  const type = (event.extendedProps as Record<string, unknown> | undefined)?.type;
+  return type === 'school-exam' || type === 'school-holiday';
+}
+
+export function getEventDate(event: EventInput): string {
+  if (isAllDayScheduleEvent(event)) {
+    const date = event.extendedProps?.date;
+
+    if (typeof date === 'string' && date.length >= 10) {
+      return date.slice(0, 10);
+    }
+
+    return String(event.start).slice(0, 10);
+  }
+
+  return resolveStudyDayDateFromIso(String(event.start));
 }
 
 export function filterScheduleEventsByDate(
@@ -151,15 +165,6 @@ export function filterScheduleEventsByDate(
   return events
     .filter((event) => getEventDate(event) === date)
     .sort((a, b) => String(a.start).localeCompare(String(b.start)));
-}
-
-export function isAllDayScheduleEvent(event: EventInput): boolean {
-  if (event.allDay) {
-    return true;
-  }
-
-  const type = (event.extendedProps as Record<string, unknown> | undefined)?.type;
-  return type === 'school-exam' || type === 'school-holiday';
 }
 
 export function partitionScheduleEventsByDate(

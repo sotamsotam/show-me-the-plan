@@ -19,7 +19,9 @@ import {
 } from '@/lib/study-plan-todo';
 import { resolveSubjectCategory, type LegacyStudyPlanSubject } from '@/lib/user-subject';
 import ExamCountdownBadge from '@/components/calendar/ExamCountdownBadge';
+import TodoDayStampVisual from '@/components/TodoDayStampVisual';
 import type { ExamCountdownResult } from '@/lib/exam-countdown';
+import type { TodoDayStamp } from '@/lib/todo-day-stamp';
 import {
   formatOccurrenceDateLabel,
   getTodayIsoDate,
@@ -31,6 +33,7 @@ interface StudyPlanTodoListProps {
   onSelectedDateChange: (date: string) => void;
   events: ExpandedStudyPlanTodoEvent[];
   todosById?: Map<number, StudyPlanTodo>;
+  dayStamp?: TodoDayStamp | null;
   examCountdown?: ExamCountdownResult | null;
   loading?: boolean;
   onTodoClick?: (todo: ExpandedStudyPlanTodoEvent) => void;
@@ -125,6 +128,7 @@ export default function StudyPlanTodoList({
   onSelectedDateChange,
   events,
   todosById,
+  dayStamp = null,
   examCountdown = null,
   loading = false,
   onTodoClick,
@@ -312,26 +316,44 @@ export default function StudyPlanTodoList({
             })}
           </ul>
         )}
+
       </div>
 
-      {!loading && (dayTodos.length > 0 || onAddClick) && (
-        <div className="border-t border-gray-200 px-4 py-3 dark:border-neutral-800 md:px-4">
-          {dayTodos.length > 0 && (
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              총 {dayTodos.length}개 · 실행 {executedCount}개
-            </p>
-          )}
-          {onAddClick && (
-            <button
-              type="button"
-              onClick={onAddClick}
-              className={`touch-press hidden w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700 md:block dark:hover:bg-blue-500 ${
-                dayTodos.length > 0 ? 'mt-3' : ''
-              }`}
-            >
-              스터디 플랜 추가
-            </button>
-          )}
+      {!loading && (dayTodos.length > 0 || onAddClick || dayStamp) && (
+        <div className="border-t border-gray-200 px-4 dark:border-neutral-800 md:px-4">
+          <div
+            className={`flex items-center justify-between gap-3 ${
+              dayStamp ? 'min-h-28 py-2 sm:min-h-32' : 'py-3'
+            }`}
+          >
+            <div className="min-w-0 flex-1 self-center">
+              {dayTodos.length > 0 && (
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  총 {dayTodos.length}개 · 실행 {executedCount}개
+                </p>
+              )}
+              {onAddClick && (
+                <button
+                  type="button"
+                  onClick={onAddClick}
+                  className={`touch-press hidden w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700 md:block dark:hover:bg-blue-500 ${
+                    dayTodos.length > 0 ? 'mt-3' : ''
+                  }`}
+                >
+                  스터디 플랜 추가
+                </button>
+              )}
+            </div>
+
+            {dayStamp ? (
+              <div
+                className="flex shrink-0 items-center"
+                aria-label={`매니저 확인도장: ${dayStamp.message}`}
+              >
+                <TodoDayStampVisual message={dayStamp.message} variant="footer" />
+              </div>
+            ) : null}
+          </div>
         </div>
       )}
     </div>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { assertOpsInternalAccess } from './ops-internal-auth';
+import { assertOpsInternalAccess, readOpsOperatorLabel } from './ops-internal-auth';
 
 function createCtx(headers: Record<string, unknown> = {}) {
   let status = 200;
@@ -61,5 +61,20 @@ describe('assertOpsInternalAccess', () => {
     } else {
       delete process.env.OPS_INTERNAL_SECRET;
     }
+  });
+});
+
+describe('readOpsOperatorLabel', () => {
+  it('decodes URI-encoded operator labels', () => {
+    expect(readOpsOperatorLabel(encodeURIComponent('운영자'))).toBe('운영자');
+  });
+
+  it('returns ops for missing values', () => {
+    expect(readOpsOperatorLabel(undefined)).toBe('ops');
+    expect(readOpsOperatorLabel('')).toBe('ops');
+  });
+
+  it('passes through plain ASCII labels', () => {
+    expect(readOpsOperatorLabel('ops-qa-runner')).toBe('ops-qa-runner');
   });
 });

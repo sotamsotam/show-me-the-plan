@@ -666,6 +666,52 @@ export interface ApiSubscriptionSubscription
   };
 }
 
+export interface ApiTodoDayStampTodoDayStamp
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'todo_day_stamps';
+  info: {
+    description: "Manager confirmation stamp for a student's study day TODO";
+    displayName: 'Todo Day Stamp';
+    pluralName: 'todo-day-stamps';
+    singularName: 'todo-day-stamp';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    date: Schema.Attribute.Date & Schema.Attribute.Required;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::todo-day-stamp.todo-day-stamp'
+    > &
+      Schema.Attribute.Private;
+    manager: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::users-permissions.user'
+    > &
+      Schema.Attribute.Required;
+    message: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 12;
+      }>;
+    publishedAt: Schema.Attribute.DateTime;
+    stampedAt: Schema.Attribute.DateTime & Schema.Attribute.Required;
+    student: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::users-permissions.user'
+    > &
+      Schema.Attribute.Required;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
 export interface ApiUserProfileUserProfile extends Struct.CollectionTypeSchema {
   collectionName: 'user_profiles';
   info: {
@@ -732,6 +778,61 @@ export interface ApiUserProfileUserProfile extends Struct.CollectionTypeSchema {
     vacationPeriodSettings: Schema.Attribute.JSON;
     vacationWeeklyPlans: Schema.Attribute.JSON;
     vacationWeeklyPlanTemplates: Schema.Attribute.JSON;
+  };
+}
+
+export interface ApiUserReviewUserReview extends Struct.CollectionTypeSchema {
+  collectionName: 'user_reviews';
+  info: {
+    description: 'User-written service reviews with operator replies';
+    displayName: 'User Review';
+    pluralName: 'user-reviews';
+    singularName: 'user-review';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    author: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::users-permissions.user'
+    > &
+      Schema.Attribute.Required;
+    content: Schema.Attribute.Text & Schema.Attribute.Required;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    featuredOnHome: Schema.Attribute.Boolean &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<false>;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::user-review.user-review'
+    > &
+      Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    rating: Schema.Attribute.Integer &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMax<
+        {
+          max: 5;
+          min: 1;
+        },
+        number
+      >;
+    repliedAt: Schema.Attribute.DateTime;
+    repliedBy: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::users-permissions.user'
+    >;
+    reply: Schema.Attribute.Text;
+    status: Schema.Attribute.Enumeration<['pending', 'published', 'hidden']> &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'pending'>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
   };
 }
 
@@ -1301,7 +1402,9 @@ declare module '@strapi/strapi' {
       'api::student-manager-assignment.student-manager-assignment': ApiStudentManagerAssignmentStudentManagerAssignment;
       'api::study-plan-todo.study-plan-todo': ApiStudyPlanTodoStudyPlanTodo;
       'api::subscription.subscription': ApiSubscriptionSubscription;
+      'api::todo-day-stamp.todo-day-stamp': ApiTodoDayStampTodoDayStamp;
       'api::user-profile.user-profile': ApiUserProfileUserProfile;
+      'api::user-review.user-review': ApiUserReviewUserReview;
       'api::user-schedule.user-schedule': ApiUserScheduleUserSchedule;
       'plugin::content-releases.release': PluginContentReleasesRelease;
       'plugin::content-releases.release-action': PluginContentReleasesReleaseAction;

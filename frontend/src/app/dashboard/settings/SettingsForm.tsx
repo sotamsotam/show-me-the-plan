@@ -422,15 +422,15 @@ export default function SettingsForm() {
   if (loading) {
     return (
       <main className="flex w-full flex-col items-center justify-center py-12">
-        <p className="text-sm text-gray-500">불러오는 중...</p>
+        <p className="text-sm text-gray-300">불러오는 중...</p>
       </main>
     );
   }
 
   return (
     <main className="mx-auto flex w-full max-w-lg flex-col py-8 md:py-12">
-      <h1 className="mb-2 text-2xl font-semibold">내정보 수정</h1>
-      <p className="mb-8 text-sm text-gray-500 dark:text-gray-400">
+      <h1 className="mb-2 text-2xl font-semibold text-white">내정보 수정</h1>
+      <p className="mb-8 text-sm text-gray-300">
         {isOtherStudentProfile
           ? '기타학생 계정입니다. 과목과 일정은 직접 설정해 주세요.'
           : '학교 정보를 수정할 수 있습니다. 사용자명과 이메일은 변경할 수 없습니다.'}
@@ -460,9 +460,9 @@ export default function SettingsForm() {
           ) : null}
           <Link
             href="/dashboard/settings/billing"
-            className="mt-3 inline-block text-sm font-medium text-blue-700 underline dark:text-blue-300"
+            className="mt-4 inline-flex w-full items-center justify-center rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 active:scale-[0.98] sm:w-auto"
           >
-            구독 관리로 이동
+            구독신청·구독관리
           </Link>
         </div>
       ) : null}

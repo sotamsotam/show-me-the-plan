@@ -31,6 +31,7 @@ export const NAV_LINKS = [
   { label: '초등', href: '/elementary' },
   { label: '중등', href: '/middle' },
   { label: '고등', href: '/high' },
+  { label: '사용후기', href: '/reviews' },
 ] as const;
 
 export const HOME_KEY_FEATURES_SHOWCASE = [

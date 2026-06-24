@@ -7,6 +7,8 @@ import {
   durationBetweenIso,
   durationBetweenTimes,
   resolveEndDate,
+  resolveStudyDayDate,
+  resolveStudyDayDateFromIso,
   validateScheduleTimeRange,
 } from './schedule-time';
 
@@ -64,6 +66,14 @@ describe('schedule-time', () => {
       expect(
         durationBetweenIso('2026-06-12T23:00:00', '2026-06-13T02:00:00')
       ).toBe(180);
+    });
+  });
+
+  describe('resolveStudyDayDate', () => {
+    it('maps early-morning wall clock to the previous study day', () => {
+      expect(resolveStudyDayDate('2026-06-13', '01:00')).toBe('2026-06-12');
+      expect(resolveStudyDayDateFromIso('2026-06-12T23:00:00')).toBe('2026-06-12');
+      expect(resolveStudyDayDateFromIso('2026-06-13T02:00:00')).toBe('2026-06-12');
     });
   });
 

@@ -60,17 +60,29 @@ export function createRangeQueryCache<T>(
     return entries.get(key)?.data;
   }
 
-  function invalidateByStudentPrefix(studentPrefix: string) {
-    const prefix = `${studentPrefix}:`;
+  function cacheKeyMatchesStudentPrefix(key: string, studentPrefix: string): boolean {
+    const segments = key.split(':');
 
+    if (segments.length === 3) {
+      return segments[0] === studentPrefix;
+    }
+
+    if (segments.length === 4) {
+      return segments[1] === studentPrefix;
+    }
+
+    return false;
+  }
+
+  function invalidateByStudentPrefix(studentPrefix: string) {
     for (const key of [...entries.keys()]) {
-      if (key.startsWith(prefix)) {
+      if (cacheKeyMatchesStudentPrefix(key, studentPrefix)) {
         entries.delete(key);
       }
     }
 
     for (const key of [...inFlight.keys()]) {
-      if (key.startsWith(prefix)) {
+      if (cacheKeyMatchesStudentPrefix(key, studentPrefix)) {
         inFlight.delete(key);
       }
     }

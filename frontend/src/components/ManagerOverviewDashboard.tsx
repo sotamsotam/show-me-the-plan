@@ -16,6 +16,8 @@ import {
 } from '@/lib/manager-student';
 import { getStudyPlanTodosInRange } from '@/lib/cached-study-plan-todos';
 import { toExclusiveApiRangeEnd } from '@/lib/study-stats';
+import { fetchTodoDayStampsInRange, type TodoDayStamp } from '@/lib/todo-day-stamp';
+import { findTodoDayStampForDate } from '@/lib/todo-day-stamp-helpers';
 import {
   formatOccurrenceDateLabel,
   getTodayIsoDate,
@@ -26,6 +28,37 @@ import { useManagerStudent } from '@/contexts/ManagerStudentContext';
 
 interface StudentRowData extends StudentDailyTodoData {
   error?: string;
+  stamp?: TodoDayStamp | null;
+}
+
+async function fetchStudentDailyData(
+  studentUserId: number,
+  date: string
+): Promise<{ daily: StudentDailyTodoData; stamp: TodoDayStamp | null }> {
+  const apiEnd = toExclusiveApiRangeEnd(date);
+
+  const [todoData, stampResult] = await Promise.all([
+    getStudyPlanTodosInRange(
+      { start: date, end: apiEnd, studentUserId },
+      (url) => withStudentUserId(url, studentUserId)
+    ),
+    fetchTodoDayStampsInRange({
+      start: date,
+      end: apiEnd,
+      studentUserId,
+    }),
+  ]);
+
+  const daily = buildStudentDailyTodoData(
+    todoData.expandedEvents ?? [],
+    buildTodosById(todoData.todos),
+    date
+  );
+  const stamp = stampResult.ok
+    ? findTodoDayStampForDate(stampResult.stamps, date) ?? null
+    : null;
+
+  return { daily, stamp };
 }
 
 function formatSchoolInfo(student: ManagedStudent): string {
@@ -34,30 +67,6 @@ function formatSchoolInfo(student: ManagedStudent): string {
   }
 
   return SCHOOL_LEVEL_LABEL[student.schoolLevel] ?? student.schoolLevel;
-}
-
-async function fetchStudentDailyData(
-  studentUserId: number,
-  date: string
-): Promise<StudentDailyTodoData> {
-  const apiEnd = toExclusiveApiRangeEnd(date);
-
-  try {
-    const data = await getStudyPlanTodosInRange(
-      { start: date, end: apiEnd, studentUserId },
-      (url) => withStudentUserId(url, studentUserId)
-    );
-
-    return buildStudentDailyTodoData(
-      data.expandedEvents ?? [],
-      buildTodosById(data.todos),
-      date
-    );
-  } catch (loadError) {
-    throw new Error(
-      loadError instanceof Error ? loadError.message : 'TODO 데이터를 불러오지 못했습니다.'
-    );
-  }
 }
 
 export default function ManagerOverviewDashboard() {
@@ -85,8 +94,14 @@ export default function ManagerOverviewDashboard() {
     const results = await Promise.all(
       studentList.map(async (student) => {
         try {
-          const dailyData = await fetchStudentDailyData(student.userId, date);
-          return { userId: student.userId, data: dailyData };
+          const { daily, stamp } = await fetchStudentDailyData(student.userId, date);
+          return {
+            userId: student.userId,
+            data: {
+              ...daily,
+              stamp,
+            } satisfies StudentRowData,
+          };
         } catch (error) {
           return {
             userId: student.userId,
@@ -137,6 +152,24 @@ export default function ManagerOverviewDashboard() {
 
   function handleToggleDetail(userId: number) {
     setSelectedDetailUserId((current) => (current === userId ? null : userId));
+  }
+
+  function handleStampSaved(userId: number, stamp: TodoDayStamp) {
+    setDataByUserId((current) => {
+      const row = current[userId];
+
+      if (!row) {
+        return current;
+      }
+
+      return {
+        ...current,
+        [userId]: {
+          ...row,
+          stamp,
+        },
+      };
+    });
   }
 
   const isToday = selectedDate === getTodayIsoDate();
@@ -319,7 +352,9 @@ export default function ManagerOverviewDashboard() {
                             student={student}
                             date={selectedDate}
                             subjectGroups={rowData.subjectGroups}
+                            stamp={rowData.stamp ?? null}
                             inline
+                            onStampSaved={(stamp) => handleStampSaved(student.userId, stamp)}
                           />
                         </td>
                       </tr>

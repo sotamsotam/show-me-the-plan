@@ -1,0 +1,53 @@
+{
+  "kind": "collectionType",
+  "collectionName": "user_reviews",
+  "info": {
+    "singularName": "user-review",
+    "pluralName": "user-reviews",
+    "displayName": "User Review",
+    "description": "User-written service reviews with operator replies"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "content": {
+      "type": "text",
+      "required": true
+    },
+    "rating": {
+      "type": "integer",
+      "required": true,
+      "min": 1,
+      "max": 5
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": ["pending", "published", "hidden"],
+      "required": true,
+      "default": "pending"
+    },
+    "featuredOnHome": {
+      "type": "boolean",
+      "required": true,
+      "default": false
+    },
+    "reply": {
+      "type": "text"
+    },
+    "repliedAt": {
+      "type": "datetime"
+    },
+    "author": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "required": true
+    },
+    "repliedBy": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    }
+  }
+}

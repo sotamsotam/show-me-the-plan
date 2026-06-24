@@ -67,7 +67,7 @@ export default function BillingSettingsClient() {
   }, []);
 
   async function handleCancel() {
-    if (!window.confirm('해지 예약을 신청하시겠습니까?')) {
+    if (!window.confirm('정말로 해지 예약을 신청 하시겠습니까?')) {
       return;
     }
 
@@ -121,7 +121,7 @@ export default function BillingSettingsClient() {
   if (loading) {
     return (
       <div className="flex min-h-[50vh] w-full flex-col items-center justify-center">
-        <p className="text-sm text-gray-600 dark:text-gray-300">구독 정보를 불러오는 중...</p>
+        <p className="text-sm text-gray-300">구독 정보를 불러오는 중...</p>
       </div>
     );
   }
@@ -142,8 +142,8 @@ export default function BillingSettingsClient() {
   return (
     <div className="mx-auto max-w-2xl space-y-6 pb-12 pt-12">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">구독 · 결제</h1>
-        <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+        <h1 className="text-2xl font-bold text-white">구독 · 결제</h1>
+        <p className="mt-2 text-sm text-gray-300">
           학생 계정 구독 상태와 결제 내역을 확인할 수 있습니다.
         </p>
       </div>

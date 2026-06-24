@@ -77,6 +77,19 @@ export function crossesMidnight(startTime: string, endTime: string): boolean {
   return parseWallClockMinutes(endTime) <= parseWallClockMinutes(startTime);
 }
 
+/** Map a calendar date + wall-clock time to the study-day occurrence date (05:00 anchor). */
+export function resolveStudyDayDate(calendarDate: string, wallClockTime: string): string {
+  if (parseWallClockMinutes(wallClockTime) < DAY_ANCHOR_MINUTES) {
+    return shiftIsoDate(calendarDate, -1);
+  }
+
+  return calendarDate;
+}
+
+export function resolveStudyDayDateFromIso(iso: string): string {
+  return resolveStudyDayDate(iso.slice(0, 10), iso.slice(11, 16));
+}
+
 export function resolveEndDate(
   occurrenceDate: string,
   startTime: string,

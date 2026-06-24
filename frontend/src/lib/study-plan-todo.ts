@@ -1,4 +1,5 @@
 import type { EventInput } from '@fullcalendar/core';
+import { resolveStudyDayDateFromIso } from '@/lib/schedule-time';
 import type { RecurrenceType } from '@/lib/user-schedule';
 import { subjectClassName } from '@/lib/calendar-design-tokens';
 import {
@@ -160,13 +161,13 @@ export function filterEventsByDate(
   date: string
 ): ExpandedStudyPlanTodoEvent[] {
   return events
-    .filter((event) => event.date === date)
+    .filter((event) => resolveStudyDayDateFromIso(event.start) === date)
     .sort((a, b) => a.start.localeCompare(b.start));
 }
 
 export function filterCalendarEventsByDate(events: EventInput[], date: string): EventInput[] {
   return events
-    .filter((event) => event.extendedProps?.date === date)
+    .filter((event) => resolveStudyDayDateFromIso(String(event.start)) === date)
     .sort((a, b) => String(a.start).localeCompare(String(b.start)));
 }
 
