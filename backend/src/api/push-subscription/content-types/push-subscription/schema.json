@@ -1,0 +1,34 @@
+{
+  "kind": "collectionType",
+  "collectionName": "push_subscriptions",
+  "info": {
+    "singularName": "push-subscription",
+    "pluralName": "push-subscriptions",
+    "displayName": "Push Subscription",
+    "description": "Web Push subscription per user device"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "required": true
+    },
+    "endpoint": {
+      "type": "text",
+      "required": true,
+      "unique": true
+    },
+    "p256dh": {
+      "type": "string",
+      "required": true
+    },
+    "auth": {
+      "type": "string",
+      "required": true
+    }
+  }
+}

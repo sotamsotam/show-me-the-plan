@@ -24,6 +24,11 @@ import {
   type OccurrenceOverrideInput,
   type StudyPlanTodoInput,
 } from '../../../services/study-plan-todo';
+import {
+  cancelAllPendingForTodo,
+  handleExecutionNotificationUpdate,
+  syncTodoNotificationQueueFromRaw,
+} from '../../../services/study-plan-todo-notify';
 
 const UID = 'api::study-plan-todo.study-plan-todo' as const;
 
@@ -159,6 +164,12 @@ export default factories.createCoreController(UID, ({ strapi }) => ({
       },
     });
 
+    await syncTodoNotificationQueueFromRaw(
+      strapi,
+      created as Record<string, unknown>,
+      owner.userId
+    );
+
     return ctx.send({
       todo: serializeStudyPlanTodo(created as Record<string, unknown>),
     });
@@ -219,6 +230,12 @@ export default factories.createCoreController(UID, ({ strapi }) => ({
       data: buildStudyPlanTodoData(merged),
     });
 
+    await syncTodoNotificationQueueFromRaw(
+      strapi,
+      updated as Record<string, unknown>,
+      owner.userId
+    );
+
     return ctx.send({
       todo: serializeStudyPlanTodo(updated as Record<string, unknown>),
     });
@@ -245,6 +262,7 @@ export default factories.createCoreController(UID, ({ strapi }) => ({
       return ctx.notFound('스터디 플랜을 찾을 수 없습니다.');
     }
 
+    await cancelAllPendingForTodo(strapi, id, 'cancelled');
     await strapi.db.query(UID).delete({ where: { id } });
 
     return ctx.send({ ok: true });
@@ -282,6 +300,12 @@ export default factories.createCoreController(UID, ({ strapi }) => ({
       where: { id },
       data: buildOccurrenceExclusionUpdate(todo, date),
     });
+
+    await syncTodoNotificationQueueFromRaw(
+      strapi,
+      updated as Record<string, unknown>,
+      owner.userId
+    );
 
     return ctx.send({
       todo: serializeStudyPlanTodo(updated as Record<string, unknown>),
@@ -328,6 +352,12 @@ export default factories.createCoreController(UID, ({ strapi }) => ({
       data: buildOccurrenceOverrideUpdate(todo, date, body),
     });
 
+    await syncTodoNotificationQueueFromRaw(
+      strapi,
+      updated as Record<string, unknown>,
+      owner.userId
+    );
+
     return ctx.send({
       todo: serializeStudyPlanTodo(updated as Record<string, unknown>),
     });
@@ -372,6 +402,16 @@ export default factories.createCoreController(UID, ({ strapi }) => ({
       where: { id },
       data: buildExecutionUpdate(todo, date, body),
     });
+
+    const updatedTodo = toStudyPlanTodoRecord(updated as Record<string, unknown>);
+
+    await handleExecutionNotificationUpdate(
+      strapi,
+      updatedTodo,
+      owner.userId,
+      date,
+      body.status!
+    );
 
     return ctx.send({
       todo: serializeStudyPlanTodo(updated as Record<string, unknown>),

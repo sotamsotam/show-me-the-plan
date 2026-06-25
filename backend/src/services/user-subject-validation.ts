@@ -1,5 +1,9 @@
 import { createCustomSubjectId } from './user-subject-seed';
 import {
+  isAllowedSubjectColor,
+  normalizeSubjectColor,
+} from './subject-color-presets';
+import {
   buildFallbackUserSubjects,
   isLegacyStudyPlanSubject,
   LEGACY_STUDY_PLAN_SUBJECTS,
@@ -124,6 +128,25 @@ function appendSubjectTags(
   return subject;
 }
 
+function parseSubjectColor(
+  raw: unknown
+): { color?: string } | { error: string } {
+  if (raw === undefined || raw === null || raw === '') {
+    return {};
+  }
+
+  if (typeof raw !== 'string') {
+    return { error: 'color는 문자열이어야 합니다.' };
+  }
+
+  const normalized = normalizeSubjectColor(raw);
+  if (!isAllowedSubjectColor(normalized)) {
+    return { error: '허용되지 않은 과목 색상입니다.' };
+  }
+
+  return { color: normalized };
+}
+
 export function parseUserSubjects(raw: unknown): UserSubject[] | null {
   if (!Array.isArray(raw)) {
     return null;
@@ -163,6 +186,11 @@ export function parseUserSubjects(raw: unknown): UserSubject[] | null {
       return null;
     }
 
+    const colorResult = parseSubjectColor(record.color);
+    if ('error' in colorResult) {
+      return null;
+    }
+
     subjects.push(
       appendSubjectTags(
         {
@@ -170,6 +198,7 @@ export function parseUserSubjects(raw: unknown): UserSubject[] | null {
           label,
           category,
           source: source as UserSubjectSource,
+          ...(colorResult.color ? { color: colorResult.color } : {}),
         },
         textbooks,
         studyMethods
@@ -296,6 +325,11 @@ export function validateAndNormalizeUserSubjects(
       return { error: studyMethodsResult.error };
     }
 
+    const colorResult = parseSubjectColor(record.color);
+    if ('error' in colorResult) {
+      return { error: colorResult.error };
+    }
+
     subjects.push(
       appendSubjectTags(
         {
@@ -303,6 +337,7 @@ export function validateAndNormalizeUserSubjects(
           label: normalizedLabel,
           category,
           source,
+          ...(colorResult.color ? { color: colorResult.color } : {}),
         },
         textbooksResult.tags,
         studyMethodsResult.tags

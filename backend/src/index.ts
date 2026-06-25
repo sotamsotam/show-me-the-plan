@@ -375,6 +375,21 @@ async function setupPermissions(strapi: Core.Strapi) {
   await ensureRolePermission(
     strapi,
     'authenticated',
+    'api::push-subscription.push-subscription.subscribe'
+  );
+  await ensureRolePermission(
+    strapi,
+    'authenticated',
+    'api::push-subscription.push-subscription.unsubscribe'
+  );
+  await ensureRolePermission(
+    strapi,
+    'authenticated',
+    'api::user-profile.user-profile.updateNotificationsEnabled'
+  );
+  await ensureRolePermission(
+    strapi,
+    'authenticated',
     'api::todo-day-stamp.todo-day-stamp.findInRange'
   );
   await ensureRolePermission(
@@ -472,6 +487,9 @@ async function setupPermissions(strapi: Core.Strapi) {
     'api::study-plan-todo.study-plan-todo.updateOccurrence',
     'api::study-plan-todo.study-plan-todo.excludeOccurrence',
     'api::study-plan-todo.study-plan-todo.updateExecution',
+    'api::push-subscription.push-subscription.subscribe',
+    'api::push-subscription.push-subscription.unsubscribe',
+    'api::user-profile.user-profile.updateNotificationsEnabled',
     'api::todo-day-stamp.todo-day-stamp.findInRange',
     'api::todo-day-stamp.todo-day-stamp.upsertForDate',
     'api::user-review.user-review.findMine',
@@ -529,6 +547,51 @@ async function setupBilling(strapi: Core.Strapi) {
 async function fixLegacyUsersWithoutProvider(strapi: Core.Strapi) {
   await strapi.db.connection('up_users').whereNull('provider').update({ provider: 'local' });
   await strapi.db.connection('up_users').where('provider', '').update({ provider: 'local' });
+}
+
+async function ensureNotificationIndexes(strapi: Core.Strapi) {
+  const clientConfig = strapi.db.connection.client.config?.client;
+
+  if (clientConfig !== 'pg' && clientConfig !== 'postgres') {
+    return;
+  }
+
+  const statements = [
+    `
+      CREATE INDEX IF NOT EXISTS idx_notifications_pending_send_at
+      ON notifications (send_at)
+      WHERE sent = false
+    `,
+    `
+      CREATE INDEX IF NOT EXISTS idx_notifications_todo_lnk_todo
+      ON notifications_todo_lnk (study_plan_todo_id)
+    `,
+  ];
+
+  const hasQueueKey = await strapi.db.connection.schema.hasColumn(
+    'notifications',
+    'queue_key'
+  );
+
+  if (hasQueueKey) {
+    statements.push(`
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_notifications_pending_queue_key
+      ON notifications (queue_key)
+      WHERE sent = false
+    `);
+  }
+
+  for (const statement of statements) {
+    try {
+      await strapi.db.connection.raw(statement);
+    } catch (error) {
+      strapi.log.warn(
+        `[bootstrap] notification index setup failed: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    }
+  }
 }
 
 async function migrateLegacyDayOfWeek(strapi: Core.Strapi) {
@@ -1029,6 +1092,7 @@ export default {
     await setupPasswordResetSettings(strapi);
     await setupBilling(strapi);
     await migrateLegacyDayOfWeek(strapi);
+    await ensureNotificationIndexes(strapi);
     await fixLegacyUsersWithoutProvider(strapi);
   },
 };

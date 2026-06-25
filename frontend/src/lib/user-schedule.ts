@@ -52,7 +52,7 @@ export const WEEKDAY_OPTIONS = [
   { value: 0, label: '일' },
 ] as const;
 
-const WEEKDAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
+export const WEEKDAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
 
 export interface ScheduleOccurrenceOverride {
   title: string;
@@ -101,6 +101,19 @@ export function shiftIsoDate(date: string, days: number): string {
   const parsed = new Date(`${date}T12:00:00`);
   parsed.setDate(parsed.getDate() + days);
   return formatIsoDate(parsed);
+}
+
+/** 월요일 시작 주간 — `date`가 속한 주의 ISO 날짜 7개 (월~일) */
+export function getWeekDatesContaining(date: string): string[] {
+  const parsed = new Date(`${date}T12:00:00`);
+  const weekStart = new Date(parsed);
+  weekStart.setDate(parsed.getDate() - ((parsed.getDay() + 6) % 7));
+
+  return Array.from({ length: 7 }, (_, index) => {
+    const day = new Date(weekStart);
+    day.setDate(weekStart.getDate() + index);
+    return formatIsoDate(day);
+  });
 }
 
 export function getMonthRange(date: string): { start: string; end: string } {

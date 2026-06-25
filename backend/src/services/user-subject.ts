@@ -52,6 +52,8 @@ export interface UserSubject {
   label: string;
   category?: LegacyStudyPlanSubject;
   source: UserSubjectSource;
+  /** 팔레트에서 선택한 accent hex (#RRGGBB). 미설정 시 카테고리 기본색 사용 */
+  color?: string;
   textbooks?: string[];
   studyMethods?: string[];
 }

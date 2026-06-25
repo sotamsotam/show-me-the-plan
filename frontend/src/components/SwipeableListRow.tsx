@@ -9,8 +9,12 @@ const DRAG_CLICK_THRESHOLD = 8;
 
 interface SwipeableListRowProps {
   children: ReactNode;
+  /** Left swipe reveals trailing action (right side). */
   actionLabel: string;
   onAction: () => void;
+  /** Right swipe reveals leading action (left side). */
+  leadingLabel?: string;
+  onLeadingAction?: () => void;
   onTap?: () => void;
   disabled?: boolean;
   contentClassName?: string;
@@ -20,10 +24,13 @@ export default function SwipeableListRow({
   children,
   actionLabel,
   onAction,
+  leadingLabel,
+  onLeadingAction,
   onTap,
   disabled = false,
   contentClassName = '',
 }: SwipeableListRowProps) {
+  const hasLeading = Boolean(leadingLabel && onLeadingAction);
   const [offsetX, setOffsetX] = useState(0);
   const [dragging, setDragging] = useState(false);
   const startXRef = useRef(0);
@@ -53,19 +60,37 @@ export default function SwipeableListRow({
       movedRef.current = true;
     }
 
-    const nextOffset = Math.min(0, Math.max(-ACTION_WIDTH, baseOffsetRef.current + delta));
+    const minOffset = -ACTION_WIDTH;
+    const maxOffset = hasLeading ? ACTION_WIDTH : 0;
+    const nextOffset = Math.min(maxOffset, Math.max(minOffset, baseOffsetRef.current + delta));
     setOffsetX(nextOffset);
   }
 
   function finishDrag() {
     setDragging(false);
-    setOffsetX((current) => (current <= -OPEN_THRESHOLD ? -ACTION_WIDTH : 0));
+    setOffsetX((current) => {
+      if (current >= OPEN_THRESHOLD) {
+        return hasLeading ? ACTION_WIDTH : 0;
+      }
+
+      if (current <= -OPEN_THRESHOLD) {
+        return -ACTION_WIDTH;
+      }
+
+      return 0;
+    });
   }
 
-  function handleActionClick() {
+  function handleTrailingClick() {
     setOffsetX(0);
     triggerHaptic('light');
     onAction();
+  }
+
+  function handleLeadingClick() {
+    setOffsetX(0);
+    triggerHaptic('light');
+    onLeadingAction?.();
   }
 
   function handleContentClick() {
@@ -79,13 +104,28 @@ export default function SwipeableListRow({
 
   return (
     <div className="relative overflow-hidden md:overflow-visible">
+      {hasLeading ? (
+        <div
+          className="absolute inset-y-0 left-0 flex w-20 items-stretch md:hidden"
+          aria-hidden={offsetX === 0}
+        >
+          <button
+            type="button"
+            onClick={handleLeadingClick}
+            className="touch-press flex h-full w-full items-center justify-center bg-amber-500 text-sm font-medium text-white"
+          >
+            {leadingLabel}
+          </button>
+        </div>
+      ) : null}
+
       <div
         className="absolute inset-y-0 right-0 flex w-20 items-stretch md:hidden"
         aria-hidden={offsetX === 0}
       >
         <button
           type="button"
-          onClick={handleActionClick}
+          onClick={handleTrailingClick}
           className="touch-press flex h-full w-full items-center justify-center bg-blue-600 text-sm font-medium text-white"
         >
           {actionLabel}

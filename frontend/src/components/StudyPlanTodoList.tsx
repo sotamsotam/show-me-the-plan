@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo, useState, type SVGProps } from 'react';
 import { ChevronRightIcon } from '@/components/ChevronRightIcon';
 import ExecutionStatusCheckbox, {
   getCheckboxVisualState,
@@ -17,7 +18,13 @@ import {
   type ExpandedStudyPlanTodoEvent,
   type StudyPlanTodo,
 } from '@/lib/study-plan-todo';
-import { resolveSubjectCategory, type LegacyStudyPlanSubject } from '@/lib/user-subject';
+import { resolveSubjectCategory, type LegacyStudyPlanSubject, type UserSubject } from '@/lib/user-subject';
+import {
+  buildSubjectAccentBarStyle,
+  buildSubjectBadgeStyle,
+  buildSubjectRowStyle,
+  hasExplicitSubjectColor,
+} from '@/lib/subject-color';
 import ExamCountdownBadge from '@/components/calendar/ExamCountdownBadge';
 import TodoDayStampVisual from '@/components/TodoDayStampVisual';
 import type { ExamCountdownResult } from '@/lib/exam-countdown';
@@ -25,8 +32,17 @@ import type { TodoDayStamp } from '@/lib/todo-day-stamp';
 import {
   formatOccurrenceDateLabel,
   getTodayIsoDate,
+  getWeekDatesContaining,
   shiftIsoDate,
+  WEEKDAY_LABELS,
 } from '@/lib/user-schedule';
+import {
+  groupConsecutiveTodosBySubject,
+  readStudyPlanTodoListSortMode,
+  sortExpandedEventsBySubjectOrder,
+  writeStudyPlanTodoListSortMode,
+  type StudyPlanTodoListSortMode,
+} from '@/lib/study-plan-todo-list-sort';
 
 interface StudyPlanTodoListProps {
   selectedDate: string;
@@ -37,6 +53,7 @@ interface StudyPlanTodoListProps {
   examCountdown?: ExamCountdownResult | null;
   loading?: boolean;
   onTodoClick?: (todo: ExpandedStudyPlanTodoEvent) => void;
+  onTodoEdit?: (todo: ExpandedStudyPlanTodoEvent) => void;
   onAddClick?: () => void;
 }
 
@@ -52,6 +69,34 @@ const STATUS_BADGE_STYLES: Record<ExecutionStatus, string> = {
 function formatTimeRange(start: string, end: string): string {
   return `${start.slice(11, 16)}~${end.slice(11, 16)}`;
 }
+
+function SubjectSortIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden {...props}>
+      <rect x="2.5" y="3" width="2.75" height="2.75" rx="0.6" />
+      <rect x="2.5" y="8.125" width="2.75" height="2.75" rx="0.6" />
+      <rect x="2.5" y="13.25" width="2.75" height="2.75" rx="0.6" />
+      <path d="M7.25 4.375h10.25a.625.625 0 010 1.25H7.25a.625.625 0 010-1.25zM7.25 9.5h10.25a.625.625 0 010 1.25H7.25a.625.625 0 010-1.25zM7.25 14.625h10.25a.625.625 0 010 1.25H7.25a.625.625 0 010-1.25z" />
+    </svg>
+  );
+}
+
+function TimeSortIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden {...props}>
+      <path
+        fillRule="evenodd"
+        d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-11.5a.75.75 0 00-1.5 0v4.5a.75.75 0 00.75.75h2.75a.75.75 0 000-1.5h-2.25V6.5z"
+        clipRule="evenodd"
+      />
+    </svg>
+  );
+}
+
+const SORT_TOGGLE_BUTTON_CLASS =
+  'touch-press mt-2 inline-flex items-center gap-1.5 rounded-full bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white shadow-md shadow-blue-600/25 transition-[transform,background-color] active:scale-[0.97] hover:bg-blue-700 dark:shadow-black/30 dark:hover:bg-blue-500';
+
+const SORT_TOGGLE_ICON_CLASS = 'h-3.5 w-3.5 shrink-0 text-white';
 
 const SUBJECT_ACCENT_COLORS: Record<LegacyStudyPlanSubject, string> = {
   korean: 'bg-red-500',
@@ -123,6 +168,128 @@ const SUBJECT_ROW_STYLES: Record<LegacyStudyPlanSubject, string> = {
     'md:border-gray-300 md:bg-gray-100 md:shadow-sm md:transition-colors md:hover:bg-gray-200/80 dark:md:border-neutral-600 dark:md:bg-zinc-800/70 dark:md:hover:bg-zinc-800',
 };
 
+type AccentBarMode = 'individual' | 'grouped';
+
+interface StudyPlanTodoListRowProps {
+  todo: ExpandedStudyPlanTodoEvent;
+  profileSubjects: UserSubject[];
+  todosById?: Map<number, StudyPlanTodo>;
+  onTodoClick?: (todo: ExpandedStudyPlanTodoEvent) => void;
+  onTodoEdit?: (todo: ExpandedStudyPlanTodoEvent) => void;
+  accentBar: AccentBarMode;
+}
+
+function StudyPlanTodoListRow({
+  todo,
+  profileSubjects,
+  todosById,
+  onTodoClick,
+  onTodoEdit,
+  accentBar,
+}: StudyPlanTodoListRowProps) {
+  const execution = getExecutionRecord(todosById?.get(todo.todoId), todo.date);
+  const checkboxStatus = getCheckboxVisualState(execution);
+  const executionLabel = execution
+    ? getExecutionStatusLabel(execution.status)
+    : '대기';
+  const subjectCategory = resolveSubjectCategory(todo.subject, profileSubjects);
+  const customAccentStyle = buildSubjectAccentBarStyle(todo.subject, profileSubjects);
+  const customBadgeStyle = buildSubjectBadgeStyle(todo.subject, profileSubjects);
+
+  return (
+    <SwipeableListRow
+      actionLabel="기록"
+      onAction={() => onTodoClick?.(todo)}
+      leadingLabel="수정"
+      onLeadingAction={() => onTodoEdit?.(todo)}
+      onTap={() => onTodoClick?.(todo)}
+    >
+      <div
+        role="button"
+        tabIndex={0}
+        aria-label={`${getSubjectLabel(todo.subject, profileSubjects)} ${todo.title} - ${executionLabel}`}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            onTodoClick?.(todo);
+          }
+        }}
+        className={`touch-press flex w-full cursor-pointer items-center gap-3 text-left active:bg-gray-50 md:gap-3 md:active:bg-transparent dark:active:bg-zinc-800/60 dark:md:active:bg-transparent ${
+          accentBar === 'grouped'
+            ? 'py-3.5 pr-4 md:py-3 md:pr-3'
+            : 'px-4 py-3.5 md:p-3'
+        }`}
+      >
+        {accentBar === 'individual' ? (
+          <>
+            <span
+              className={`hidden h-10 w-1 shrink-0 rounded-full md:block ${customAccentStyle ? '' : SUBJECT_ACCENT_COLORS[subjectCategory]}`}
+              style={customAccentStyle}
+              aria-hidden
+            />
+            <span
+              className={`h-10 w-1 shrink-0 rounded-full md:hidden ${customAccentStyle ? '' : SUBJECT_ACCENT_COLORS[subjectCategory]}`}
+              style={customAccentStyle}
+              aria-hidden
+            />
+          </>
+        ) : null}
+
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span
+                className={`shrink-0 rounded px-1.5 py-0.5 text-xs font-medium ${customBadgeStyle ? 'border md:border md:bg-white md:shadow-sm dark:md:bg-zinc-900 dark:md:shadow-sm' : SUBJECT_BADGE_STYLES[subjectCategory]}`}
+                style={customBadgeStyle}
+              >
+                {getSubjectLabel(todo.subject, profileSubjects)}
+              </span>
+              <p className="min-w-0 text-[15px] font-semibold leading-snug text-gray-900 dark:text-gray-100">
+                {todo.title}
+              </p>
+            </div>
+            <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+              계획 {formatTimeRange(todo.start, todo.end)}
+            </p>
+            {execution?.executedStartTime && execution.executedEndTime && (
+              <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                시행 {execution.executedStartTime}~{execution.executedEndTime}
+              </p>
+            )}
+          </div>
+
+          <div className="flex shrink-0 items-center gap-2">
+            <div className="flex flex-col items-end gap-1.5">
+              {execution && (
+                <span
+                  className={`rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap ${STATUS_BADGE_STYLES[execution.status]}`}
+                >
+                  {getExecutionStatusLabel(execution.status)}
+                  {(execution.status === 'completed' || execution.status === 'partial') &&
+                    execution.achievementLevel != null &&
+                    ` ${execution.achievementLevel}/10`}
+                </span>
+              )}
+              <ExecutionStatusCheckbox status={checkboxStatus} />
+            </div>
+            {onTodoEdit ? (
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onTodoEdit(todo);
+                }}
+                className="touch-press hidden shrink-0 rounded-lg border border-amber-300 px-2.5 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-50 md:inline-flex dark:border-amber-700 dark:text-amber-300 dark:hover:bg-amber-950"
+              >
+                수정
+              </button>
+            ) : null}
+            <ChevronRightIcon className="h-4 w-4 shrink-0 text-gray-400 md:hidden" />
+          </div>
+        </div>
+      </SwipeableListRow>
+  );
+}
+
 export default function StudyPlanTodoList({
   selectedDate,
   onSelectedDateChange,
@@ -132,12 +299,41 @@ export default function StudyPlanTodoList({
   examCountdown = null,
   loading = false,
   onTodoClick,
+  onTodoEdit,
   onAddClick,
 }: StudyPlanTodoListProps) {
   const { subjects: profileSubjects } = useProfileSubjectsContext();
-  const dayTodos = filterEventsByDate(events, selectedDate);
+  const [sortMode, setSortMode] = useState<StudyPlanTodoListSortMode>(() =>
+    readStudyPlanTodoListSortMode()
+  );
+  const filteredDayTodos = useMemo(
+    () => filterEventsByDate(events, selectedDate),
+    [events, selectedDate]
+  );
+  const dayTodos = useMemo(() => {
+    if (sortMode === 'time') {
+      return filteredDayTodos;
+    }
+
+    return sortExpandedEventsBySubjectOrder(filteredDayTodos, profileSubjects);
+  }, [filteredDayTodos, profileSubjects, sortMode]);
+  const subjectGroups = useMemo(
+    () => (sortMode === 'subject' ? groupConsecutiveTodosBySubject(dayTodos) : []),
+    [dayTodos, sortMode]
+  );
   const executedCount = countExecutedTodos(events, selectedDate, todosById ?? new Map());
-  const isToday = selectedDate === getTodayIsoDate();
+  const todayIsoDate = getTodayIsoDate();
+  const isToday = selectedDate === todayIsoDate;
+  const weekDates = useMemo(
+    () => getWeekDatesContaining(selectedDate),
+    [selectedDate]
+  );
+
+  function handleSortToggle() {
+    const nextMode: StudyPlanTodoListSortMode = sortMode === 'time' ? 'subject' : 'time';
+    setSortMode(nextMode);
+    writeStudyPlanTodoListSortMode(nextMode);
+  }
 
   return (
     <div className="flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-zinc-900 md:shadow-sm">
@@ -202,15 +398,55 @@ export default function StudyPlanTodoList({
           </button>
         </div>
 
-        {!isToday && (
-          <button
-            type="button"
-            onClick={() => onSelectedDateChange(getTodayIsoDate())}
-            className="touch-press mt-3 min-h-11 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 dark:border-neutral-600 dark:text-gray-300 dark:hover:bg-zinc-800"
-          >
-            오늘로 이동
-          </button>
-        )}
+        <div className="mt-3" role="group" aria-label="이번 주 날짜 선택">
+          <div className="grid grid-cols-7 text-center">
+            {weekDates.map((date) => {
+              const weekdayIndex = new Date(`${date}T12:00:00`).getDay();
+              const weekdayClass =
+                weekdayIndex === 0
+                  ? 'text-red-500 dark:text-red-400'
+                  : weekdayIndex === 6
+                    ? 'text-blue-600 dark:text-blue-400'
+                    : 'text-gray-500 dark:text-gray-400';
+
+              return (
+                <span
+                  key={`label-${date}`}
+                  className={`text-xs font-medium ${weekdayClass}`}
+                  aria-hidden
+                >
+                  {WEEKDAY_LABELS[weekdayIndex]}
+                </span>
+              );
+            })}
+          </div>
+          <div className="mt-1 grid grid-cols-7 text-center">
+            {weekDates.map((date) => {
+              const dayNumber = new Date(`${date}T12:00:00`).getDate();
+              const isSelected = date === selectedDate;
+              const isTodayDate = date === todayIsoDate;
+
+              return (
+                <button
+                  key={date}
+                  type="button"
+                  onClick={() => onSelectedDateChange(date)}
+                  aria-label={`${date} 선택`}
+                  aria-current={isSelected ? 'date' : undefined}
+                  className={`touch-press mx-auto flex h-9 w-9 items-center justify-center rounded-full text-sm transition-colors ${
+                    isSelected
+                      ? 'bg-blue-100 font-bold text-blue-600 dark:bg-blue-950 dark:text-blue-300'
+                      : isTodayDate
+                        ? 'font-bold text-blue-600 hover:bg-gray-100 dark:text-blue-400 dark:hover:bg-zinc-800'
+                        : 'font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-zinc-800'
+                  }`}
+                >
+                  {dayNumber}
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
       <div className="md:p-4">
@@ -222,98 +458,95 @@ export default function StudyPlanTodoList({
           </p>
         ) : (
           <ul className="md:space-y-3">
-            {dayTodos.map((todo, index) => {
-              const execution = getExecutionRecord(
-                todosById?.get(todo.todoId),
-                todo.date
-              );
-              const checkboxStatus = getCheckboxVisualState(execution);
-              const executionLabel = execution
-                ? getExecutionStatusLabel(execution.status)
-                : '대기';
-              const subjectCategory = resolveSubjectCategory(
-                todo.subject,
-                profileSubjects
-              );
+            {sortMode === 'subject'
+              ? subjectGroups.map((group, groupIndex) => {
+                  const subjectCategory = resolveSubjectCategory(
+                    group.subject,
+                    profileSubjects
+                  );
+                  const customRowStyle = buildSubjectRowStyle(group.subject, profileSubjects);
+                  const customAccentStyle = buildSubjectAccentBarStyle(
+                    group.subject,
+                    profileSubjects
+                  );
+                  const useCustomColor = hasExplicitSubjectColor(group.subject, profileSubjects);
 
-              return (
-                <li
-                  key={todo.id}
-                  className={`overflow-hidden ${SUBJECT_ROW_STYLES[subjectCategory]} ${
-                    index > 0
-                      ? 'border-t border-gray-200 dark:border-neutral-800 md:border-t-0'
-                      : ''
-                  } md:rounded-lg md:border`}
-                >
-                <SwipeableListRow
-                  actionLabel="기록"
-                  onAction={() => onTodoClick?.(todo)}
-                  onTap={() => onTodoClick?.(todo)}
-                >
-                  <div
-                    role="button"
-                    tabIndex={0}
-                    aria-label={`${getSubjectLabel(todo.subject, profileSubjects)} ${todo.title} - ${executionLabel}`}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter' || event.key === ' ') {
-                        event.preventDefault();
-                        onTodoClick?.(todo);
-                      }
-                    }}
-                    className="touch-press flex w-full cursor-pointer items-center gap-3 px-4 py-3.5 text-left active:bg-gray-50 md:gap-3 md:p-3 md:active:bg-transparent dark:active:bg-zinc-800/60 dark:md:active:bg-transparent"
-                  >
-                    <span
-                      className={`hidden h-10 w-1 shrink-0 rounded-full md:block ${SUBJECT_ACCENT_COLORS[subjectCategory]}`}
-                      aria-hidden
-                    />
-                    <span
-                      className={`h-10 w-1 shrink-0 rounded-full md:hidden ${SUBJECT_ACCENT_COLORS[subjectCategory]}`}
-                      aria-hidden
-                    />
-
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-1.5">
+                  return (
+                    <li
+                      key={`${group.subject}-${group.todos[0]?.id ?? groupIndex}`}
+                      className={`flex items-stretch overflow-hidden ${
+                        useCustomColor
+                          ? 'md:rounded-lg md:border md:shadow-sm md:transition-colors'
+                          : SUBJECT_ROW_STYLES[subjectCategory]
+                      } ${
+                        groupIndex > 0
+                          ? 'border-t border-gray-200 dark:border-neutral-800 md:border-t-0'
+                          : ''
+                      } md:rounded-lg md:border`}
+                      style={customRowStyle}
+                    >
+                      <div
+                        className={`ml-4 mr-3 flex w-1 shrink-0 flex-col self-stretch py-3.5 md:ml-3 md:mr-3 md:py-3 ${
+                          group.todos.length === 1 ? 'items-center justify-center' : ''
+                        }`}
+                      >
                         <span
-                          className={`shrink-0 rounded px-1.5 py-0.5 text-xs font-medium ${SUBJECT_BADGE_STYLES[subjectCategory]}`}
-                        >
-                          {getSubjectLabel(todo.subject, profileSubjects)}
-                        </span>
-                        <p className="min-w-0 text-[15px] font-semibold leading-snug text-gray-900 dark:text-gray-100">
-                          {todo.title}
-                        </p>
+                          className={`w-1 rounded-full ${
+                            customAccentStyle ? '' : SUBJECT_ACCENT_COLORS[subjectCategory]
+                          } ${group.todos.length === 1 ? 'h-10' : 'min-h-10 flex-1'}`}
+                          style={customAccentStyle}
+                          aria-hidden
+                        />
                       </div>
-                      <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                        계획 {formatTimeRange(todo.start, todo.end)}
-                      </p>
-                      {execution?.executedStartTime && execution.executedEndTime && (
-                        <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                          시행 {execution.executedStartTime}~{execution.executedEndTime}
-                        </p>
-                      )}
-                    </div>
+                      <div className="min-w-0 flex-1 divide-y divide-gray-200 dark:divide-neutral-800">
+                        {group.todos.map((todo) => (
+                          <StudyPlanTodoListRow
+                            key={todo.id}
+                            todo={todo}
+                            profileSubjects={profileSubjects}
+                            todosById={todosById}
+                            onTodoClick={onTodoClick}
+                            onTodoEdit={onTodoEdit}
+                            accentBar="grouped"
+                          />
+                        ))}
+                      </div>
+                    </li>
+                  );
+                })
+              : dayTodos.map((todo, index) => {
+                  const subjectCategory = resolveSubjectCategory(
+                    todo.subject,
+                    profileSubjects
+                  );
+                  const customRowStyle = buildSubjectRowStyle(todo.subject, profileSubjects);
+                  const useCustomColor = hasExplicitSubjectColor(todo.subject, profileSubjects);
 
-                    <div className="flex shrink-0 items-center gap-2">
-                      <div className="flex flex-col items-end gap-1.5">
-                        {execution && (
-                          <span
-                            className={`rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap ${STATUS_BADGE_STYLES[execution.status]}`}
-                          >
-                            {getExecutionStatusLabel(execution.status)}
-                            {(execution.status === 'completed' ||
-                              execution.status === 'partial') &&
-                              execution.achievementLevel != null &&
-                              ` ${execution.achievementLevel}/10`}
-                          </span>
-                        )}
-                        <ExecutionStatusCheckbox status={checkboxStatus} />
-                      </div>
-                      <ChevronRightIcon className="h-4 w-4 shrink-0 text-gray-400 md:hidden" />
-                    </div>
-                  </div>
-                </SwipeableListRow>
-                </li>
-              );
-            })}
+                  return (
+                    <li
+                      key={todo.id}
+                      className={`overflow-hidden ${
+                        useCustomColor
+                          ? 'md:rounded-lg md:border md:shadow-sm md:transition-colors'
+                          : SUBJECT_ROW_STYLES[subjectCategory]
+                      } ${
+                        index > 0
+                          ? 'border-t border-gray-200 dark:border-neutral-800 md:border-t-0'
+                          : ''
+                      } md:rounded-lg md:border`}
+                      style={customRowStyle}
+                    >
+                      <StudyPlanTodoListRow
+                        todo={todo}
+                        profileSubjects={profileSubjects}
+                        todosById={todosById}
+                        onTodoClick={onTodoClick}
+                        onTodoEdit={onTodoEdit}
+                        accentBar="individual"
+                      />
+                    </li>
+                  );
+                })}
           </ul>
         )}
 
@@ -328,9 +561,29 @@ export default function StudyPlanTodoList({
           >
             <div className="min-w-0 flex-1 self-center">
               {dayTodos.length > 0 && (
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  총 {dayTodos.length}개 · 실행 {executedCount}개
-                </p>
+                <>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    총 {dayTodos.length}개 · 실행 {executedCount}개
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleSortToggle}
+                    className={SORT_TOGGLE_BUTTON_CLASS}
+                    aria-label={sortMode === 'time' ? '과목별로 정렬' : '시간순으로 정렬'}
+                  >
+                    {sortMode === 'time' ? (
+                      <>
+                        <SubjectSortIcon className={SORT_TOGGLE_ICON_CLASS} />
+                        과목별 정렬
+                      </>
+                    ) : (
+                      <>
+                        <TimeSortIcon className={SORT_TOGGLE_ICON_CLASS} />
+                        시간순 정렬
+                      </>
+                    )}
+                  </button>
+                </>
               )}
               {onAddClick && (
                 <button

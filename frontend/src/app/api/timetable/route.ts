@@ -1,6 +1,7 @@
 import { appendStudentUserIdToParams } from '@/lib/api-student-query';
 import { getServerStrapiJwt } from '@/lib/auth';
 import { timetableToCalendarEvents } from '@/lib/timetable';
+import type { UserSubject } from '@/lib/user-subject';
 import { strapiFetch } from '@/lib/strapi';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -52,7 +53,8 @@ export async function GET(request: NextRequest) {
         ...event,
         kind: 'exam' as const,
       })) ?? [],
-      data.profile?.schoolLevel ?? 'middle'
+      data.profile?.schoolLevel ?? 'middle',
+      (data.subjects as UserSubject[] | undefined) ?? undefined
     ),
   });
 }

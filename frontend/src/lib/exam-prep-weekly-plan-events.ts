@@ -11,6 +11,7 @@ import {
 import type { ExamPrepWeeklyPlans } from '@/lib/exam-prep-weekly-plan';
 import { EXAM_PREP_MEMO_EVENT_TYPE } from '@/lib/exam-prep-memo';
 import { subjectClassName } from '@/lib/calendar-design-tokens';
+import { enrichCalendarEventWithSubjectColor } from '@/lib/subject-color';
 import { ymdToIsoDate } from '@/lib/period-times';
 import { getSubjectLabel, type UserSubject } from '@/lib/user-subject';
 
@@ -82,30 +83,36 @@ export function buildExamPrepWeeklyPlanEvents(
 
         const subjectLabel = getSubjectLabel(subjectId, input.subjects);
 
-        events.push({
-          id: buildExamPrepMemoEventId(roundSlot, weekNumber, subjectId),
-          title: `[${subjectLabel}] ${trimmedContent}`,
-          start: ymdToIsoDate(range.start),
-          end: ymdToIsoDate(addDaysYmd(range.end, 1)),
-          allDay: true,
-          editable: false,
-          startEditable: false,
-          durationEditable: false,
-          classNames: [
-            'exam-prep-memo-event',
-            'cal-event-card',
-            subjectClassName(subjectId, input.subjects),
-          ],
-          extendedProps: {
-            type: EXAM_PREP_MEMO_EVENT_TYPE,
-            roundSlot,
-            weekNumber,
+        events.push(
+          enrichCalendarEventWithSubjectColor(
+            {
+              id: buildExamPrepMemoEventId(roundSlot, weekNumber, subjectId),
+              title: `[${subjectLabel}] ${trimmedContent}`,
+              start: ymdToIsoDate(range.start),
+              end: ymdToIsoDate(addDaysYmd(range.end, 1)),
+              allDay: true,
+              editable: false,
+              startEditable: false,
+              durationEditable: false,
+              classNames: [
+                'exam-prep-memo-event',
+                'cal-event-card',
+                subjectClassName(subjectId, input.subjects),
+              ],
+              extendedProps: {
+                type: EXAM_PREP_MEMO_EVENT_TYPE,
+                roundSlot,
+                weekNumber,
+                subjectId,
+                content: trimmedContent,
+                weekStart: range.start,
+                weekEnd: range.end,
+              },
+            },
             subjectId,
-            content: trimmedContent,
-            weekStart: range.start,
-            weekEnd: range.end,
-          },
-        });
+            input.subjects
+          )
+        );
       }
     }
   }

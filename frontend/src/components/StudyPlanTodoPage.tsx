@@ -10,9 +10,11 @@ import { useUserSchedulesInRange } from '@/hooks/useUserSchedulesInRange';
 import StudyPlanDayTimeline from '@/components/StudyPlanDayTimeline';
 import DayStudyTimeProgress from '@/components/DayStudyTimeProgress';
 import MobileFab from '@/components/MobileFab';
+import StudyPlanOccurrenceChooser from '@/components/StudyPlanOccurrenceChooser';
 import StudyPlanTodoExecutionModal from '@/components/StudyPlanTodoExecutionModal';
 import StudyPlanTodoForm, {
   type StudyPlanTodoFormInitial,
+  type StudyPlanTodoFormMode,
 } from '@/components/StudyPlanTodoForm';
 import StudyPlanTodoList from '@/components/StudyPlanTodoList';
 import {
@@ -20,6 +22,7 @@ import {
   TimelineSkeleton,
 } from '@/components/skeletons/MobileSkeletons';
 import { invalidateStudyPlanTodos } from '@/lib/dashboard-data-invalidation';
+import { useStudySession } from '@/hooks/useStudySession';
 import { fetchTodoDayStampsInRange, type TodoDayStamp } from '@/lib/todo-day-stamp';
 import { findTodoDayStampForDate } from '@/lib/todo-day-stamp-helpers';
 import {
@@ -28,11 +31,17 @@ import {
   type DayViewMode,
 } from '@/lib/day-timeline';
 import {
+  buildInitialFromExpandedEvent,
+  resolveEditFormMode,
+  shouldShowOccurrenceChooser,
+} from '@/lib/study-plan-todo-edit';
+import {
   filterEventsByDate,
   getExecutionRecord,
   type ExpandedStudyPlanTodoEvent,
+  type StudyPlanTodo,
 } from '@/lib/study-plan-todo';
-import { getMonthRange, getTodayIsoDate } from '@/lib/user-schedule';
+import { formatOccurrenceDateLabel, getMonthRange, getTodayIsoDate } from '@/lib/user-schedule';
 
 const MOBILE_MEDIA_QUERY = '(max-width: 640px)';
 
@@ -58,7 +67,16 @@ export default function StudyPlanTodoPage() {
   const [isMobile, setIsMobile] = useState(getIsMobileViewport);
   const [modalOpen, setModalOpen] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
+  const [formMode, setFormMode] = useState<StudyPlanTodoFormMode>('create');
   const [formInitial, setFormInitial] = useState<StudyPlanTodoFormInitial | undefined>();
+  const [editingTodo, setEditingTodo] = useState<StudyPlanTodo | null>(null);
+  const [editOccurrenceDate, setEditOccurrenceDate] = useState('');
+  const [chooserOpen, setChooserOpen] = useState(false);
+  const [chooserTodo, setChooserTodo] = useState<StudyPlanTodo | null>(null);
+  const [chooserOccurrenceDate, setChooserOccurrenceDate] = useState('');
+  const [pendingEditEvent, setPendingEditEvent] = useState<ExpandedStudyPlanTodoEvent | null>(
+    null
+  );
   const [selectedEvent, setSelectedEvent] = useState<ExpandedStudyPlanTodoEvent | null>(
     null
   );
@@ -99,6 +117,8 @@ export default function StudyPlanTodoPage() {
     () => filterEventsByDate(events, selectedDate),
     [events, selectedDate]
   );
+
+  const { notifyExecutionSaved } = useStudySession(events);
 
   const plannedMinutes = useMemo(
     () => calculatePlannedStudyMinutes(events, selectedDate),
@@ -195,7 +215,50 @@ export default function StudyPlanTodoPage() {
     void loadDayStamps();
   }, [monthRange.end, monthRange.start, selectedDate, studentUserId]);
 
+  const handleSaved = useCallback(() => {
+    invalidateStudyPlanTodos(studentUserId);
+    void refetchStudyPlanTodos(true);
+  }, [refetchStudyPlanTodos, studentUserId]);
+
+  const closeChooser = useCallback(() => {
+    setChooserOpen(false);
+    setChooserTodo(null);
+    setChooserOccurrenceDate('');
+    setPendingEditEvent(null);
+  }, []);
+
+  const handleFormClose = useCallback(() => {
+    setFormOpen(false);
+    setFormInitial(undefined);
+    setEditingTodo(null);
+    setEditOccurrenceDate('');
+    setFormMode('create');
+    setPendingEditEvent(null);
+  }, []);
+
+  const openEditForm = useCallback(
+    (
+      todo: StudyPlanTodo,
+      mode: 'once' | 'occurrence' | 'series',
+      occurrenceDate: string,
+      event?: ExpandedStudyPlanTodoEvent | null
+    ) => {
+      setEditingTodo(todo);
+      setEditOccurrenceDate(occurrenceDate);
+      setFormInitial(event ? buildInitialFromExpandedEvent(event) : undefined);
+      setFormMode(mode);
+      setChooserOpen(false);
+      setChooserTodo(null);
+      setChooserOccurrenceDate('');
+      setFormOpen(true);
+    },
+    []
+  );
+
   const openCreateForm = useCallback(() => {
+    setEditingTodo(null);
+    setEditOccurrenceDate('');
+    setFormMode('create');
     setFormInitial({
       date: selectedDate,
       recurrenceType: 'once',
@@ -203,25 +266,73 @@ export default function StudyPlanTodoPage() {
     setFormOpen(true);
   }, [selectedDate]);
 
-  function handleTodoClick(todo: ExpandedStudyPlanTodoEvent) {
+  const handleTodoClick = useCallback((todo: ExpandedStudyPlanTodoEvent) => {
     setSelectedEvent(todo);
     setModalOpen(true);
-  }
+  }, []);
 
-  function handleModalClose() {
+  const handleTodoEdit = useCallback(
+    (event: ExpandedStudyPlanTodoEvent) => {
+      const todo = todosById.get(event.todoId);
+
+      if (!todo) {
+        return;
+      }
+
+      if (shouldShowOccurrenceChooser(event)) {
+        setPendingEditEvent(event);
+        setChooserTodo(todo);
+        setChooserOccurrenceDate(event.date);
+        setChooserOpen(true);
+        return;
+      }
+
+      openEditForm(todo, resolveEditFormMode(event), event.date, event);
+    },
+    [openEditForm, todosById]
+  );
+
+  const handleModalClose = useCallback(() => {
     setModalOpen(false);
     setSelectedEvent(null);
-  }
+  }, []);
 
-  function handleSaved() {
-    invalidateStudyPlanTodos(studentUserId);
-    void refetchStudyPlanTodos(true);
-  }
+  const handleDeleteOccurrence = useCallback(async () => {
+    if (!chooserTodo || !chooserOccurrenceDate) {
+      return;
+    }
 
-  function handleFormClose() {
-    setFormOpen(false);
-    setFormInitial(undefined);
-  }
+    if (
+      !confirm(
+        `${formatOccurrenceDateLabel(chooserOccurrenceDate)} 스터디 플랜만 삭제할까요?`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const res = await fetch(
+        withStudent(
+          `/api/study-plan-todos/${chooserTodo.id}/occurrences/${chooserOccurrenceDate}`
+        ),
+        {
+          method: 'DELETE',
+          credentials: 'include',
+        }
+      );
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error ?? '이 날짜 스터디 플랜 삭제에 실패했습니다.');
+        return;
+      }
+
+      closeChooser();
+      handleSaved();
+    } catch {
+      setError('이 날짜 스터디 플랜 삭제에 실패했습니다.');
+    }
+  }, [chooserOccurrenceDate, chooserTodo, closeChooser, handleSaved, withStudent]);
 
   const achievementRate =
     plannedMinutes > 0 ? Math.round((executedMinutes / plannedMinutes) * 100) : null;
@@ -244,6 +355,7 @@ export default function StudyPlanTodoPage() {
           examCountdown={countdown}
           loading={loading}
           onTodoClick={handleTodoClick}
+          onTodoEdit={handleTodoEdit}
           onAddClick={openCreateForm}
         />
 
@@ -283,12 +395,40 @@ export default function StudyPlanTodoPage() {
         todo={selectedEvent}
         existingRecord={existingRecord}
         onClose={handleModalClose}
-        onSaved={handleSaved}
+        onSaved={() => {
+          if (selectedEvent) {
+            notifyExecutionSaved(selectedEvent.todoId, selectedEvent.date);
+          }
+          handleSaved();
+        }}
       />
+
+      {chooserTodo && chooserOccurrenceDate && (
+        <StudyPlanOccurrenceChooser
+          open={chooserOpen}
+          todo={chooserTodo}
+          occurrenceDate={chooserOccurrenceDate}
+          onClose={closeChooser}
+          onEditOccurrence={() => {
+            openEditForm(
+              chooserTodo,
+              'occurrence',
+              chooserOccurrenceDate,
+              pendingEditEvent
+            );
+          }}
+          onDeleteOccurrence={handleDeleteOccurrence}
+          onEditSeries={() => {
+            openEditForm(chooserTodo, 'series', chooserOccurrenceDate);
+          }}
+        />
+      )}
 
       <StudyPlanTodoForm
         open={formOpen}
-        mode="create"
+        mode={formMode}
+        todo={editingTodo}
+        occurrenceDate={formMode === 'occurrence' ? editOccurrenceDate : undefined}
         initial={formInitial}
         onClose={handleFormClose}
         onSaved={() => {

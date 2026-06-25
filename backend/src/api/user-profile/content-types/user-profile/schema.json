@@ -94,6 +94,10 @@
     "isOperator": {
       "type": "boolean",
       "default": false
+    },
+    "notificationsEnabled": {
+      "type": "boolean",
+      "default": true
     }
   }
 }

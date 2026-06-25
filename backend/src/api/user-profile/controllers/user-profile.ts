@@ -1873,12 +1873,42 @@ export default factories.createCoreController(
           },
           entries,
           scheduleEvents,
+          subjects: resolveProfileSubjects(profile.subjects ?? null),
         });
       } catch (error) {
         const message =
           error instanceof Error ? error.message : '시간표 조회에 실패했습니다.';
         return ctx.badRequest(message);
       }
+    },
+
+    async updateNotificationsEnabled(ctx) {
+      const user = ctx.state.user;
+
+      if (!user) {
+        return ctx.unauthorized('로그인이 필요합니다.');
+      }
+
+      const { enabled } = ctx.request.body as { enabled?: unknown };
+
+      if (typeof enabled !== 'boolean') {
+        return ctx.badRequest('enabled(boolean)는 필수입니다.');
+      }
+
+      const profile = await strapi.db.query('api::user-profile.user-profile').findOne({
+        where: { user: user.id },
+      });
+
+      if (!profile) {
+        return ctx.notFound('프로필을 찾을 수 없습니다.');
+      }
+
+      await strapi.db.query('api::user-profile.user-profile').update({
+        where: { id: profile.id },
+        data: { notificationsEnabled: enabled },
+      });
+
+      return ctx.send({ notificationsEnabled: enabled });
     },
   })
 );

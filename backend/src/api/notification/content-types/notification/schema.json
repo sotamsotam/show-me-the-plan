@@ -1,0 +1,57 @@
+{
+  "kind": "collectionType",
+  "collectionName": "notifications",
+  "info": {
+    "singularName": "notification",
+    "pluralName": "notifications",
+    "displayName": "Notification",
+    "description": "Pending study-plan todo push notification queue"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "required": true
+    },
+    "todo": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::study-plan-todo.study-plan-todo",
+      "required": true
+    },
+    "occurrenceDate": {
+      "type": "date",
+      "required": true
+    },
+    "queueKey": {
+      "type": "string",
+      "required": true
+    },
+    "sendAt": {
+      "type": "datetime",
+      "required": true
+    },
+    "sent": {
+      "type": "boolean",
+      "default": false,
+      "required": true
+    },
+    "skipReason": {
+      "type": "enumeration",
+      "enum": ["completed", "cancelled", "suppressed", "expired"]
+    },
+    "titleSnapshot": {
+      "type": "string"
+    },
+    "subjectSnapshot": {
+      "type": "string"
+    },
+    "sentAt": {
+      "type": "datetime"
+    }
+  }
+}

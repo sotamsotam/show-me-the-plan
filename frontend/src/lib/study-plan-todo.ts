@@ -2,6 +2,7 @@ import type { EventInput } from '@fullcalendar/core';
 import { resolveStudyDayDateFromIso } from '@/lib/schedule-time';
 import type { RecurrenceType } from '@/lib/user-schedule';
 import { subjectClassName } from '@/lib/calendar-design-tokens';
+import { enrichCalendarEventWithSubjectColor } from '@/lib/subject-color';
 import {
   getSubjectLabel,
   getSubjectOptions,
@@ -132,7 +133,7 @@ export function expandedEventsToCalendarEvents(
   subjects?: ProfileSubjectsInput
 ): EventInput[] {
   return events.map((event) => {
-    return {
+    const baseEvent: EventInput = {
       id: event.id,
       title: formatStudyPlanEventTitle(event.subject, event.title, subjects),
       start: event.start,
@@ -153,6 +154,8 @@ export function expandedEventsToCalendarEvents(
         hasOverride: event.hasOverride,
       },
     };
+
+    return enrichCalendarEventWithSubjectColor(baseEvent, event.subject, subjects);
   });
 }
 

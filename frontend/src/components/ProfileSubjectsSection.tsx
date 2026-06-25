@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { FormEvent, useEffect, useState } from 'react';
+import SubjectColorPicker from '@/components/SubjectColorPicker';
 import { useProfileSubjectsContext } from '@/contexts/ProfileSubjectsContext';
 import type { UserSubject } from '@/lib/user-subject';
 
@@ -40,6 +41,23 @@ export default function ProfileSubjectsSection({
       prev.map((subject, subjectIndex) =>
         subjectIndex === index ? { ...subject, label } : subject
       )
+    );
+  }
+
+  function updateSubjectColor(index: number, color: string | undefined) {
+    setDraftSubjects((prev) =>
+      prev.map((subject, subjectIndex) => {
+        if (subjectIndex !== index) {
+          return subject;
+        }
+
+        if (!color) {
+          const { color: _removed, ...rest } = subject;
+          return rest;
+        }
+
+        return { ...subject, color };
+      })
     );
   }
 
@@ -127,8 +145,10 @@ export default function ProfileSubjectsSection({
       <div>
         <h2 className="text-lg font-medium">내 과목</h2>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          학교 정보 등록 시 시간표에서 자동으로 채워집니다. 스터디 플랜 추가 시
-          여기에 설정된 과목만 선택할 수 있습니다. 교재명·공부방법 태그는{' '}
+          학교 정보 등록 시 시간표에서 자동으로 채워집니다. 과목명을 바꾸면 학교
+          시간표에도 수정한 이름이 표시됩니다. 스터디 플랜 추가 시 여기에 설정된
+          과목만 선택할 수 있습니다. 색상 아이콘으로 과목별 표시 색을 바꿀 수
+          있습니다. 교재명·공부방법 태그는{' '}
           <Link
             href="/dashboard/preferences/subject-tags"
             className="text-blue-600 underline-offset-2 hover:underline dark:text-blue-400"
@@ -169,6 +189,15 @@ export default function ProfileSubjectsSection({
                     ↓
                   </button>
                 </div>
+
+                <SubjectColorPicker
+                  subjectId={subject.id}
+                  category={subject.category}
+                  color={subject.color}
+                  subjects={draftSubjects}
+                  disabled={saving}
+                  onChange={(color) => updateSubjectColor(index, color)}
+                />
 
                 <input
                   type="text"

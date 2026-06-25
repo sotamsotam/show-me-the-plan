@@ -1,6 +1,7 @@
 import type { EventInput } from '@fullcalendar/core';
 import { subjectClassName } from '@/lib/calendar-design-tokens';
-import { resolveSchoolSubject } from '@/lib/resolve-school-subject';
+import { resolveNeisTimetableSubject } from '@/lib/neis-timetable-subject';
+import type { ProfileSubjectsInput } from '@/lib/user-subject';
 import { getPeriodTimes, isSaturdayYmd, ymdToIsoDate } from './period-times';
 
 export interface TimetableEntry {
@@ -39,7 +40,8 @@ function isHolidaySubject(subject: string): boolean {
 
 export function entriesToCalendarEvents(
   entries: TimetableEntry[],
-  schoolLevel = 'middle'
+  schoolLevel = 'middle',
+  subjects?: ProfileSubjectsInput
 ): EventInput[] {
   const events: EventInput[] = [];
   const periodTimes = getPeriodTimes(schoolLevel);
@@ -55,19 +57,24 @@ export function entriesToCalendarEvents(
     }
 
     const isoDate = ymdToIsoDate(entry.date);
-    const subject = resolveSchoolSubject(entry.subject);
+    const resolved = resolveNeisTimetableSubject(entry.subject, subjects);
 
     events.push({
       id: `school-${entry.date}-${entry.period}`,
-      title: entry.subject,
+      title: resolved.displayLabel,
       start: `${isoDate}T${periodTime.start}:00`,
       end: `${isoDate}T${periodTime.end}:00`,
       editable: false,
-      classNames: ['school-event', 'cal-event-card', subjectClassName(subject)],
+      classNames: [
+        'school-event',
+        'cal-event-card',
+        subjectClassName(resolved.styleSubjectKey, subjects),
+      ],
       extendedProps: {
         type: 'school',
         period: entry.period,
-        subject,
+        subject: resolved.category,
+        neisSubject: resolved.neisLabel,
       },
     });
   }
@@ -119,11 +126,12 @@ export function examEventsToCalendarEvents(
 export function timetableToCalendarEvents(
   entries: TimetableEntry[],
   scheduleEvents: SchoolScheduleEvent[] = [],
-  schoolLevel = 'middle'
+  schoolLevel = 'middle',
+  subjects?: ProfileSubjectsInput
 ): EventInput[] {
   return [
     ...scheduleEventsToCalendarEvents(scheduleEvents),
-    ...entriesToCalendarEvents(entries, schoolLevel),
+    ...entriesToCalendarEvents(entries, schoolLevel, subjects),
   ];
 }
 

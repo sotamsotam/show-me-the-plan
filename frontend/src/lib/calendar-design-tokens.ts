@@ -1,5 +1,6 @@
 import type { StudyPlanSubject } from '@/lib/study-plan-todo';
 import type { PlanSubjectKey, ProfileSubjectsInput } from '@/lib/user-subject';
+import { getSubjectAccentColor } from '@/lib/subject-color';
 import { resolveSubjectCategory } from '@/lib/user-subject';
 
 export interface CalendarEventToken {
@@ -140,6 +141,5 @@ export function subjectAccentColor(
   subject: PlanSubjectKey,
   subjects?: ProfileSubjectsInput
 ): string {
-  const category = resolveSubjectCategory(subject, subjects);
-  return CALENDAR_SUBJECT_TOKENS[category].accent;
+  return getSubjectAccentColor(subject, subjects);
 }

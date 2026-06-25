@@ -72,6 +72,7 @@ export interface UserProfile {
   guardianConsentConfirmedAt?: string | null;
   termsAgreedAt?: string | null;
   isOperator?: boolean;
+  notificationsEnabled?: boolean;
 }
 
 export interface UserRole {

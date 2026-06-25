@@ -401,6 +401,9 @@ Strapi 콘텐츠 타입 4개 + 사용자 계정.
 | `NEIS_CACHE_ENABLED` | NEIS 시간표 인메모리 캐시 on/off (기본 `true`) |
 | `NEIS_CACHE_TTL_HOURS` | 캐시 TTL 시간 (기본 `12`) |
 | `NEIS_CACHE_MAX_ENTRIES` | 캐시 최대 엔트리 수 (기본 `2000`) |
+| `VAPID_PUBLIC_KEY` | Web Push 공개 키 (frontend `NEXT_PUBLIC_VAPID_PUBLIC_KEY`와 동일 값) |
+| `VAPID_PRIVATE_KEY` | Web Push 비공개 키 (backend 전용) |
+| `VAPID_SUBJECT` | VAPID subject (`mailto:` 또는 `https://` URL) |
 
 ---
 
@@ -411,9 +414,13 @@ Strapi 콘텐츠 타입 4개 + 사용자 계정.
 | 홈 화면 추가 | ✅ Android Chrome, iOS Safari |
 | standalone 실행 | ✅ (주소창 없는 앱 형태) |
 | Web App Manifest | ✅ |
-| Service Worker | ✅ (정적 에셋 캐시, API는 Network Only) |
-| 푸시 알람 | ❌ (향후 과제) |
+| Service Worker | ✅ (정적 에셋 캐시, API는 Network Only, push 핸들러 포함) |
+| 푸시 알람 (학습 TODO) | ✅ (서버 Web Push + SW 억제 정책) |
 | 오프라인 완전 지원 | ❌ (향후 과제) |
+
+- 학습 TODO `startTime` 정각에 「[과목] 제목 — 학습할 시간입니다」 알림
+- 설정 → **학습 알림** 토글로 전역 ON/OFF 및 Push 구독
+- 상세 설계: [PUSH-NOTIFICATION-DESIGN.md](./PUSH-NOTIFICATION-DESIGN.md)
 
 - HTTPS 필수 (`https://rmaker.duckdns.org`)
 - iOS: Safari 「홈 화면에 추가」 수동 안내 배너 제공
@@ -436,8 +443,10 @@ routine-maker/
 │   ├── src/api/              # 콘텐츠 타입·컨트롤러·라우트
 │   │   ├── user-profile/     # 프로필·회원가입·시간표·매니저
 │   │   ├── user-schedule/    # 개인 일정
-│   │   └── study-plan-todo/  # 스터디 플랜 TODO
-│   ├── src/services/         # NEIS, 반복 확장, 권한 검증
+│   │   ├── study-plan-todo/  # 스터디 플랜 TODO
+│   │   ├── notification/     # 푸시 알림 큐
+│   │   └── push-subscription/ # Web Push 구독
+│   ├── src/services/         # NEIS, 반복 확장, web-push, 알림 dispatch
 │   ├── config/               # DB, CORS, 미들웨어
 │   └── Dockerfile
 │
@@ -464,10 +473,10 @@ routine-maker/
 - 스케줄·스터디 플랜·TODO·통계
 - 매니저 모니터링
 - Docker 자체 호스팅
+- **학습 TODO 푸시 알람** (Web Push, Study Session 억제)
 
 ### 미포함 (향후)
 
-- 푸시 알람 (TODO 알림)
 - 오프라인 완전 지원
 - 앱스토어 배포 (iOS/Android 네이티브)
 - 부모 스크린타임 연동
@@ -482,7 +491,8 @@ routine-maker/
 | 분류 | 경로 |
 |------|------|
 | 인증 | `/api/auth/*`, `/api/register` |
-| 프로필 | `/api/profile/me`, `/api/profile/me/managers`, `/api/profile/managers/search`, `/api/profile/manager/students`, `/api/profile/change-password` |
+| 프로필 | `/api/profile/me`, `/api/profile/me/managers`, `/api/profile/managers/search`, `/api/profile/manager/students`, `/api/profile/change-password`, `/api/profile/notifications` |
+| 푸시 | `/api/push/subscribe`, `/api/push/unsubscribe` |
 | 일정 | `/api/user-schedules`, `/api/user-schedules/[id]`, `.../occurrences/[date]` |
 | 스터디 플랜 | `/api/study-plan-todos`, `.../[id]`, `.../occurrences/[date]`, `.../executions/[date]` |
 | 시간표 | `/api/timetable` |
@@ -498,6 +508,8 @@ routine-maker/
 | `GET/POST /api/user-profiles/me/managers` | 학생 담당 매니저 목록·추가 |
 | `DELETE /api/user-profiles/me/managers/:managerUserId` | 학생 담당 매니저 개별 해제 |
 | `GET /api/neis/schools` | 학교 검색 |
+| `POST /api/push-subscriptions/subscribe` | Web Push 구독 등록 |
+| `PUT /api/user-profiles/me/notifications` | 알림 전역 ON/OFF |
 
 ---
 
@@ -505,5 +517,6 @@ routine-maker/
 
 - [NEIS 메모리 캐시 구현](./NEIS-MEMORY-CACHE-IMPLEMENTATION.md)
 - [PWA 구현 가이드](./PWA-IMPLEMENTATION.md)
+- [학습 TODO 푸시 알람 설계](./PUSH-NOTIFICATION-DESIGN.md)
 - [클라우드 배포 검토](./CLOUD-DEPLOYMENT-REVIEW.md)
 - [Hetzner VPS 이전 가이드](./HETZNER-VPS-MIGRATION-GUIDE.md)

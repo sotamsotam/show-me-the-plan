@@ -8,6 +8,7 @@ import type {
   EventClickArg,
   EventContentArg,
   EventInput,
+  EventMountArg,
 } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
@@ -57,6 +58,7 @@ import {
 } from '@/lib/study-plan-todo-occurrence';
 import type { ExpandedStudyPlanTodoEvent, StudyPlanTodo } from '@/lib/study-plan-todo';
 import { expandedEventsToCalendarEvents, resolveOccurrenceFields } from '@/lib/study-plan-todo';
+import { mountCalendarEventSubjectColor } from '@/lib/subject-color';
 import { formatOccurrenceDateLabel } from '@/lib/user-schedule';
 
 const CALENDAR_PLUGINS = [dayGridPlugin, timeGridPlugin, listPlugin, interactionPlugin];
@@ -262,6 +264,9 @@ export default function StudyPlanCalendar() {
     (arg: EventContentArg) => renderCalendarEventContent(arg, profileSubjects),
     [profileSubjects]
   );
+  const handleEventDidMount = useCallback((arg: EventMountArg) => {
+    mountCalendarEventSubjectColor(arg.el, arg.event.extendedProps);
+  }, []);
   const [isMobile, setIsMobile] = useState(getIsMobileViewport);
   const [activeViewType, setActiveViewType] = useState(() =>
     resolveDefaultCalendarView(getIsMobileViewport())
@@ -1149,6 +1154,7 @@ export default function StudyPlanCalendar() {
             select={handleSelect}
             dateClick={handleDateClick}
             eventClick={handleEventClick}
+            eventDidMount={handleEventDidMount}
             eventChange={handleEventChange}
             eventContent={renderEventContent}
             displayEventTime={isListView}

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { FormEvent, useCallback, useEffect, useState } from 'react';
 import AccountDeletionSection from '@/components/AccountDeletionSection';
+import NotificationSettingsSection from '@/components/NotificationSettingsSection';
 import SubscriptionPointsSection from '@/components/billing/SubscriptionPointsSection';
 import { getMarketingHomeUrl } from '@/lib/account-helpers';
 import PasswordInput from '@/components/PasswordInput';
@@ -715,6 +716,12 @@ export default function SettingsForm() {
           {passwordSaving ? '변경 중...' : '비밀번호 변경'}
         </button>
       </form>
+
+      {isAnyStudentProfile && (
+        <NotificationSettingsSection
+          initialEnabled={profile?.notificationsEnabled !== false}
+        />
+      )}
 
       {isAnyStudentProfile && (
         <section className="mt-6 space-y-4 rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-zinc-900">

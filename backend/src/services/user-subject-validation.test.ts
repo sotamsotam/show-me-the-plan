@@ -252,4 +252,40 @@ describe('user-subject-validation', () => {
       })
     ).toBe('subject는 유효한 과목 값이어야 합니다.');
   });
+
+  it('validateAndNormalizeUserSubjects accepts palette colors and rejects unknown colors', () => {
+    expect(
+      validateAndNormalizeUserSubjects([
+        {
+          id: 'math',
+          label: '수학',
+          category: 'math',
+          source: 'neis',
+          color: '#9334E6',
+        },
+      ])
+    ).toEqual({
+      subjects: [
+        {
+          id: 'math',
+          label: '수학',
+          category: 'math',
+          source: 'neis',
+          color: '#9334E6',
+        },
+      ],
+    });
+
+    expect(
+      validateAndNormalizeUserSubjects([
+        {
+          id: 'math',
+          label: '수학',
+          category: 'math',
+          source: 'neis',
+          color: '#FFFFFF',
+        },
+      ])
+    ).toEqual({ error: '허용되지 않은 과목 색상입니다.' });
+  });
 });

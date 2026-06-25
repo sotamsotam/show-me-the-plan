@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { subjectClassName } from '@/lib/calendar-design-tokens';
+import { buildSubjectPanelStyle } from '@/lib/subject-color';
 import type { ExamPrepWeeklyPlansContext } from '@/lib/exam-prep-weekly-plans-context';
 import type { VacationWeeklyPlansContext } from '@/lib/vacation-weekly-plans-context';
 import { formatVacationWeekRange } from '@/lib/vacation-week-date-range';
@@ -145,6 +146,7 @@ function PanelContent({
                   <li
                     key={subject.subjectId}
                     className={`exam-prep-panel-subject ${subjectClassName(subject.subjectId, subjects)}`}
+                    style={buildSubjectPanelStyle(subject.subjectId, subjects)}
                   >
                     <p className="exam-prep-panel-subject-label">
                       {getSubjectLabel(subject.subjectId, subjects)}

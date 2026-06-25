@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { formatPrepWeekLabel } from '@/lib/exam-countdown';
 import { subjectClassName } from '@/lib/calendar-design-tokens';
+import { buildSubjectPanelStyle } from '@/lib/subject-color';
 import type { ExamPrepWeeklyPlansContext } from '@/lib/exam-prep-weekly-plans-context';
 import {
   resolveVisiblePrepWeekPlans,
@@ -79,6 +80,7 @@ function PanelContent({
                   <li
                     key={subject.subjectId}
                     className={`exam-prep-panel-subject ${subjectClassName(subject.subjectId, subjects)}`}
+                    style={buildSubjectPanelStyle(subject.subjectId, subjects)}
                   >
                     <p className="exam-prep-panel-subject-label">
                       {getSubjectLabel(subject.subjectId, subjects)}

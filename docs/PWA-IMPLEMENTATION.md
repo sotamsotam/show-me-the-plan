@@ -180,10 +180,10 @@ rutine-maker/
 
 ---
 
-## 6. 푸시 알람 (향후 과제, 이번 범위 제외)
+## 6. 푸시 알람 (2차 구현 완료)
 
-> TODO 등록 시간에 알림을 보내는 기능. **1차 PWA 작업에 포함하지 않는다.**  
-> 추후 구현 시 참고용으로 기록한다.
+> 학습 TODO `startTime` 정각 알림. **1차 PWA(설치·standalone) 이후 2차로 구현 완료.**  
+> 상세 설계·억제 정책·테스트 체크리스트: **[PUSH-NOTIFICATION-DESIGN.md](./PUSH-NOTIFICATION-DESIGN.md)**
 
 ### 6.1 PWA에서의 알람 방식
 
@@ -202,11 +202,25 @@ rutine-maker/
 
 예시 (사용자 100명, 5알림/일): 하루 500건 전송 — Show Me The Plan API 트래픽 대비 미미
 
-### 6.3 향후 구현 시 필요 요소
+### 6.3 구현 요소 (현재 코드베이스)
+
+| 항목 | 위치 |
+|------|------|
+| VAPID 키 | 루트 `.env` — `VAPID_*`, frontend는 `NEXT_PUBLIC_VAPID_PUBLIC_KEY` |
+| `web-push` 발송 | `backend/src/services/web-push.ts` |
+| 알림 큐 + cron | `backend/src/services/study-plan-todo-notify.ts`, `notification-dispatch.ts` |
+| Push 구독 API | `POST /api/push-subscriptions/subscribe` |
+| 구독 UI | 설정 → 학습 알림 (`NotificationSettingsSection`) |
+| SW push / Study Session | `frontend/src/worker/index.ts`, `useStudySession` hook |
+| iOS | 홈 화면 PWA + 알림 권한 필수 (`PwaInstallHint` 안내) |
+
+배포 시 `docker-compose.yml`이 `VAPID_*`를 Strapi·frontend에 전달한다. 기존 TODO 알림 큐 백필은 `backfillStudyPlanTodoNotificationQueues()` 유틸 참고.
+
+### 6.4 (참고) 초기 설계 시 필요 요소
 
 - VAPID 키, `web-push` 라이브러리
 - Push 구독 저장 (`/api/push/subscribe`)
-- `scheduled_notifications` 테이블 + cron/큐
+- `notifications` 큐 + cron
 - iOS: 홈 화면 PWA + 권한 허용 필수
 
 ---

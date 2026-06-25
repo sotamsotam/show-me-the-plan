@@ -248,5 +248,13 @@ export default {
         auth: {},
       },
     },
+    {
+      method: 'PUT',
+      path: '/user-profiles/me/notifications',
+      handler: 'user-profile.updateNotificationsEnabled',
+      config: {
+        auth: {},
+      },
+    },
   ],
 };

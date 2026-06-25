@@ -369,6 +369,57 @@ export interface AdminUser extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiNotificationNotification
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'notifications';
+  info: {
+    description: 'Pending study-plan todo push notification queue';
+    displayName: 'Notification';
+    pluralName: 'notifications';
+    singularName: 'notification';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::notification.notification'
+    > &
+      Schema.Attribute.Private;
+    occurrenceDate: Schema.Attribute.Date & Schema.Attribute.Required;
+    publishedAt: Schema.Attribute.DateTime;
+    queueKey: Schema.Attribute.String & Schema.Attribute.Required;
+    sendAt: Schema.Attribute.DateTime & Schema.Attribute.Required;
+    sent: Schema.Attribute.Boolean &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<false>;
+    sentAt: Schema.Attribute.DateTime;
+    skipReason: Schema.Attribute.Enumeration<
+      ['completed', 'cancelled', 'suppressed', 'expired']
+    >;
+    subjectSnapshot: Schema.Attribute.String;
+    titleSnapshot: Schema.Attribute.String;
+    todo: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::study-plan-todo.study-plan-todo'
+    > &
+      Schema.Attribute.Required;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    user: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::users-permissions.user'
+    > &
+      Schema.Attribute.Required;
+  };
+}
+
 export interface ApiPaymentHistoryPaymentHistory
   extends Struct.CollectionTypeSchema {
   collectionName: 'payment_histories';
@@ -484,6 +535,45 @@ export interface ApiPlanPlan extends Struct.CollectionTypeSchema {
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+  };
+}
+
+export interface ApiPushSubscriptionPushSubscription
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'push_subscriptions';
+  info: {
+    description: 'Web Push subscription per user device';
+    displayName: 'Push Subscription';
+    pluralName: 'push-subscriptions';
+    singularName: 'push-subscription';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    auth: Schema.Attribute.String & Schema.Attribute.Required;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    endpoint: Schema.Attribute.Text &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::push-subscription.push-subscription'
+    > &
+      Schema.Attribute.Private;
+    p256dh: Schema.Attribute.String & Schema.Attribute.Required;
+    publishedAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    user: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::users-permissions.user'
+    > &
+      Schema.Attribute.Required;
   };
 }
 
@@ -754,6 +844,8 @@ export interface ApiUserProfileUserProfile extends Struct.CollectionTypeSchema {
     managerStatus: Schema.Attribute.Enumeration<
       ['pending', 'approved', 'rejected']
     >;
+    notificationsEnabled: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<true>;
     privacyAgreedAt: Schema.Attribute.DateTime;
     privacyVersion: Schema.Attribute.String;
     publishedAt: Schema.Attribute.DateTime;
@@ -1397,8 +1489,10 @@ declare module '@strapi/strapi' {
       'admin::transfer-token': AdminTransferToken;
       'admin::transfer-token-permission': AdminTransferTokenPermission;
       'admin::user': AdminUser;
+      'api::notification.notification': ApiNotificationNotification;
       'api::payment-history.payment-history': ApiPaymentHistoryPaymentHistory;
       'api::plan.plan': ApiPlanPlan;
+      'api::push-subscription.push-subscription': ApiPushSubscriptionPushSubscription;
       'api::student-manager-assignment.student-manager-assignment': ApiStudentManagerAssignmentStudentManagerAssignment;
       'api::study-plan-todo.study-plan-todo': ApiStudyPlanTodoStudyPlanTodo;
       'api::subscription.subscription': ApiSubscriptionSubscription;

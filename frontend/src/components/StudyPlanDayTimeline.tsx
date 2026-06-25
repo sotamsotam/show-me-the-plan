@@ -21,10 +21,13 @@ import {
 } from '@/lib/day-timeline';
 import type {
   ExpandedStudyPlanTodoEvent,
-  LegacyStudyPlanSubject,
   StudyPlanTodo,
 } from '@/lib/study-plan-todo';
-import { resolveSubjectCategory, type ProfileSubjectsInput } from '@/lib/user-subject';
+import { resolveSubjectCategory, type LegacyStudyPlanSubject, type ProfileSubjectsInput } from '@/lib/user-subject';
+import {
+  buildSubjectTimelineBarStyle,
+  hasExplicitSubjectColor,
+} from '@/lib/subject-color';
 
 interface StudyPlanDayTimelineProps {
   selectedDate: string;
@@ -141,27 +144,69 @@ function resolveSegmentInnerClassName(
     classes.push('day-slot-continuous-single');
   }
 
+  const useCustomColor =
+    segment.subject && hasExplicitSubjectColor(segment.subject, subjects);
+
   if (layer === 'schedule' && segment.kind === 'school' && segment.subject) {
-    classes.push(SUBJECT_SLOT_CLASSES[resolveSubjectCategory(segment.subject, subjects)]);
+    if (!useCustomColor) {
+      classes.push(SUBJECT_SLOT_CLASSES[resolveSubjectCategory(segment.subject, subjects)]);
+    }
   }
 
   if (layer === 'planned' && segment.subject) {
-    classes.push(
-      SUBJECT_PLANNED_BAR_CLASSES[resolveSubjectCategory(segment.subject, subjects)]
-    );
+    if (!useCustomColor) {
+      classes.push(
+        SUBJECT_PLANNED_BAR_CLASSES[resolveSubjectCategory(segment.subject, subjects)]
+      );
+    }
   } else if (layer === 'planned') {
     classes.push('day-slot-planned-default');
   }
 
   if (layer === 'executed' && segment.subject) {
-    classes.push(
-      SUBJECT_EXECUTED_BAR_CLASSES[resolveSubjectCategory(segment.subject, subjects)]
-    );
+    if (!useCustomColor) {
+      classes.push(
+        SUBJECT_EXECUTED_BAR_CLASSES[resolveSubjectCategory(segment.subject, subjects)]
+      );
+    }
   } else if (layer === 'executed') {
     classes.push('day-slot-executed-default');
   }
 
   return classes.join(' ');
+}
+
+function resolveSegmentInnerStyle(
+  segment: BlockRowSegment,
+  layer: BarLayer,
+  subjects?: ProfileSubjectsInput
+): CSSProperties | undefined {
+  if (!segment.subject) {
+    return undefined;
+  }
+
+  if (layer === 'schedule' && segment.kind === 'school') {
+    if (!hasExplicitSubjectColor(segment.subject, subjects)) {
+      return undefined;
+    }
+    return buildSubjectTimelineBarStyle(segment.subject, subjects, 'school');
+  }
+
+  if (layer === 'planned') {
+    if (!hasExplicitSubjectColor(segment.subject, subjects)) {
+      return undefined;
+    }
+    return buildSubjectTimelineBarStyle(segment.subject, subjects, 'planned');
+  }
+
+  if (layer === 'executed') {
+    if (!hasExplicitSubjectColor(segment.subject, subjects)) {
+      return undefined;
+    }
+    return buildSubjectTimelineBarStyle(segment.subject, subjects, 'executed');
+  }
+
+  return undefined;
 }
 
 function resolveSegmentPositionStyle(segment: BlockRowSegment): CSSProperties {
@@ -191,7 +236,10 @@ function ContinuousBar({
       title={`${BLOCK_KIND_LABELS[segment.kind]}: ${segment.title}`}
       aria-label={`${BLOCK_KIND_LABELS[segment.kind]} ${segment.title}`}
     >
-      <div className={resolveSegmentInnerClassName(segment, layer, subjects)}>
+      <div
+        className={resolveSegmentInnerClassName(segment, layer, subjects)}
+        style={resolveSegmentInnerStyle(segment, layer, subjects)}
+      >
         {segment.isFirst ? (
           <span className={`day-slot-continuous-label day-slot-continuous-label-${labelClassKind}`}>
             {segment.title}
