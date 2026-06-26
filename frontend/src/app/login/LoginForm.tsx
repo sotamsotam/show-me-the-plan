@@ -116,7 +116,7 @@ export default function LoginForm() {
                   htmlFor="identifier"
                   className="mb-1.5 block text-sm font-medium text-gray-700"
                 >
-                  이메일 또는 사용자명
+                  이메일 또는 닉네임(아이디)
                 </label>
                 <input
                   id="identifier"

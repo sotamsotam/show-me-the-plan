@@ -13,7 +13,7 @@ import { useEffect, useId, useMemo, useRef, useState, type MouseEvent } from 're
 
 export type ScheduleAttachmentViewerVariant = 'badge' | 'calendar';
 
-export type ScheduleAttachmentCalendarTriggerMode = 'full' | 'icon';
+export type ScheduleAttachmentCalendarTriggerMode = 'full' | 'icon' | 'stacked';
 
 interface ScheduleAttachmentViewerProps {
   event: EventInput;
@@ -143,7 +143,7 @@ export default function ScheduleAttachmentViewer({
   const attachmentIcon = hasAttachments ? (
     <ScheduleAttachmentBadgeIcon
       count={attachments.length}
-      compact={calendarTriggerMode === 'icon'}
+      compact={calendarTriggerMode === 'icon' || calendarTriggerMode === 'stacked'}
       className="cal-allday-attachment-icon"
     />
   ) : null;
@@ -158,11 +158,21 @@ export default function ScheduleAttachmentViewer({
       .filter(Boolean)
       .join(' ');
 
-    if (calendarTriggerMode === 'icon' && hasAttachments) {
+    if (
+      (calendarTriggerMode === 'icon' || calendarTriggerMode === 'stacked') &&
+      hasAttachments
+    ) {
+      const triggerClassName = [
+        'cal-allday-attachment-trigger',
+        calendarTriggerMode === 'stacked'
+          ? 'cal-allday-attachment-trigger--stacked'
+          : 'cal-allday-attachment-trigger--icon-only',
+      ].join(' ');
+
       return (
         <>
           <div className={innerClassName}>
-            <div className="cal-allday-attachment-trigger cal-allday-attachment-trigger--icon-only">
+            <div className={triggerClassName}>
               <button
                 type="button"
                 className="cal-allday-attachment-icon-button"

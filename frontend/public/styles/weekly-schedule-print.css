@@ -1,0 +1,241 @@
+@page {
+  size: A4 landscape;
+  margin: 8mm;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: #fff;
+  color: #111;
+  font-family:
+    'Malgun Gothic',
+    'Apple SD Gothic Neo',
+    'Noto Sans KR',
+    sans-serif;
+  font-size: var(--print-font-size, 10px);
+  line-height: var(--print-line-height, 1.25);
+}
+
+.weekly-print-page {
+  --print-font-size: 10px;
+  --print-line-height: 1.25;
+  --print-header-font-size: 26px;
+  --print-header-margin-bottom: 4rem;
+  --print-cell-padding-y: 0.27rem;
+  --print-cell-padding-x: 0.28rem;
+  --print-cell-gap: 0.18rem;
+  --print-checkbox-size: 11px;
+  --print-time-col-width: 9.5rem;
+  --print-row-height: auto;
+  --print-table-height: auto;
+  --print-page-height: auto;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.weekly-print-page[data-density='compact'] {
+  --print-font-size: 9px;
+  --print-line-height: 1.2;
+  --print-header-font-size: 23px;
+  --print-header-margin-bottom: 3.4rem;
+  --print-cell-padding-y: 0.18rem;
+  --print-cell-padding-x: 0.22rem;
+  --print-cell-gap: 0.12rem;
+  --print-checkbox-size: 10px;
+  --print-time-col-width: 8.7rem;
+}
+
+.weekly-print-page[data-density='dense'] {
+  --print-font-size: 8px;
+  --print-line-height: 1.15;
+  --print-header-font-size: 20px;
+  --print-header-margin-bottom: 2.8rem;
+  --print-cell-padding-y: 0.12rem;
+  --print-cell-padding-x: 0.18rem;
+  --print-cell-gap: 0.075rem;
+  --print-checkbox-size: 9px;
+  --print-time-col-width: 8rem;
+}
+
+.weekly-print-document {
+  width: 100%;
+  max-width: 100%;
+  flex: 0 0 auto;
+}
+
+.weekly-print-header {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin-bottom: var(--print-header-margin-bottom);
+}
+
+.weekly-print-range {
+  justify-self: start;
+}
+
+.weekly-print-title {
+  justify-self: center;
+  text-align: center;
+}
+
+.weekly-print-name {
+  justify-self: end;
+  text-align: right;
+}
+
+.weekly-print-range,
+.weekly-print-title,
+.weekly-print-name {
+  margin: 0;
+  font-size: var(--print-header-font-size);
+  font-weight: 600;
+}
+
+.weekly-print-table {
+  width: 100%;
+  height: var(--print-table-height, auto);
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.weekly-print-table th,
+.weekly-print-table td {
+  border: 1px solid #222;
+  padding: var(--print-cell-padding-y) var(--print-cell-padding-x);
+  vertical-align: top;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+.weekly-print-corner,
+.weekly-print-time-label,
+.weekly-print-day-header {
+  background: #ececec;
+  font-weight: 600;
+  text-align: center;
+}
+
+.weekly-print-corner,
+.weekly-print-time-label {
+  width: var(--print-time-col-width);
+}
+
+.weekly-print-sunday {
+  color: #c5221f;
+}
+
+.weekly-print-cell {
+  min-height: 0;
+}
+
+.weekly-print-table thead tr,
+.weekly-print-allday-row,
+.weekly-print-time-row {
+  height: var(--print-row-height, auto);
+}
+
+.weekly-print-table thead th,
+.weekly-print-allday-row th,
+.weekly-print-allday-row td,
+.weekly-print-time-row .weekly-print-time-label,
+.weekly-print-time-row .weekly-print-cell {
+  height: var(--print-row-height, auto);
+  min-height: 0;
+  overflow: hidden;
+}
+
+.weekly-print-table thead th {
+  vertical-align: middle;
+}
+
+.weekly-print-allday-row .weekly-print-time-label {
+  vertical-align: middle;
+}
+
+.weekly-print-cell--filled {
+  vertical-align: top;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.weekly-print-cell-items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--print-cell-gap);
+  height: 100%;
+  min-height: 100%;
+}
+
+.weekly-print-cell-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.18rem;
+  padding: 0.12rem 0.18rem;
+  border-radius: 2px;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.weekly-print-cell--filled .weekly-print-cell-item {
+  padding: 0;
+  border-radius: 0;
+  background: transparent !important;
+}
+
+.weekly-print-checkbox {
+  flex: 0 0 auto;
+  font-size: var(--print-checkbox-size);
+  line-height: 1.1;
+}
+
+.weekly-print-cell-title {
+  flex: 1 1 auto;
+}
+
+.weekly-print-empty {
+  height: var(--print-table-height, auto);
+  padding: 0.75rem;
+  text-align: center;
+  color: #555;
+  vertical-align: middle;
+}
+
+@media print {
+  html,
+  body {
+    width: 100%;
+    height: auto;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .weekly-print-page {
+    min-height: var(--print-page-height, 194mm);
+    max-height: var(--print-page-height, 194mm);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    overflow: hidden;
+    page-break-before: avoid;
+    page-break-after: avoid;
+    break-before: avoid-page;
+    break-after: avoid-page;
+  }
+
+  .weekly-print-header {
+    page-break-after: avoid;
+    break-after: avoid-page;
+  }
+}

@@ -11,9 +11,12 @@ export default function DashboardPageTransition({
   children,
 }: DashboardPageTransitionProps) {
   const pathname = usePathname();
-  const isPreferencesRoute = pathname.startsWith('/dashboard/preferences');
+  const isSidebarLayoutRoute =
+    pathname.startsWith('/dashboard/preferences') ||
+    pathname.startsWith('/dashboard/guide') ||
+    pathname.startsWith('/dashboard/manager-guide');
 
-  if (isPreferencesRoute) {
+  if (isSidebarLayoutRoute) {
     return (
       <div className="flex min-h-0 w-full flex-1 flex-col">{children}</div>
     );

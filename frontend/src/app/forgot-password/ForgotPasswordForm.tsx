@@ -1,5 +1,6 @@
 'use client';
 
+import EmailHintModal from '@/app/forgot-password/EmailHintModal';
 import Link from 'next/link';
 import { FormEvent, useState } from 'react';
 
@@ -8,6 +9,7 @@ export default function ForgotPasswordForm() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+  const [emailHintOpen, setEmailHintOpen] = useState(false);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -73,12 +75,25 @@ export default function ForgotPasswordForm() {
           </button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
-          <Link href="/login" className="text-blue-600 hover:underline">
-            로그인으로 돌아가기
-          </Link>
-        </p>
+        <div className="mt-6 space-y-2 text-center text-sm text-gray-500 dark:text-gray-400">
+          <p>
+            <Link href="/login" className="text-blue-600 hover:underline">
+              로그인으로 돌아가기
+            </Link>
+          </p>
+          <p>
+            <button
+              type="button"
+              onClick={() => setEmailHintOpen(true)}
+              className="text-blue-600 hover:underline"
+            >
+              이메일도 기억나지 않으실 경우
+            </button>
+          </p>
+        </div>
       </div>
+
+      <EmailHintModal open={emailHintOpen} onClose={() => setEmailHintOpen(false)} />
     </main>
   );
 }

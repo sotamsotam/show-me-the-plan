@@ -7,6 +7,7 @@ import ResponsiveOverlay from '@/components/ResponsiveOverlay';
 import {
   ExecutionNavIcon,
   MoreNavIcon,
+  ManagerGuideNavIcon,
   OverviewNavIcon,
   ScheduleNavIcon,
   StudentsNavIcon,
@@ -29,7 +30,7 @@ const STUDENT_TAB_ICONS = [
   ExecutionNavIcon,
 ] as const;
 
-const MANAGER_TAB_ICONS = [StudentsNavIcon, OverviewNavIcon] as const;
+const MANAGER_TAB_ICONS = [StudentsNavIcon, OverviewNavIcon, ManagerGuideNavIcon] as const;
 
 interface DashboardBottomNavProps {
   variant: 'student' | 'manager';
@@ -61,7 +62,7 @@ export default function DashboardBottomNav({ variant }: DashboardBottomNavProps)
         aria-label="하단 메뉴"
       >
         <div className="flex h-14 items-stretch">
-          {MANAGER_NAV_ITEMS.map(({ href, label, exact }, index) => {
+          {MANAGER_NAV_ITEMS.map(({ href, label, shortLabel, exact }, index) => {
             const active = isActive(href, exact);
             const Icon = MANAGER_TAB_ICONS[index];
 
@@ -73,7 +74,7 @@ export default function DashboardBottomNav({ variant }: DashboardBottomNavProps)
                 aria-current={active ? 'page' : undefined}
               >
                 <Icon className={`h-5 w-5 shrink-0 ${active ? 'stroke-[2.5]' : ''}`} />
-                <span className="truncate">{label}</span>
+                <span className="truncate">{shortLabel ?? label}</span>
               </Link>
             );
           })}

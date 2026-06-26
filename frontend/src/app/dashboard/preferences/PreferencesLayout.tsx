@@ -2,9 +2,11 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { ChevronRightIcon } from '@/components/ChevronRightIcon';
 import PreferencesNavIcon from './PreferencesNavIcon';
+
+const PREFERENCES_SIDEBAR_COLLAPSED_KEY = 'preferences-sidebar-collapsed';
 
 const PREFERENCES_NAV_ITEMS = [
   {
@@ -67,8 +69,32 @@ const preferencesNavActiveClass =
 const preferencesNavInactiveClass =
   'font-medium text-gray-600 hover:bg-gray-100/80 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-zinc-800/60 dark:hover:text-gray-100';
 
+const sidebarToggleButtonClass =
+  'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#1b76e0]/40 bg-white text-[#1b76e0] shadow-sm transition-colors hover:border-[#1b76e0]/65 hover:bg-[#edf4ff] hover:text-[#1557b0] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1b76e0] dark:border-[#3b8eea]/50 dark:bg-zinc-800 dark:text-[#7eb8ff] dark:hover:border-[#3b8eea]/75 dark:hover:bg-zinc-700';
+
+function readSidebarCollapsed(): boolean {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  return localStorage.getItem(PREFERENCES_SIDEBAR_COLLAPSED_KEY) === 'true';
+}
+
 export default function PreferencesLayout({ children }: PreferencesLayoutProps) {
   const pathname = usePathname();
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  useEffect(() => {
+    setSidebarCollapsed(readSidebarCollapsed());
+  }, []);
+
+  const toggleSidebar = () => {
+    setSidebarCollapsed((collapsed) => {
+      const next = !collapsed;
+      localStorage.setItem(PREFERENCES_SIDEBAR_COLLAPSED_KEY, String(next));
+      return next;
+    });
+  };
 
   return (
     <main
@@ -110,30 +136,55 @@ export default function PreferencesLayout({ children }: PreferencesLayoutProps) 
           })}
         </nav>
 
-        <aside className="hidden shrink-0 self-stretch md:flex md:flex-col md:border-r md:border-gray-200 md:bg-[#f1f1f1] md:py-6 md:pl-[50px] md:pr-4 dark:border-neutral-800 dark:bg-zinc-900">
-          <nav
-            aria-label="설정 메뉴"
-            className="flex w-60 flex-col gap-0.5"
-          >
-            {PREFERENCES_NAV_ITEMS.map((item) => {
-              const isActive = pathname === item.href;
+        {sidebarCollapsed ? (
+          <aside className="hidden shrink-0 self-stretch md:flex md:flex-col md:border-r md:border-gray-200 md:bg-[#f1f1f1] md:py-6 md:pl-[50px] md:pr-3 dark:border-neutral-800 dark:bg-zinc-900">
+            <button
+              type="button"
+              className={sidebarToggleButtonClass}
+              aria-label="설정 메뉴 펼치기"
+              aria-expanded={false}
+              onClick={toggleSidebar}
+            >
+              <ChevronRightIcon className="h-4 w-4" />
+            </button>
+          </aside>
+        ) : (
+          <aside className="hidden shrink-0 self-stretch md:flex md:flex-col md:border-r md:border-gray-200 md:bg-[#f1f1f1] md:py-6 md:pl-[50px] md:pr-4 dark:border-neutral-800 dark:bg-zinc-900">
+            <div className="mb-2 flex w-60 justify-end">
+              <button
+                type="button"
+                className={sidebarToggleButtonClass}
+                aria-label="설정 메뉴 접기"
+                aria-expanded
+                onClick={toggleSidebar}
+              >
+                <ChevronRightIcon className="h-4 w-4 rotate-180" />
+              </button>
+            </div>
+            <nav
+              aria-label="설정 메뉴"
+              className="flex w-60 flex-col gap-0.5"
+            >
+              {PREFERENCES_NAV_ITEMS.map((item) => {
+                const isActive = pathname === item.href;
 
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  aria-current={isActive ? 'page' : undefined}
-                  className={`flex min-h-11 items-center gap-2.5 rounded-lg px-2.5 py-2.5 text-sm leading-[1.35] transition-colors duration-150 ${
-                    isActive ? preferencesNavActiveClass : preferencesNavInactiveClass
-                  }`}
-                >
-                  <PreferencesNavItemIcon active={isActive} name={item.icon} />
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
-          </nav>
-        </aside>
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    aria-current={isActive ? 'page' : undefined}
+                    className={`flex min-h-11 items-center gap-2.5 rounded-lg px-2.5 py-2.5 text-sm leading-[1.35] transition-colors duration-150 ${
+                      isActive ? preferencesNavActiveClass : preferencesNavInactiveClass
+                    }`}
+                  >
+                    <PreferencesNavItemIcon active={isActive} name={item.icon} />
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })}
+            </nav>
+          </aside>
+        )}
 
         <div className="min-w-0 flex-1 md:flex md:min-h-0 md:flex-col md:overflow-y-auto md:py-6 md:pl-8 md:pr-[50px]">
           {children}

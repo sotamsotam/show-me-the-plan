@@ -222,7 +222,7 @@ export function renderCalendarEventContent(
             title={title}
             variant="calendar"
             calendarInnerClassName="cal-event-inner--month"
-            calendarTriggerMode="icon"
+            calendarTriggerMode="stacked"
           />
         );
       }

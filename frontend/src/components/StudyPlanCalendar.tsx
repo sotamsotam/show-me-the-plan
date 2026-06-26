@@ -16,6 +16,7 @@ import listPlugin from '@fullcalendar/list';
 import FullCalendar from '@fullcalendar/react';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useSession } from 'next-auth/react';
 import { useNeisTimetableEnabled } from '@/hooks/useNeisTimetableEnabled';
 import { useStudentApi } from '@/hooks/useStudentApi';
 import { useStudyPlanTodosInRange } from '@/hooks/useStudyPlanTodosInRange';
@@ -31,6 +32,7 @@ import { renderCalendarEventContent } from '@/components/calendar/CalendarEventC
 import CalendarEditHint from '@/components/calendar/CalendarEditHint';
 import { useProfileSubjectsContext } from '@/contexts/ProfileSubjectsContext';
 import CalendarExamCountdownBadge from '@/components/calendar/CalendarExamCountdownBadge';
+import CalendarPrintToolbarButton from '@/components/calendar/CalendarPrintToolbarButton';
 import CalendarWeeklyPlanToolbarToggle from '@/components/calendar/CalendarWeeklyPlanToolbarToggle';
 import WeeklyPlanPanel from '@/components/calendar/WeeklyPlanPanel';
 import MobileFab from '@/components/MobileFab';
@@ -59,7 +61,9 @@ import {
 import type { ExpandedStudyPlanTodoEvent, StudyPlanTodo } from '@/lib/study-plan-todo';
 import { expandedEventsToCalendarEvents, resolveOccurrenceFields } from '@/lib/study-plan-todo';
 import { mountCalendarEventSubjectColor } from '@/lib/subject-color';
-import { formatOccurrenceDateLabel } from '@/lib/user-schedule';
+import { printWeeklySchedule } from '@/lib/print-weekly-schedule';
+import { printMonthlySchedule } from '@/lib/print-monthly-schedule';
+import { formatIsoDate, formatOccurrenceDateLabel } from '@/lib/user-schedule';
 
 const CALENDAR_PLUGINS = [dayGridPlugin, timeGridPlugin, listPlugin, interactionPlugin];
 
@@ -80,6 +84,8 @@ const MOBILE_HEADER_TOOLBAR = {
 const MOBILE_LIST_VIEW = 'listWeek';
 const MOBILE_DAY_VIEW = 'timeGridDay';
 const DESKTOP_WEEK_VIEW = 'timeGridWeek';
+const DESKTOP_MONTH_VIEW = 'dayGridMonth';
+const DESKTOP_DAY_VIEW = 'timeGridDay';
 
 const CALENDAR_HEIGHT = 660;
 const ALL_DAY_SLOT_HEIGHT = 30;
@@ -91,13 +97,6 @@ const SLOT_MAX_TIME = '28:00:00';
 interface DraftSlot {
   start: Date;
   end: Date;
-}
-
-function formatIsoDate(date: Date): string {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
 }
 
 function buildRangeKey(arg: DatesSetArg): string {
@@ -257,6 +256,7 @@ function isMobileDayCalendarView(isMobile: boolean, viewType: string): boolean {
 }
 
 export default function StudyPlanCalendar() {
+  const { data: session } = useSession();
   const { withStudent, studentUserId } = useStudentApi();
   const { usesNeisTimetable, loading: neisProfileLoading } = useNeisTimetableEnabled();
   const { subjects: profileSubjects } = useProfileSubjectsContext();
@@ -1090,6 +1090,52 @@ export default function StudyPlanCalendar() {
     setWeeklyPlanPanelOpen((value) => !value);
   }, []);
 
+  const showPrintButton =
+    !isMobile &&
+    activeViewType !== DESKTOP_DAY_VIEW &&
+    (activeViewType === DESKTOP_WEEK_VIEW || activeViewType === DESKTOP_MONTH_VIEW);
+
+  const handlePrintSchedule = useCallback(async () => {
+    if (!visibleRange) {
+      return;
+    }
+
+    const calendarDate = calendarRef.current?.getApi()?.getDate();
+    const monthAnchorDate = calendarDate
+      ? formatIsoDate(calendarDate)
+      : formatIsoDate(visibleRange.start);
+    const userName = session?.user?.username ?? '사용자';
+
+    const succeeded =
+      activeViewType === DESKTOP_MONTH_VIEW
+        ? await printMonthlySchedule({
+            anchorDate: monthAnchorDate,
+            scheduleEvents,
+            subjects: profileSubjects,
+            userName,
+          })
+        : await printWeeklySchedule({
+            anchorDate: formatIsoDate(visibleRange.start),
+            scheduleEvents,
+            studyPlanEvents: expandedTodoEvents,
+            studyPlanTodos,
+            subjects: profileSubjects,
+            userName,
+          });
+
+    if (!succeeded) {
+      setError('인쇄 준비에 실패했습니다. 잠시 후 다시 시도해 주세요.');
+    }
+  }, [
+    activeViewType,
+    expandedTodoEvents,
+    profileSubjects,
+    scheduleEvents,
+    session?.user?.username,
+    studyPlanTodos,
+    visibleRange,
+  ]);
+
   return (
     <div className="space-y-4">
       {(error || loadError) && (
@@ -1132,6 +1178,15 @@ export default function StudyPlanCalendar() {
             visible={showWeeklyPlanPanel && !isMobile}
             open={weeklyPlanPanelOpen}
             onToggle={handleWeeklyPlanPanelToggle}
+          />
+          <CalendarPrintToolbarButton
+            containerRef={calendarContainerRef}
+            toolbarVersion={toolbarVersion}
+            visible={showPrintButton}
+            disabled={loading}
+            onPrint={() => {
+              void handlePrintSchedule();
+            }}
           />
           {mobileHelpText ? (
             <p className="mb-3 text-sm text-gray-500 dark:text-gray-400">

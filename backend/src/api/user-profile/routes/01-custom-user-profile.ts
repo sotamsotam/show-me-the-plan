@@ -9,6 +9,14 @@ export default {
       },
     },
     {
+      method: 'POST',
+      path: '/user-profiles/email-hint',
+      handler: 'user-profile.emailHintByUsername',
+      config: {
+        auth: false,
+      },
+    },
+    {
       method: 'GET',
       path: '/user-profiles/me',
       handler: 'user-profile.me',

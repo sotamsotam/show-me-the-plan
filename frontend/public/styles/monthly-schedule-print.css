@@ -1,0 +1,261 @@
+@page {
+  size: A4 landscape;
+  margin: 8mm;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: #fff;
+  color: #111;
+  font-family:
+    'Malgun Gothic',
+    'Apple SD Gothic Neo',
+    'Noto Sans KR',
+    sans-serif;
+  font-size: var(--print-font-size, 10px);
+  line-height: var(--print-line-height, 1.25);
+}
+
+.monthly-print-page {
+  --print-font-size: 10px;
+  --print-line-height: 1.25;
+  --print-header-font-size: 26px;
+  --print-header-margin-bottom: 2.5rem;
+  --print-week-height: auto;
+  --print-table-height: auto;
+  --print-page-height: auto;
+  --print-span-lane-height: 1.15rem;
+  --print-day-padding: 0.22rem;
+  --print-day-gap: 0.14rem;
+  --print-event-padding-y: 0.1rem;
+  --print-event-padding-x: 0.18rem;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.monthly-print-page[data-density='compact'] {
+  --print-font-size: 9px;
+  --print-line-height: 1.2;
+  --print-header-font-size: 23px;
+  --print-header-margin-bottom: 2rem;
+  --print-span-lane-height: 1rem;
+  --print-day-padding: 0.16rem;
+  --print-day-gap: 0.1rem;
+}
+
+.monthly-print-page[data-density='dense'] {
+  --print-font-size: 8px;
+  --print-line-height: 1.15;
+  --print-header-font-size: 20px;
+  --print-header-margin-bottom: 1.6rem;
+  --print-span-lane-height: 0.9rem;
+  --print-day-padding: 0.12rem;
+  --print-day-gap: 0.08rem;
+}
+
+.monthly-print-document {
+  width: 100%;
+}
+
+.monthly-print-header {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: end;
+  gap: 0.5rem;
+  margin-bottom: var(--print-header-margin-bottom);
+}
+
+.monthly-print-range,
+.monthly-print-title,
+.monthly-print-name {
+  margin: 0;
+  font-size: var(--print-header-font-size);
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.monthly-print-range {
+  justify-self: start;
+}
+
+.monthly-print-title {
+  justify-self: center;
+  text-align: center;
+}
+
+.monthly-print-name {
+  justify-self: end;
+  text-align: right;
+}
+
+.monthly-print-calendar {
+  border: 1px solid #dadce0;
+  border-radius: 8px;
+  overflow: hidden;
+  height: var(--print-table-height, auto);
+}
+
+.monthly-print-weekday-row,
+.monthly-print-day-row,
+.monthly-print-span-layer {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.monthly-print-weekday-row {
+  background: #f8f9fa;
+  border-bottom: 1px solid #dadce0;
+}
+
+.monthly-print-weekday {
+  padding: 0.35rem 0.25rem;
+  text-align: center;
+  font-weight: 700;
+  color: #3c4043;
+}
+
+.monthly-print-weekday--sunday {
+  color: #d93025;
+}
+
+.monthly-print-week-block {
+  display: flex;
+  flex-direction: column;
+  height: var(--print-week-height, auto);
+  border-bottom: 1px solid #e8eaed;
+}
+
+.monthly-print-week-block:last-child {
+  border-bottom: none;
+}
+
+.monthly-print-span-layer {
+  grid-auto-rows: var(--print-span-lane-height);
+  gap: 0.12rem;
+  padding: 0.12rem 0.1rem 0;
+  flex-shrink: 0;
+}
+
+.monthly-print-span {
+  min-width: 0;
+  border-left: 3px solid;
+  border-radius: 4px;
+  padding: var(--print-event-padding-y) var(--print-event-padding-x);
+  overflow: hidden;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.monthly-print-span--start {
+  border-top-left-radius: 4px;
+  border-bottom-left-radius: 4px;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.monthly-print-span--end {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.monthly-print-span--middle {
+  border-radius: 0;
+  border-left-width: 0;
+}
+
+.monthly-print-span-title,
+.monthly-print-day-event-title {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.monthly-print-day-row {
+  flex: 1;
+  min-height: 0;
+}
+
+.monthly-print-day {
+  display: flex;
+  flex-direction: column;
+  gap: var(--print-day-gap);
+  min-width: 0;
+  min-height: 0;
+  padding: var(--print-day-padding);
+  border-right: 1px solid #f1f3f4;
+}
+
+.monthly-print-day:last-child {
+  border-right: none;
+}
+
+.monthly-print-day--outside {
+  background: #fafafa;
+}
+
+.monthly-print-day--outside .monthly-print-day-number {
+  color: #9aa0a6;
+}
+
+.monthly-print-day--sunday .monthly-print-day-number {
+  color: #d93025;
+}
+
+.monthly-print-day-number {
+  flex-shrink: 0;
+  font-size: 1.05em;
+  font-weight: 700;
+  line-height: 1.1;
+  color: #3c4043;
+}
+
+.monthly-print-day-events {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.monthly-print-day-event {
+  border-left: 3px solid;
+  border-radius: 4px;
+  padding: var(--print-event-padding-y) var(--print-event-padding-x);
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+@media print {
+  html,
+  body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .monthly-print-page {
+    min-height: var(--print-page-height, 194mm);
+    max-height: var(--print-page-height, 194mm);
+    page-break-after: avoid;
+    page-break-inside: avoid;
+  }
+
+  .monthly-print-header {
+    break-after: avoid;
+  }
+
+  .monthly-print-calendar {
+    break-inside: avoid;
+  }
+}

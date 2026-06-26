@@ -82,13 +82,14 @@ const DESKTOP_HEADER_TOOLBAR = {
 } as const;
 
 const MOBILE_HEADER_TOOLBAR = {
-  left: 'listWeek,timeGridDay prev,next today',
+  left: 'listWeek,timeGridDay,dayGridMonth prev,next today',
   center: 'title',
   right: '',
 } as const;
 
 const MOBILE_LIST_VIEW = 'listWeek';
 const MOBILE_DAY_VIEW = 'timeGridDay';
+const MOBILE_MONTH_VIEW = 'dayGridMonth';
 const DESKTOP_WEEK_VIEW = 'timeGridWeek';
 
 const CALENDAR_HEIGHT = 660;
@@ -348,7 +349,9 @@ export default function ScheduleCalendar() {
   }, [isMobile, clearEditSession]);
 
   const isListView = isListCalendarView(currentViewType);
+  const isMonthView = currentViewType === MOBILE_MONTH_VIEW;
   const isMobileDayView = isMobileDayCalendarView(isMobile, currentViewType);
+  const isMobileMonthEditDisabled = isMonthView && isMobile;
 
   const calendarLocale = useMemo(
     () => ({
@@ -358,6 +361,8 @@ export default function ScheduleCalendar() {
         list: '주간',
         listWeek: '주간',
         timeGridDay: '일간',
+        month: '월간',
+        dayGridMonth: '월간',
       },
     }),
     []
@@ -548,6 +553,23 @@ export default function ScheduleCalendar() {
     },
     [openCreateForm]
   );
+
+  const openMonthAllDayCreateFormForToday = useCallback(() => {
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 1);
+    openMonthAllDayCreateForm(start, end);
+  }, [openMonthAllDayCreateForm]);
+
+  const handleMobileFabClick = useCallback(() => {
+    if (isMonthView) {
+      openMonthAllDayCreateFormForToday();
+      return;
+    }
+
+    openCreateForm();
+  }, [isMonthView, openCreateForm, openMonthAllDayCreateFormForToday]);
 
   const openFormFromDraft = useCallback(
     (draft: DraftSlot) => {
@@ -1144,6 +1166,10 @@ export default function ScheduleCalendar() {
       return null;
     }
 
+    if (isMonthView) {
+      return '날짜를 탭하거나 + 버튼으로 종일 일정을 추가할 수 있습니다. 일정을 탭하면 수정할 수 있습니다.';
+    }
+
     if (isListView) {
       return '일정을 탭하면 수정할 수 있습니다. 새 일정은 일간 뷰에서 추가하세요.';
     }
@@ -1153,7 +1179,7 @@ export default function ScheduleCalendar() {
     }
 
     return '일정 입력 시 원하는 시간 영역을 길게 탭하세요.';
-  }, [editSession, isListView, isMobile]);
+  }, [editSession, isListView, isMobile, isMonthView]);
 
   return (
     <div className="space-y-4">
@@ -1165,7 +1191,7 @@ export default function ScheduleCalendar() {
 
       <div
         ref={calendarContainerRef}
-        className="relative schedule-calendar w-full overflow-hidden rounded-xl border border-gray-200 bg-white p-4 shadow-sm max-[580px]:p-3 max-[480px]:p-2.5 max-[360px]:p-2 dark:border-neutral-800 dark:bg-zinc-900"
+        className={`relative schedule-calendar w-full overflow-hidden rounded-xl border border-gray-200 bg-white p-4 shadow-sm max-[580px]:p-3 max-[480px]:p-2.5 max-[360px]:p-2 dark:border-neutral-800 dark:bg-zinc-900${isMonthView ? ' schedule-calendar--month' : ''}`}
       >
         {(loading || savingDrag) && (
           <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-white/70 text-sm text-gray-500 dark:bg-zinc-900/70 dark:text-gray-400">
@@ -1225,12 +1251,14 @@ export default function ScheduleCalendar() {
           snapDuration="00:10:00"
           allDaySlot
           allDaySlotHeight={40}
-          height={isListView ? 'auto' : CALENDAR_HEIGHT}
-          nowIndicator={!isListView}
-          selectable={!isListView && (!isMobile || isMobileDayView)}
-          editable={!isListView}
-          eventStartEditable={!isListView}
-          eventDurationEditable={!isListView}
+          height={isListView || isMonthView ? 'auto' : CALENDAR_HEIGHT}
+          dayMaxEvents={false}
+          dayMaxEventRows={isMonthView ? false : undefined}
+          nowIndicator={!isListView && !isMonthView}
+          selectable={!isListView && !isMonthView && (!isMobile || isMobileDayView)}
+          editable={!isListView && !isMobileMonthEditDisabled}
+          eventStartEditable={!isListView && !isMobileMonthEditDisabled}
+          eventDurationEditable={!isListView && !isMobileMonthEditDisabled}
           eventLongPressDelay={isMobileDayView ? 400 : 0}
           unselectAuto
         />
@@ -1281,7 +1309,7 @@ export default function ScheduleCalendar() {
       />
 
       {isMobile && (
-        <MobileFab label="일정 추가" onClick={() => openCreateForm()} />
+        <MobileFab label="일정 추가" onClick={handleMobileFabClick} />
       )}
     </div>
   );

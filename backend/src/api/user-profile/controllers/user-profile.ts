@@ -40,6 +40,7 @@ import {
   validateSignupConsents,
 } from '../../../services/legal-consent';
 import { deleteUserAccount } from '../../../services/account-deletion';
+import { maskEmailHint } from '../../../services/email-hint';
 import {
   createTrialSubscription,
   getSubscriptionSummaryForUser,
@@ -478,6 +479,27 @@ async function buildAccountResponse(
 export default factories.createCoreController(
   'api::user-profile.user-profile',
   ({ strapi }) => ({
+    async emailHintByUsername(ctx) {
+      const { username } = ctx.request.body as { username?: string };
+
+      if (!username || typeof username !== 'string' || !username.trim()) {
+        return ctx.badRequest('닉네임은 필수입니다.');
+      }
+
+      const user = await strapi.db.query('plugin::users-permissions.user').findOne({
+        where: { username: username.trim() },
+        select: ['email'],
+      });
+
+      if (!user?.email) {
+        return ctx.notFound('입력하신 닉네임과 일치하는 계정을 찾을 수 없습니다.');
+      }
+
+      return ctx.send({
+        maskedEmail: maskEmailHint(String(user.email)),
+      });
+    },
+
     async registerWithProfile(ctx) {
       const { username, email, password, profile, consents } = ctx.request.body as {
         username?: string;

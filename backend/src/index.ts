@@ -130,6 +130,11 @@ async function setupPermissions(strapi: Core.Strapi) {
   await ensureRolePermission(
     strapi,
     'public',
+    'api::user-profile.user-profile.emailHintByUsername'
+  );
+  await ensureRolePermission(
+    strapi,
+    'public',
     'plugin::users-permissions.auth.forgotPassword'
   );
   await ensureRolePermission(

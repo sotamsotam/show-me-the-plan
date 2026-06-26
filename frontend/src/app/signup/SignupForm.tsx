@@ -271,7 +271,7 @@ export default function SignupForm() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="username" className="mb-1.5 block text-sm font-medium text-gray-700">
-              닉네임
+              닉네임 (아이디 한글 3글자 영문 5자 이상)
             </label>
             <input
               id="username"

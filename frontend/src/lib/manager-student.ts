@@ -20,6 +20,7 @@ export const MANAGER_STUDENT_REQUIRED_PATHS = [
   '/dashboard/todo',
   '/dashboard/study-stats',
   '/dashboard/preferences',
+  '/dashboard/guide',
 ] as const;
 
 export const MANAGER_STUDENT_NAV_ITEMS = [
@@ -29,6 +30,7 @@ export const MANAGER_STUDENT_NAV_ITEMS = [
   { href: '/dashboard/todo', label: 'TODO', exact: false },
   { href: '/dashboard/study-stats', label: '공부통계', exact: false },
   { href: '/dashboard/preferences', label: '설정', exact: false },
+  { href: '/dashboard/guide', label: '사용법', exact: false },
 ] as const;
 
 export function formatManagedStudentLabel(student: ManagedStudent): string {
