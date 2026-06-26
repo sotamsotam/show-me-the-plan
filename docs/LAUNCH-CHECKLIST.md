@@ -336,6 +336,7 @@ npm run ops:qa            # Fail 0
 
 | 문서 | 용도 |
 |------|------|
+| [`PRODUCTION-LAUNCH-GUIDE.md`](./PRODUCTION-LAUNCH-GUIDE.md) | **Hetzner 배포 → PG 연결** 순차 실행 마스터 가이드 |
 | [`PROJECT-OVERVIEW.md`](./PROJECT-OVERVIEW.md) | 기술·기능 전체 개요 |
 | [`CLOUD-DEPLOYMENT-REVIEW.md`](./CLOUD-DEPLOYMENT-REVIEW.md) | 클라우드 아키텍처·비용 비교 |
 | [`HETZNER-VPS-MIGRATION-GUIDE.md`](./HETZNER-VPS-MIGRATION-GUIDE.md) | VPS 이전 단계별 TodoList |
