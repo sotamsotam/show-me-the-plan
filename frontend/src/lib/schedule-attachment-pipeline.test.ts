@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   readEventAttachments,
   resolveScheduleAttachmentUrl,
+  getStrapiPublicUrl,
 } from '@/lib/schedule-attachment';
 import { expandedEventsToCalendarEvents, type ExpandedScheduleEvent } from '@/lib/user-schedule';
 
@@ -52,7 +53,7 @@ describe('schedule attachment pipeline', () => {
 
     expect(attachments).toEqual([SAMPLE_ATTACHMENT]);
     expect(resolveScheduleAttachmentUrl(attachments[0]!.url)).toBe(
-      'http://localhost:1337/uploads/perf.jpg'
+      `${getStrapiPublicUrl()}/uploads/perf.jpg`
     );
   });
 

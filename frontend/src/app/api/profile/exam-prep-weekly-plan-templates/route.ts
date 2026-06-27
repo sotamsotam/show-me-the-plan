@@ -16,7 +16,10 @@ function resolveTemplateApiError(
 }
 
 function readErrorMessage(data: { error?: { message?: string } | string }): string | null {
-  return data.error?.message ?? (typeof data.error === 'string' ? data.error : null);
+  const err = data.error;
+  if (!err) return null;
+  if (typeof err === 'string') return err;
+  return err.message ?? null;
 }
 
 export async function GET(request: NextRequest) {

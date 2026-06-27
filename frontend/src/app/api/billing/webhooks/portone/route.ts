@@ -43,6 +43,20 @@ async function parseWebhook(request: NextRequest, rawBody: string) {
   );
 }
 
+type ParsedWebhook = Awaited<ReturnType<typeof parseWebhook>>;
+type VerifiedWebhook = Awaited<ReturnType<typeof verifyPortOneWebhook>>;
+
+function getPaymentIdFromWebhook(webhook: ParsedWebhook): string | undefined {
+  const payload = webhook as { type?: string; data?: { paymentId?: string } };
+  const type = payload.type ?? '';
+
+  if (type !== 'Transaction.Paid' && type !== 'Transaction.Failed') {
+    return undefined;
+  }
+
+  return payload.data?.paymentId;
+}
+
 export async function POST(request: NextRequest) {
   const rawBody = await request.text();
 
@@ -57,14 +71,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
   }
 
-  if (isUnrecognizedWebhook(webhook)) {
+  if (isPortOneWebhookVerifyEnabled() && isUnrecognizedWebhook(webhook as VerifiedWebhook)) {
     return NextResponse.json({ ok: true, ignored: true });
   }
 
-  const paymentId =
-    webhook.type === 'Transaction.Paid' || webhook.type === 'Transaction.Failed'
-      ? webhook.data.paymentId
-      : undefined;
+  const paymentId = getPaymentIdFromWebhook(webhook);
 
   if (!paymentId) {
     return NextResponse.json({ ok: true, ignored: true });
@@ -77,7 +88,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: true, ignored: true });
   }
 
-  if (webhook.type === 'Transaction.Paid') {
+  const eventType = (webhook as { type?: string }).type ?? '';
+
+  if (eventType === 'Transaction.Paid') {
     try {
       const payment = await getPayment(paymentId);
 
@@ -112,7 +125,7 @@ export async function POST(request: NextRequest) {
       });
       return NextResponse.json({ error: 'Processing failed' }, { status: 500 });
     }
-  } else if (webhook.type === 'Transaction.Failed') {
+  } else if (eventType === 'Transaction.Failed') {
     try {
       await notifyPaymentFailed({
         userId,
@@ -121,7 +134,7 @@ export async function POST(request: NextRequest) {
       logBillingEvent('warn', 'webhook.payment_failed', {
         userId,
         paymentId,
-        status: webhook.type,
+        status: eventType,
       });
     } catch (error) {
       logBillingEvent('error', 'webhook.payment_failed_notify_error', {

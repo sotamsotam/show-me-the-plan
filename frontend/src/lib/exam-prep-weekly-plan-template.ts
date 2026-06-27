@@ -657,7 +657,7 @@ export function applyTemplateToRound(
 
   return {
     plans: nextPlans,
-    skippedSubjectKeys: [...skippedSubjectKeys].sort(),
+    skippedSubjectKeys: Array.from(skippedSubjectKeys).sort(),
     appliedWeekCount,
   };
 }

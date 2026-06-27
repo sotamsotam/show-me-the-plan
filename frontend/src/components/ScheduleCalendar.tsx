@@ -2,7 +2,6 @@
 
 import koLocale from '@fullcalendar/core/locales/ko';
 import type {
-  DateClickArg,
   DateSelectArg,
   DatesSetArg,
   EventChangeArg,
@@ -11,7 +10,7 @@ import type {
   EventInput,
 } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
-import interactionPlugin from '@fullcalendar/interaction';
+import interactionPlugin, { type DateClickArg } from '@fullcalendar/interaction';
 import listPlugin from '@fullcalendar/list';
 import FullCalendar from '@fullcalendar/react';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -1250,7 +1249,6 @@ export default function ScheduleCalendar() {
           slotLabelInterval="00:30:00"
           snapDuration="00:10:00"
           allDaySlot
-          allDaySlotHeight={40}
           height={isListView || isMonthView ? 'auto' : CALENDAR_HEIGHT}
           dayMaxEvents={false}
           dayMaxEventRows={isMonthView ? false : undefined}
