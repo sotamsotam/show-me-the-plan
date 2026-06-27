@@ -1,5 +1,6 @@
 import {
   getPortOneAuthorizationHeader,
+  getPortOneStoreId,
   PORTONE_API_BASE,
 } from '@/lib/portone/config';
 
@@ -60,11 +61,22 @@ function toBillingPaymentResponse(
   };
 }
 
+function normalizeBillingKeyInfo(data: {
+  billingKeyInfo?: PortOneBillingKeyInfo;
+} & PortOneBillingKeyInfo): PortOneBillingKeyInfo | null {
+  const info = data.billingKeyInfo ?? data;
+
+  return info?.billingKey ? info : null;
+}
+
 export async function getBillingKey(
   billingKey: string
 ): Promise<PortOneBillingKeyInfo> {
+  const storeId = getPortOneStoreId();
+  const query = storeId ? `?storeId=${encodeURIComponent(storeId)}` : '';
+
   const res = await fetch(
-    `${PORTONE_API_BASE}/billing-keys/${encodeURIComponent(billingKey)}`,
+    `${PORTONE_API_BASE}/billing-keys/${encodeURIComponent(billingKey)}${query}`,
     {
       method: 'GET',
       headers: {
@@ -73,13 +85,13 @@ export async function getBillingKey(
     }
   );
 
-  const data = await parsePortOneResponse<{
-    billingKeyInfo?: PortOneBillingKeyInfo;
-  }>(res);
+  const data = await parsePortOneResponse<
+    PortOneBillingKeyInfo & { billingKeyInfo?: PortOneBillingKeyInfo }
+  >(res);
 
-  const info = data.billingKeyInfo;
+  const info = normalizeBillingKeyInfo(data);
 
-  if (!info?.billingKey) {
+  if (!info) {
     throw new Error('빌링키 정보를 찾을 수 없습니다.');
   }
 

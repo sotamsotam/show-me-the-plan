@@ -49,18 +49,16 @@ export default function BillingHistoryClient() {
   }, []);
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="mx-auto max-w-4xl space-y-6 pb-12 pt-12">
       <div>
         <Link
           href="/dashboard/settings/billing"
-          className="text-sm text-blue-600 hover:underline"
+          className="text-sm text-blue-300 hover:text-blue-200 hover:underline"
         >
           ← 구독 · 결제로 돌아가기
         </Link>
-        <h1 className="mt-3 text-2xl font-bold text-gray-900 dark:text-gray-100">
-          결제 내역
-        </h1>
-        <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+        <h1 className="mt-3 text-2xl font-bold text-white">결제 내역</h1>
+        <p className="mt-2 text-sm text-gray-300">
           정가, 할인, 실결제액을 구분하여 확인할 수 있습니다.
         </p>
       </div>
