@@ -1,8 +1,10 @@
 import { formatYmdLocal } from '@/lib/exam-countdown';
 import type { RegularPeriodSegmentPreviewItem } from '@/lib/regular-period-segments';
 import {
-  getRegularWeeklyPlanContent,
+  getRegularWeeklyPlanItems,
+  getUnscheduledRegularWeeklyPlanItems,
   previewItemToRegularPeriodFromPreview,
+  type RegularWeeklyPlanItem,
   type RegularWeeklyPlans,
 } from '@/lib/regular-weekly-plan';
 import type { RegularWeeklyPlansContext } from '@/lib/regular-weekly-plans-context';
@@ -12,7 +14,7 @@ import type { VisibleDateRange } from '@/lib/exam-prep-visible-week-plans';
 
 export interface VisibleRegularWeekPlanSubject {
   subjectId: string;
-  content: string;
+  items: RegularWeeklyPlanItem[];
 }
 
 export interface VisibleRegularWeekPlanWeek {
@@ -119,15 +121,12 @@ export function resolveVisibleRegularWeekPlans(
       const subjects: VisibleRegularWeekPlanSubject[] = [];
 
       for (const subjectId of orderSubjectIds(Object.keys(weekSubjects), context.subjects)) {
-        const content = getRegularWeeklyPlanContent(
-          context.plans,
-          preview.periodKey,
-          weekNumber,
-          subjectId
+        const items = getUnscheduledRegularWeeklyPlanItems(
+          getRegularWeeklyPlanItems(context.plans, preview.periodKey, weekNumber, subjectId)
         );
 
-        if (content) {
-          subjects.push({ subjectId, content });
+        if (items.length > 0) {
+          subjects.push({ subjectId, items });
         }
       }
 

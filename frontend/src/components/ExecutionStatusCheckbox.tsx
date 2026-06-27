@@ -18,6 +18,7 @@ const STATUS_ARIA_LABELS: Record<CheckboxVisualState, string> = {
 };
 
 const SIZE_CLASSES = {
+  xs: 'h-4 w-4',
   sm: 'h-8 w-8',
   md: 'h-11 w-11',
 } as const;
@@ -25,13 +26,16 @@ const SIZE_CLASSES = {
 interface ExecutionStatusCheckboxProps {
   status: CheckboxVisualState;
   size?: keyof typeof SIZE_CLASSES;
+  className?: string;
 }
 
 export default function ExecutionStatusCheckbox({
   status,
   size = 'md',
+  className = '',
 }: ExecutionStatusCheckboxProps) {
   const isChecked = status === 'completed' || status === 'partial';
+  const isIncomplete = status === 'incomplete';
 
   return (
     <svg
@@ -40,18 +44,25 @@ export default function ExecutionStatusCheckbox({
       fill="none"
       stroke="currentColor"
       strokeWidth="1.5"
-      className={`shrink-0 ${SIZE_CLASSES[size]} ${CHECKBOX_ICON_STYLES[status]}`}
+      className={`shrink-0 ${SIZE_CLASSES[size]} ${CHECKBOX_ICON_STYLES[status]} ${className}`.trim()}
       role="img"
       aria-label={STATUS_ARIA_LABELS[status]}
     >
       <rect x="3" y="3" width="14" height="14" rx="2" />
-      {isChecked && (
+      {isChecked ? (
         <path
           d="M6.5 10.5 8.75 12.75 13.5 7.5"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
-      )}
+      ) : null}
+      {isIncomplete ? (
+        <path
+          d="M7.25 7.25 12.75 12.75M12.75 7.25 7.25 12.75"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      ) : null}
     </svg>
   );
 }

@@ -14,12 +14,18 @@ import {
 } from '@/lib/exam-period-settings';
 import {
   createEmptyExamPrepWeeklyPlans,
-  MAX_EXAM_PREP_WEEKLY_PLAN_CONTENT_LENGTH,
   areExamPrepWeeklyPlansEqual,
   resolveExamPrepWeeklyPlans,
+  getExamPrepWeeklyPlanItems,
+  writeExamPrepWeeklyPlanItemsForCell,
+  type ExamPrepWeeklyPlanItem,
   type ExamPrepWeeklyPlans,
   type ExamPrepWeeklyPlansContextResponse,
 } from '@/lib/exam-prep-weekly-plan';
+import WeeklyPlanItemList from '@/components/WeeklyPlanItemList';
+import { useStudyPlanTodosInRange } from '@/hooks/useStudyPlanTodosInRange';
+import { useWeeklyPlanTableColumnHover } from '@/hooks/useWeeklyPlanTableColumnHover';
+import { buildTodoByIdMap } from '@/lib/exam-prep-weekly-plan-item-display';
 import {
   EXAM_ROUND_LABELS,
   EXAM_ROUND_SLOTS,
@@ -28,6 +34,7 @@ import {
   listPrepWeekNumbers,
   resolveExamPrepWeeksByRound,
   resolveNearestScheduledRoundSlot,
+  resolveStudyPlanTodoQueryRangeForExamPrep,
   type ExamPrepWeeksByRound,
   type ExamRoundPreviewItem,
   type ExamRoundSlot,
@@ -67,47 +74,23 @@ function formatExamDateRange(firstDay: string, lastDay: string): string {
   return `${format(firstDay)} ~ ${format(lastDay)}`;
 }
 
-function readWeekContent(
+function readWeekItems(
   plans: ExamPrepWeeklyPlans,
   roundSlot: ExamRoundSlot,
   weekNumber: number,
   subjectId: string
-): string {
-  return plans[roundSlot]?.weeks?.[String(weekNumber)]?.[subjectId] ?? '';
+): ExamPrepWeeklyPlanItem[] {
+  return getExamPrepWeeklyPlanItems(plans, roundSlot, weekNumber, subjectId);
 }
 
-function writeWeekContent(
+function writeWeekItems(
   plans: ExamPrepWeeklyPlans,
   roundSlot: ExamRoundSlot,
   weekNumber: number,
   subjectId: string,
-  content: string
+  items: ExamPrepWeeklyPlanItem[]
 ): ExamPrepWeeklyPlans {
-  const weekKey = String(weekNumber);
-  const roundPlan = plans[roundSlot] ?? { weeks: {} };
-  const weekSubjects = { ...(roundPlan.weeks[weekKey] ?? {}) };
-
-  if (content.trim()) {
-    weekSubjects[subjectId] = content;
-  } else {
-    delete weekSubjects[subjectId];
-  }
-
-  const nextWeeks = { ...roundPlan.weeks };
-  if (Object.keys(weekSubjects).length > 0) {
-    nextWeeks[weekKey] = weekSubjects;
-  } else {
-    delete nextWeeks[weekKey];
-  }
-
-  const nextPlans = { ...plans };
-  if (Object.keys(nextWeeks).length > 0) {
-    nextPlans[roundSlot] = { weeks: nextWeeks };
-  } else {
-    delete nextPlans[roundSlot];
-  }
-
-  return nextPlans;
+  return writeExamPrepWeeklyPlanItemsForCell(plans, roundSlot, weekNumber, subjectId, items);
 }
 
 export default function ExamPrepWeeklyPlanForm() {
@@ -189,6 +172,38 @@ export default function ExamPrepWeeklyPlanForm() {
       ),
     [draftPlans, selectedRoundSlot, subjects, currentWeekCount]
   );
+
+  const studyPlanTodoQueryRange = useMemo(
+    () => resolveStudyPlanTodoQueryRangeForExamPrep(examRoundPreview, examPrepWeeksByRound),
+    [examRoundPreview, examPrepWeeksByRound]
+  );
+
+  const { todos: studyPlanTodos, refetch: refetchStudyPlanTodos } = useStudyPlanTodosInRange({
+    start: studyPlanTodoQueryRange?.start ?? '',
+    end: studyPlanTodoQueryRange?.end ?? '',
+    enabled: loaded && studyPlanTodoQueryRange !== null,
+  });
+
+  const todoById = useMemo(() => buildTodoByIdMap(studyPlanTodos), [studyPlanTodos]);
+  const { clearHoveredCol, getColumnHoverHandlers, getColumnHoverClassName } =
+    useWeeklyPlanTableColumnHover();
+
+  useEffect(() => {
+    if (!loaded) {
+      return;
+    }
+
+    function handleVisibilityChange() {
+      if (document.visibilityState === 'visible') {
+        void refetchStudyPlanTodos(true);
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [loaded, refetchStudyPlanTodos]);
 
   const currentRoundSubjectCount = useMemo(
     () => countTemplateSubjectKeys(currentRoundTemplateWeeks),
@@ -531,13 +546,13 @@ export default function ExamPrepWeeklyPlanForm() {
     }
   }
 
-  function handleContentChange(
+  function handleItemsChange(
     weekNumber: number,
     subjectId: string,
-    content: string
+    items: ExamPrepWeeklyPlanItem[]
   ) {
     setDraftPlans((current) =>
-      writeWeekContent(current, selectedRoundSlot, weekNumber, subjectId, content)
+      writeWeekItems(current, selectedRoundSlot, weekNumber, subjectId, items)
     );
     setSuccess('');
   }
@@ -624,7 +639,7 @@ export default function ExamPrepWeeklyPlanForm() {
       <div className="shrink-0">
         <h2 className="text-lg font-medium text-white">시험기간 주차별 공부계획</h2>
         <p className="mt-1 text-sm text-[#e2feff]">
-          회차별·주차별 공부 목표를 입력하면 스터디 플랜 캘린더에서 확인할 수 있습니다.
+          회차별·주차별 공부 항목을 입력하면 공부 스케줄 캘린더에서 배치할 수 있습니다.
         </p>
       </div>
 
@@ -745,22 +760,31 @@ export default function ExamPrepWeeklyPlanForm() {
                 className="exam-prep-weekly-plan-table-scroll"
                 tabIndex={0}
                 aria-label="주차별 공부계획 표"
+                onMouseLeave={clearHoveredCol}
               >
-                <table className="exam-prep-weekly-plan-table border-collapse text-sm dark:border-neutral-700">
+                <table className="exam-prep-weekly-plan-table text-sm dark:border-neutral-700">
                   <thead>
-                    <tr className="bg-gray-50 text-left dark:bg-zinc-800/60">
-                      <th className="exam-prep-weekly-plan-corner-cell min-w-[5.5rem] px-3 py-2 font-medium">
+                    <tr className="bg-gray-50 dark:bg-zinc-800/60">
+                      <th
+                        className={`exam-prep-weekly-plan-corner-cell min-w-[5.5rem] px-3 py-2 font-medium ${getColumnHoverClassName(0)}`}
+                        {...getColumnHoverHandlers(0)}
+                      >
                         주차
                       </th>
-                      {subjects.map((subject) => (
+                      {subjects.map((subject, subjectIndex) => {
+                        const colIndex = subjectIndex + 1;
+
+                        return (
                         <th
                           key={subject.id}
-                          className="w-[20rem] min-w-[20rem] px-3 py-2 font-medium"
+                          className={`w-[20rem] min-w-[20rem] px-3 py-2 font-medium ${getColumnHoverClassName(colIndex)}`}
                           title={subject.label}
+                          {...getColumnHoverHandlers(colIndex)}
                         >
                           <span className="line-clamp-2">{subject.label}</span>
                         </th>
-                      ))}
+                        );
+                      })}
                     </tr>
                   </thead>
                   <tbody>
@@ -768,37 +792,42 @@ export default function ExamPrepWeeklyPlanForm() {
                       <tr key={weekNumber} className="align-top">
                         <th
                           scope="row"
-                          className="exam-prep-weekly-plan-week-cell px-3 py-3 text-left font-medium text-gray-700 dark:text-gray-200"
+                          className={`exam-prep-weekly-plan-week-cell px-3 py-3 text-left font-medium text-gray-700 dark:text-gray-200 ${getColumnHoverClassName(0)}`}
+                          {...getColumnHoverHandlers(0)}
                         >
                           {formatPrepWeekLabel(weekNumber)}
                         </th>
-                        {subjects.map((subject) => {
+                        {subjects.map((subject, subjectIndex) => {
+                          const colIndex = subjectIndex + 1;
                           const weekLabel = formatPrepWeekLabel(weekNumber);
                           const fieldId = `exam-prep-plan-${selectedRoundSlot}-${weekNumber}-${subject.id}`;
 
                           return (
                             <td
                               key={subject.id}
-                              className="exam-prep-weekly-plan-subject-cell w-[20rem] min-w-[20rem] px-3 py-3"
+                              className={`exam-prep-weekly-plan-subject-cell w-[20rem] min-w-[20rem] px-3 py-3 ${getColumnHoverClassName(colIndex)}`}
+                              {...getColumnHoverHandlers(colIndex)}
                             >
                               <label htmlFor={fieldId} className="sr-only">
                                 {weekLabel} {subject.label}
                               </label>
-                              <textarea
-                                id={fieldId}
-                                value={readWeekContent(
+                              <WeeklyPlanItemList
+                                inputId={fieldId}
+                                inputLabel={`${weekLabel} ${subject.label}`}
+                                items={readWeekItems(
                                   draftPlans,
                                   selectedRoundSlot,
                                   weekNumber,
                                   subject.id
                                 )}
-                                onChange={(event) =>
-                                  handleContentChange(weekNumber, subject.id, event.target.value)
+                                todoById={todoById}
+                                onChange={(items) =>
+                                  handleItemsChange(weekNumber, subject.id, items)
                                 }
-                                rows={4}
-                                maxLength={MAX_EXAM_PREP_WEEKLY_PLAN_CONTENT_LENGTH}
-                                placeholder="이번 주 공부 목표"
-                                className="min-h-[7rem] w-full resize-y rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 dark:border-neutral-700 dark:bg-zinc-800"
+                                textbooks={subject.textbooks}
+                                studyMethods={subject.studyMethods}
+                                placeholder="이번 주 공부 항목"
+                                disabled={saving}
                               />
                             </td>
                           );

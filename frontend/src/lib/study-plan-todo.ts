@@ -1,6 +1,7 @@
 import type { EventInput } from '@fullcalendar/core';
 import { resolveStudyDayDateFromIso } from '@/lib/schedule-time';
 import type { RecurrenceType } from '@/lib/user-schedule';
+import type { WeeklyPlanSource } from '@/lib/weekly-plan-source';
 import { subjectClassName } from '@/lib/calendar-design-tokens';
 import { enrichCalendarEventWithSubjectColor } from '@/lib/subject-color';
 import {
@@ -86,6 +87,7 @@ export interface StudyPlanTodo {
   excludedDates: string[];
   overrides: Record<string, StudyPlanOccurrenceOverride>;
   executionRecords: Record<string, StudyPlanExecutionRecord>;
+  weeklyPlanSource?: WeeklyPlanSource | null;
 }
 
 export interface ExpandedStudyPlanTodoEvent {
@@ -112,6 +114,7 @@ export interface StudyPlanTodoInput {
   date?: string;
   excludedDates?: string[];
   overrides?: Record<string, StudyPlanOccurrenceOverride>;
+  weeklyPlanSource?: WeeklyPlanSource | null;
 }
 
 export interface OccurrenceOverrideInput {
@@ -130,9 +133,20 @@ export function formatStudyPlanEventTitle(
 
 export function expandedEventsToCalendarEvents(
   events: ExpandedStudyPlanTodoEvent[],
-  subjects?: ProfileSubjectsInput
+  subjects?: ProfileSubjectsInput,
+  todos?: StudyPlanTodo[]
 ): EventInput[] {
+  const todoById =
+    todos && todos.length > 0
+      ? new Map(todos.map((todo) => [Number(todo.id), todo]))
+      : null;
+
   return events.map((event) => {
+    const todo = todoById?.get(event.todoId);
+    const executionStatus = getCheckboxVisualState(
+      todo ? getExecutionRecord(todo, event.date) : undefined
+    );
+
     const baseEvent: EventInput = {
       id: event.id,
       title: formatStudyPlanEventTitle(event.subject, event.title, subjects),
@@ -152,6 +166,7 @@ export function expandedEventsToCalendarEvents(
         recurrenceType: event.recurrenceType,
         date: event.date,
         hasOverride: event.hasOverride,
+        executionStatus,
       },
     };
 

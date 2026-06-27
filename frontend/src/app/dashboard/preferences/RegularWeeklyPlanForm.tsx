@@ -4,7 +4,12 @@ import Link from 'next/link';
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import RegularTemplateLoadModal from '@/app/dashboard/preferences/RegularTemplateLoadModal';
 import RegularTemplateSaveModal from '@/app/dashboard/preferences/RegularTemplateSaveModal';
+import WeeklyPlanItemList from '@/components/WeeklyPlanItemList';
 import { useStudentApi } from '@/hooks/useStudentApi';
+import { useUnsavedChangesWarning } from '@/hooks/useUnsavedChangesWarning';
+import { useStudyPlanTodosInRange } from '@/hooks/useStudyPlanTodosInRange';
+import { useWeeklyPlanTableColumnHover } from '@/hooks/useWeeklyPlanTableColumnHover';
+import { buildTodoByIdMap } from '@/lib/exam-prep-weekly-plan-item-display';
 import { todayYmdLocal } from '@/lib/exam-countdown';
 import { resolveNearestRegularPeriodKey, type RegularPeriodSegmentPreviewItem } from '@/lib/regular-period-segments';
 import {
@@ -20,10 +25,14 @@ import {
   type RegularWeeklyPlanTemplateSaveResponse,
 } from '@/lib/regular-weekly-plan-template';
 import {
+  areRegularWeeklyPlansEqual,
   createEmptyRegularWeeklyPlans,
-  MAX_REGULAR_WEEKLY_PLAN_CONTENT_LENGTH,
+  getRegularWeeklyPlanItems,
   previewItemToRegularPeriodFromPreview,
   resolveRegularWeeklyPlans,
+  resolveStudyPlanTodoQueryRangeForRegular,
+  writeRegularWeeklyPlanItemsForCell,
+  type RegularWeeklyPlanItem,
   type RegularWeeklyPlans,
   type RegularWeeklyPlansContextResponse,
 } from '@/lib/regular-weekly-plan';
@@ -34,6 +43,8 @@ import {
 } from '@/lib/vacation-week-date-range';
 import type { UserSubject } from '@/lib/user-subject';
 
+const UNSAVED_REGULAR_WEEKLY_PLAN_MESSAGE =
+  '작성내용이 저장되지 않았습니다. 저장하시려면 공부계획 저장 버튼을 눌러주세요. 저장 없이 이동하시겠습니까?';
 const EXAM_SETTINGS_HREF = '/dashboard/preferences/exam-prep';
 const VACATION_SETTINGS_HREF = '/dashboard/preferences/vacation-period';
 
@@ -55,47 +66,23 @@ function formatRegularDateRange(start: string, end: string): string {
   return formatVacationWeekRange(start, end);
 }
 
-function readWeekContent(
+function readWeekItems(
   plans: RegularWeeklyPlans,
   periodKey: string,
   weekNumber: number,
   subjectId: string
-): string {
-  return plans[periodKey]?.weeks?.[String(weekNumber)]?.[subjectId] ?? '';
+): RegularWeeklyPlanItem[] {
+  return getRegularWeeklyPlanItems(plans, periodKey, weekNumber, subjectId);
 }
 
-function writeWeekContent(
+function writeWeekItems(
   plans: RegularWeeklyPlans,
   periodKey: string,
   weekNumber: number,
   subjectId: string,
-  content: string
+  items: RegularWeeklyPlanItem[]
 ): RegularWeeklyPlans {
-  const weekKey = String(weekNumber);
-  const periodPlan = plans[periodKey] ?? { weeks: {} };
-  const weekSubjects = { ...(periodPlan.weeks[weekKey] ?? {}) };
-
-  if (content.trim()) {
-    weekSubjects[subjectId] = content;
-  } else {
-    delete weekSubjects[subjectId];
-  }
-
-  const nextWeeks = { ...periodPlan.weeks };
-  if (Object.keys(weekSubjects).length > 0) {
-    nextWeeks[weekKey] = weekSubjects;
-  } else {
-    delete nextWeeks[weekKey];
-  }
-
-  const nextPlans = { ...plans };
-  if (Object.keys(nextWeeks).length > 0) {
-    nextPlans[periodKey] = { weeks: nextWeeks };
-  } else {
-    delete nextPlans[periodKey];
-  }
-
-  return nextPlans;
+  return writeRegularWeeklyPlanItemsForCell(plans, periodKey, weekNumber, subjectId, items);
 }
 
 export default function RegularWeeklyPlanForm() {
@@ -103,6 +90,9 @@ export default function RegularWeeklyPlanForm() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [draftPlans, setDraftPlans] = useState<RegularWeeklyPlans>(
+    createEmptyRegularWeeklyPlans()
+  );
+  const [savedPlans, setSavedPlans] = useState<RegularWeeklyPlans>(
     createEmptyRegularWeeklyPlans()
   );
   const [regularPeriodPreview, setRegularPeriodPreview] = useState<
@@ -189,6 +179,45 @@ export default function RegularWeeklyPlanForm() {
     [draftPlans, selectedPeriodKey]
   );
 
+  const studyPlanTodoQueryRange = useMemo(
+    () => resolveStudyPlanTodoQueryRangeForRegular(regularPeriodPreview),
+    [regularPeriodPreview]
+  );
+
+  const { todos: studyPlanTodos, refetch: refetchStudyPlanTodos } = useStudyPlanTodosInRange({
+    start: studyPlanTodoQueryRange?.start ?? '',
+    end: studyPlanTodoQueryRange?.end ?? '',
+    enabled: loaded && studyPlanTodoQueryRange !== null,
+  });
+
+  const todoById = useMemo(() => buildTodoByIdMap(studyPlanTodos), [studyPlanTodos]);
+  const { clearHoveredCol, getColumnHoverHandlers, getColumnHoverClassName } =
+    useWeeklyPlanTableColumnHover();
+
+  useEffect(() => {
+    if (!loaded) {
+      return;
+    }
+
+    function handleVisibilityChange() {
+      if (document.visibilityState === 'visible') {
+        void refetchStudyPlanTodos(true);
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [loaded, refetchStudyPlanTodos]);
+
+  const hasUnsavedChanges = useMemo(
+    () => loaded && !areRegularWeeklyPlansEqual(savedPlans, draftPlans),
+    [draftPlans, loaded, savedPlans]
+  );
+
+  useUnsavedChangesWarning(hasUnsavedChanges, UNSAVED_REGULAR_WEEKLY_PLAN_MESSAGE);
+
   const loadTemplates = useCallback(async () => {
     setTemplatesLoading(true);
     setTemplatesLoadingError('');
@@ -241,9 +270,11 @@ export default function RegularWeeklyPlanForm() {
 
       const preview = data.regularPeriodPreview ?? [];
 
+      const plans = resolveRegularWeeklyPlans(data.regularWeeklyPlans);
       setRegularPeriodPreview(preview);
       setSubjects(data.subjects ?? []);
-      setDraftPlans(resolveRegularWeeklyPlans(data.regularWeeklyPlans));
+      setDraftPlans(plans);
+      setSavedPlans(plans);
       setSelectedPeriodKey(
         resolveNearestRegularPeriodKey(preview, todayYmdLocal()) ?? preview[0]?.periodKey ?? ''
       );
@@ -398,17 +429,17 @@ export default function RegularWeeklyPlanForm() {
     }
   }
 
-  function handleContentChange(
+  function handleItemsChange(
     weekNumber: number,
     subjectId: string,
-    content: string
+    items: RegularWeeklyPlanItem[]
   ) {
     if (!selectedPeriodKey) {
       return;
     }
 
     setDraftPlans((current) =>
-      writeWeekContent(current, selectedPeriodKey, weekNumber, subjectId, content)
+      writeWeekItems(current, selectedPeriodKey, weekNumber, subjectId, items)
     );
     setSuccess('');
   }
@@ -445,6 +476,7 @@ export default function RegularWeeklyPlanForm() {
       }
 
       setDraftPlans(resolveRegularWeeklyPlans(data.regularWeeklyPlans));
+      setSavedPlans(resolveRegularWeeklyPlans(data.regularWeeklyPlans));
       setSuccess('평소기간 주차별 공부계획이 저장되었습니다.');
     } catch {
       setError('평소기간 주차별 공부계획 저장에 실패했습니다.');
@@ -571,22 +603,31 @@ export default function RegularWeeklyPlanForm() {
                     className="exam-prep-weekly-plan-table-scroll"
                     tabIndex={0}
                     aria-label="주차별 공부계획 표"
+                    onMouseLeave={clearHoveredCol}
                   >
-                    <table className="exam-prep-weekly-plan-table border-collapse text-sm dark:border-neutral-700">
+                    <table className="exam-prep-weekly-plan-table text-sm dark:border-neutral-700">
                       <thead>
-                        <tr className="bg-gray-50 text-left dark:bg-zinc-800/60">
-                          <th className="exam-prep-weekly-plan-corner-cell min-w-[10rem] px-3 py-2 font-medium">
+                        <tr className="bg-gray-50 dark:bg-zinc-800/60">
+                          <th
+                            className={`exam-prep-weekly-plan-corner-cell min-w-[10rem] px-3 py-2 font-medium ${getColumnHoverClassName(0)}`}
+                            {...getColumnHoverHandlers(0)}
+                          >
                             기간
                           </th>
-                          {subjects.map((subject) => (
+                          {subjects.map((subject, subjectIndex) => {
+                            const colIndex = subjectIndex + 1;
+
+                            return (
                             <th
                               key={subject.id}
-                              className="w-[20rem] min-w-[20rem] px-3 py-2 font-medium"
+                              className={`w-[20rem] min-w-[20rem] px-3 py-2 font-medium ${getColumnHoverClassName(colIndex)}`}
                               title={subject.label}
+                              {...getColumnHoverHandlers(colIndex)}
                             >
                               <span className="line-clamp-2">{subject.label}</span>
                             </th>
-                          ))}
+                            );
+                          })}
                         </tr>
                       </thead>
                       <tbody>
@@ -594,41 +635,42 @@ export default function RegularWeeklyPlanForm() {
                           <tr key={weekNumber} className="align-top">
                             <th
                               scope="row"
-                              className="exam-prep-weekly-plan-week-cell px-3 py-3 text-left font-medium text-gray-700 dark:text-gray-200"
+                              className={`exam-prep-weekly-plan-week-cell px-3 py-3 text-left font-medium text-gray-700 dark:text-gray-200 ${getColumnHoverClassName(0)}`}
+                              {...getColumnHoverHandlers(0)}
                             >
                               {weekRanges.get(weekNumber) ?? ''}
                             </th>
-                            {subjects.map((subject) => {
+                            {subjects.map((subject, subjectIndex) => {
+                              const colIndex = subjectIndex + 1;
                               const weekRangeLabel = weekRanges.get(weekNumber) ?? '';
                               const fieldId = `regular-plan-${selectedPeriodKey}-${weekNumber}-${subject.id}`;
 
                               return (
                                 <td
                                   key={subject.id}
-                                  className="exam-prep-weekly-plan-subject-cell w-[20rem] min-w-[20rem] px-3 py-3"
+                                  className={`exam-prep-weekly-plan-subject-cell w-[20rem] min-w-[20rem] px-3 py-3 ${getColumnHoverClassName(colIndex)}`}
+                                  {...getColumnHoverHandlers(colIndex)}
                                 >
                                   <label htmlFor={fieldId} className="sr-only">
                                     {weekRangeLabel} {subject.label}
                                   </label>
-                                  <textarea
-                                    id={fieldId}
-                                    value={readWeekContent(
+                                  <WeeklyPlanItemList
+                                    inputId={fieldId}
+                                    inputLabel={`${weekRangeLabel} ${subject.label}`}
+                                    items={readWeekItems(
                                       draftPlans,
                                       selectedPeriodKey,
                                       weekNumber,
                                       subject.id
                                     )}
-                                    onChange={(event) =>
-                                      handleContentChange(
-                                        weekNumber,
-                                        subject.id,
-                                        event.target.value
-                                      )
+                                    todoById={todoById}
+                                    onChange={(items) =>
+                                      handleItemsChange(weekNumber, subject.id, items)
                                     }
-                                    rows={4}
-                                    maxLength={MAX_REGULAR_WEEKLY_PLAN_CONTENT_LENGTH}
-                                    placeholder="이번 주 공부 목표"
-                                    className="min-h-[7rem] w-full resize-y rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 dark:border-neutral-700 dark:bg-zinc-800"
+                                    textbooks={subject.textbooks}
+                                    studyMethods={subject.studyMethods}
+                                    placeholder="이번 주 공부 항목"
+                                    disabled={saving}
                                   />
                                 </td>
                               );

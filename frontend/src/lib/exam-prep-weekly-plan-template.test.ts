@@ -29,12 +29,12 @@ const samplePlans: ExamPrepWeeklyPlans = {
   'sem1-r1': {
     weeks: {
       '4': {
-        korean: '국어 1주차',
-        english: '영어 1주차',
-        'custom-essay': '논술 1주차',
+        korean: [{ id: 'k-1', title: '국어 1주차' }],
+        english: [{ id: 'e-1', title: '영어 1주차' }],
+        'custom-essay': [{ id: 'c-1', title: '논술 1주차' }],
       },
       '3': {
-        korean: '국어 2주차',
+        korean: [{ id: 'k-2', title: '국어 2주차' }],
       },
     },
   },
@@ -84,9 +84,9 @@ describe('applyTemplateToRound', () => {
     );
 
     expect(result.skippedSubjectKeys).toEqual(['science']);
-    expect(result.plans['sem1-r2']?.weeks?.['4']).toEqual({
-      korean: '템플릿 국어 1주차',
-    });
+    expect(result.plans['sem1-r2']?.weeks?.['4']?.korean).toEqual([
+      expect.objectContaining({ title: '템플릿 국어 1주차' }),
+    ]);
   });
 
   it('does not duplicate content into lower prep weeks for ordinal templates', () => {
@@ -105,10 +105,12 @@ describe('applyTemplateToRound', () => {
       'overwrite'
     );
 
-    expect(result.plans['sem1-r2']?.weeks).toEqual({
-      '6': { korean: 'D-6 국어' },
-      '5': { korean: 'D-5 국어' },
-    });
+    expect(result.plans['sem1-r2']?.weeks?.['6']?.korean).toEqual([
+      expect.objectContaining({ title: 'D-6 국어' }),
+    ]);
+    expect(result.plans['sem1-r2']?.weeks?.['5']?.korean).toEqual([
+      expect.objectContaining({ title: 'D-5 국어' }),
+    ]);
   });
 
   it('does not duplicate legacy absolute week keys into lower prep weeks', () => {
@@ -127,10 +129,12 @@ describe('applyTemplateToRound', () => {
       'overwrite'
     );
 
-    expect(result.plans['sem1-r2']?.weeks).toEqual({
-      '6': { korean: 'D-6 국어' },
-      '5': { korean: 'D-5 국어' },
-    });
+    expect(result.plans['sem1-r2']?.weeks?.['6']?.korean).toEqual([
+      expect.objectContaining({ title: 'D-6 국어' }),
+    ]);
+    expect(result.plans['sem1-r2']?.weeks?.['5']?.korean).toEqual([
+      expect.objectContaining({ title: 'D-5 국어' }),
+    ]);
   });
 });
 

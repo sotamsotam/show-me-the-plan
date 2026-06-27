@@ -9,19 +9,32 @@ import {
   type ExecutionStatus,
   type ExpandedStudyPlanTodoEvent,
   type StudyPlanExecutionRecord,
+  type StudyPlanTodo,
 } from '@/lib/study-plan-todo';
 import { formatOccurrenceDateLabel } from '@/lib/user-schedule';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import ResponsiveOverlay from '@/components/ResponsiveOverlay';
+import WeeklyPlanCarryOverModal from '@/components/calendar/WeeklyPlanCarryOverModal';
 import { triggerHaptic } from '@/lib/haptic';
 import { useStudentApi } from '@/hooks/useStudentApi';
+import type { ExamPrepWeeksByRound } from '@/lib/exam-countdown';
+import { getWeeksForSlot } from '@/lib/exam-countdown';
+import {
+  buildCarryOverPayload,
+  requestCarryOverExamPrepWeeklyPlanItem,
+  requestDeleteExamPrepWeeklyPlanItem,
+} from '@/lib/exam-prep-weekly-plan-item-actions';
+import { resolveDefaultCarryOverWeek } from '@/lib/exam-prep-weekly-plan-unachieved';
 
 interface StudyPlanTodoExecutionModalProps {
   open: boolean;
   todo: ExpandedStudyPlanTodoEvent | null;
+  studyPlanTodo?: StudyPlanTodo | null;
+  examPrepWeeksByRound?: ExamPrepWeeksByRound;
   existingRecord?: StudyPlanExecutionRecord;
   onClose: () => void;
   onSaved: () => void;
+  onWeeklyPlanChanged?: () => void;
 }
 
 function formatTimeInput(date: Date): string {
@@ -132,9 +145,12 @@ function buildDefaults(
 export default function StudyPlanTodoExecutionModal({
   open,
   todo,
+  studyPlanTodo = null,
+  examPrepWeeksByRound,
   existingRecord,
   onClose,
   onSaved,
+  onWeeklyPlanChanged,
 }: StudyPlanTodoExecutionModalProps) {
   const { withStudent } = useStudentApi();
   const [inputMode, setInputMode] = useState<ExecutionInputMode>('timer');
@@ -144,6 +160,11 @@ export default function StudyPlanTodoExecutionModal({
   const [achievementLevel, setAchievementLevel] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showIncompleteActions, setShowIncompleteActions] = useState(false);
+  const [carryOverOpen, setCarryOverOpen] = useState(false);
+  const [carryOverWeek, setCarryOverWeek] = useState(1);
+  const [carryOverLoading, setCarryOverLoading] = useState(false);
+  const [carryOverError, setCarryOverError] = useState('');
   const [editingTitle, setEditingTitle] = useState(false);
   const [editedTitle, setEditedTitle] = useState('');
   const [timerRunning, setTimerRunning] = useState(false);
@@ -188,6 +209,9 @@ export default function StudyPlanTodoExecutionModal({
     setError('');
     setEditingTitle(false);
     setEditedTitle(todo.title);
+    setShowIncompleteActions(false);
+    setCarryOverOpen(false);
+    setCarryOverError('');
     resetTimer();
   }, [open, todo, existingRecord, resetTimer]);
 
@@ -391,6 +415,23 @@ export default function StudyPlanTodoExecutionModal({
         return;
       }
 
+      const weeklyPlanSource = studyPlanTodo?.weeklyPlanSource;
+      if (
+        status === 'incomplete' &&
+        weeklyPlanSource?.kind === 'exam-prep' &&
+        examPrepWeeksByRound
+      ) {
+        const defaultWeek = resolveDefaultCarryOverWeek(
+          weeklyPlanSource.weekNumber,
+          examPrepWeeksByRound,
+          weeklyPlanSource.roundSlot
+        );
+        setCarryOverWeek(defaultWeek ?? weeklyPlanSource.weekNumber + 1);
+        setShowIncompleteActions(true);
+        triggerHaptic('success');
+        return;
+      }
+
       onSaved();
       onClose();
       triggerHaptic('success');
@@ -405,6 +446,86 @@ export default function StudyPlanTodoExecutionModal({
     return null;
   }
 
+  const weeklyPlanSource = studyPlanTodo?.weeklyPlanSource;
+  const carryOverWeekOptions =
+    weeklyPlanSource?.kind === 'exam-prep' && examPrepWeeksByRound
+      ? Array.from(
+          { length: getWeeksForSlot(weeklyPlanSource.roundSlot, examPrepWeeksByRound) },
+          (_, index) => index + 1
+        ).filter((week) => week !== weeklyPlanSource.weekNumber)
+      : [];
+
+  async function handleConfirmWeeklyPlanCarryOver() {
+    if (!weeklyPlanSource || weeklyPlanSource.kind !== 'exam-prep') {
+      return;
+    }
+
+    setCarryOverLoading(true);
+    setCarryOverError('');
+
+    const result = await requestCarryOverExamPrepWeeklyPlanItem(
+      withStudent,
+      buildCarryOverPayload(
+        weeklyPlanSource.roundSlot,
+        weeklyPlanSource.weekNumber,
+        weeklyPlanSource.subjectId,
+        weeklyPlanSource.itemId,
+        carryOverWeek
+      )
+    );
+
+    setCarryOverLoading(false);
+
+    if (!result.ok) {
+      setCarryOverError(result.error ?? '공부 계획 이월에 실패했습니다.');
+      return;
+    }
+
+    onWeeklyPlanChanged?.();
+    onSaved();
+    onClose();
+  }
+
+  async function handleDeleteWeeklyPlanItem() {
+    if (!weeklyPlanSource || weeklyPlanSource.kind !== 'exam-prep') {
+      return;
+    }
+
+    if (
+      !confirm(
+        '이 공부 계획 항목을 주차별 계획에서 삭제할까요? 연결된 캘린더 일정도 함께 삭제됩니다.'
+      )
+    ) {
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    const result = await requestDeleteExamPrepWeeklyPlanItem(withStudent, {
+      roundSlot: weeklyPlanSource.roundSlot,
+      weekNumber: weeklyPlanSource.weekNumber,
+      subjectId: weeklyPlanSource.subjectId,
+      itemId: weeklyPlanSource.itemId,
+    });
+
+    setLoading(false);
+
+    if (!result.ok) {
+      setError(result.error ?? '공부 계획 항목 삭제에 실패했습니다.');
+      return;
+    }
+
+    onWeeklyPlanChanged?.();
+    onSaved();
+    onClose();
+  }
+
+  function handleDismissIncompleteActions() {
+    onSaved();
+    onClose();
+  }
+
   const showTimeInputs = status !== 'incomplete';
   const showAchievement = status === 'completed' || status === 'partial';
   const elapsedParts = getElapsedParts(elapsedMs);
@@ -412,6 +533,7 @@ export default function StudyPlanTodoExecutionModal({
   const plannedDurationMinutes = getPlannedDurationMinutes(todo.start, todo.end);
 
   return (
+    <>
     <ResponsiveOverlay open={open} onClose={handleClose} mobileVariant="fullscreen">
         <div className="rounded-lg bg-gray-50 p-3 dark:bg-zinc-800">
           {editingTitle ? (
@@ -632,6 +754,38 @@ export default function StudyPlanTodoExecutionModal({
             <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
           )}
 
+          {showIncompleteActions ? (
+            <div className="space-y-3 rounded-lg border border-amber-200 bg-amber-50/80 p-3 dark:border-amber-900/60 dark:bg-amber-950/20">
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                미완료로 저장되었습니다. 다음 중 선택해 주세요.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  className="rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-neutral-600"
+                  onClick={() => setCarryOverOpen(true)}
+                >
+                  다음 주로 미루기
+                </button>
+                <button
+                  type="button"
+                  className="rounded-lg border border-red-200 px-3 py-2 text-sm text-red-700 dark:border-red-900/60 dark:text-red-300"
+                  onClick={() => {
+                    void handleDeleteWeeklyPlanItem();
+                  }}
+                >
+                  계획에서 삭제
+                </button>
+                <button
+                  type="button"
+                  className="rounded-lg bg-gray-900 px-3 py-2 text-sm text-white dark:bg-gray-100 dark:text-gray-900"
+                  onClick={handleDismissIncompleteActions}
+                >
+                  나중에
+                </button>
+              </div>
+            </div>
+          ) : (
           <div className="flex justify-end gap-2 pt-2">
             <button
               type="button"
@@ -660,7 +814,30 @@ export default function StudyPlanTodoExecutionModal({
               {loading ? '저장 중...' : '저장'}
             </button>
           </div>
+          )}
         </div>
     </ResponsiveOverlay>
+
+    <WeeklyPlanCarryOverModal
+      open={carryOverOpen}
+      itemTitle={todo.title}
+      fromWeek={weeklyPlanSource?.kind === 'exam-prep' ? weeklyPlanSource.weekNumber : 1}
+      weekOptions={carryOverWeekOptions}
+      selectedWeek={carryOverWeek}
+      loading={carryOverLoading}
+      error={carryOverError}
+      onSelectedWeekChange={setCarryOverWeek}
+      onConfirm={() => {
+        void handleConfirmWeeklyPlanCarryOver();
+      }}
+      onClose={() => {
+        if (carryOverLoading) {
+          return;
+        }
+        setCarryOverOpen(false);
+        setCarryOverError('');
+      }}
+    />
+  </>
   );
 }

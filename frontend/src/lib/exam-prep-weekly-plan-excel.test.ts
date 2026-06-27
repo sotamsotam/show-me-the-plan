@@ -21,12 +21,12 @@ const samplePlans: ExamPrepWeeklyPlans = {
   'sem1-r1': {
     weeks: {
       '4': {
-        korean: '국어 1주차',
-        english: '영어 1주차',
-        'custom-essay': '논술 1주차',
+        korean: [{ id: 'k4', title: '국어 1주차' }],
+        english: [{ id: 'e4', title: '영어 1주차' }],
+        'custom-essay': [{ id: 'c4', title: '논술 1주차' }],
       },
       '3': {
-        korean: '국어 2주차',
+        korean: [{ id: 'k3', title: '국어 2주차' }],
       },
     },
   },
@@ -155,7 +155,18 @@ describe('applyExamPrepExcelImportToRound', () => {
       4
     );
 
-    expect(result.plans['sem1-r2']?.weeks).toEqual(samplePlans['sem1-r1']?.weeks);
+    expect(result.plans['sem1-r2']?.weeks?.['4']?.korean?.map((item) => item.title)).toEqual([
+      '국어 1주차',
+    ]);
+    expect(result.plans['sem1-r2']?.weeks?.['4']?.english?.map((item) => item.title)).toEqual([
+      '영어 1주차',
+    ]);
+    expect(
+      result.plans['sem1-r2']?.weeks?.['4']?.['custom-essay']?.map((item) => item.title)
+    ).toEqual(['논술 1주차']);
+    expect(result.plans['sem1-r2']?.weeks?.['3']?.korean?.map((item) => item.title)).toEqual([
+      '국어 2주차',
+    ]);
     expect(result.appliedWeekCount).toBe(4);
   });
 });

@@ -19,10 +19,10 @@ describe('buildExamPrepWeeklyPlanEvents', () => {
         'sem1-r2': {
           weeks: {
             '4': {
-              korean: '교과서 1-3단원 1회독',
+              korean: [{ id: 'k4', title: '교과서 1-3단원 1회독' }],
             },
             '1': {
-              english: '단어 암기',
+              english: [{ id: 'e1', title: '단어 암기' }],
             },
           },
         },
@@ -42,7 +42,7 @@ describe('buildExamPrepWeeklyPlanEvents', () => {
 
     expect(events).toHaveLength(2);
     expect(events[0]).toMatchObject({
-      id: 'exam-prep-memo-sem1-r2-4-korean',
+      id: 'exam-prep-memo-sem1-r2-4-korean-k4',
       title: '[국어] 교과서 1-3단원 1회독',
       start: '2026-05-11',
       end: '2026-05-18',
@@ -53,12 +53,13 @@ describe('buildExamPrepWeeklyPlanEvents', () => {
         roundSlot: 'sem1-r2',
         weekNumber: 4,
         subjectId: 'korean',
+        itemId: 'k4',
         weekStart: '20260511',
         weekEnd: '20260517',
       },
     });
     expect(events[1]).toMatchObject({
-      id: 'exam-prep-memo-sem1-r2-1-english',
+      id: 'exam-prep-memo-sem1-r2-1-english-e1',
       start: '2026-06-01',
       end: '2026-06-10',
     });
@@ -69,12 +70,12 @@ describe('buildExamPrepWeeklyPlanEvents', () => {
       plans: {
         'sem1-r1': {
           weeks: {
-            '2': { korean: '   ' },
+            '2': { korean: [{ id: 'empty', title: '   ' }] },
           },
         },
         'sem2-r1': {
           weeks: {
-            '1': { korean: '기출 정리' },
+            '1': { korean: [{ id: 'k1', title: '기출 정리' }] },
           },
         },
       },

@@ -155,21 +155,8 @@ describe('buildVacationPeriodPreviewFromSettings', () => {
 
 describe('resolveVacationWeeklyPlans migration', () => {
   it('maps legacy yyyymmdd keys to summer or winter slots', () => {
-    expect(
-      resolveVacationWeeklyPlans({
-        '20260720': {
-          weeks: {
-            '1': { math: '복습' },
-          },
-        },
-        winter: {
-          weeks: {
-            '2': { korean: '독서' },
-          },
-        },
-      })
-    ).toEqual({
-      summer: {
+    const resolved = resolveVacationWeeklyPlans({
+      '20260720': {
         weeks: {
           '1': { math: '복습' },
         },
@@ -180,6 +167,9 @@ describe('resolveVacationWeeklyPlans migration', () => {
         },
       },
     });
+
+    expect(resolved.summer?.weeks?.['1']?.math?.[0]?.title).toBe('복습');
+    expect(resolved.winter?.weeks?.['2']?.korean?.[0]?.title).toBe('독서');
   });
 
   it('validates plans against settings-based preview', () => {
@@ -190,29 +180,23 @@ describe('resolveVacationWeeklyPlans migration', () => {
       })
     );
 
-    expect(
-      validateVacationWeeklyPlansInput(
-        {
-          summer: {
-            weeks: {
-              '1': { math: '단원 정리' },
-            },
-          },
-        },
-        {
-          allowedSubjectIds: new Set(['math']),
-          vacationPeriodPreview: preview,
-        }
-      )
-    ).toEqual({
-      plans: {
+    const result = validateVacationWeeklyPlansInput(
+      {
         summer: {
           weeks: {
             '1': { math: '단원 정리' },
           },
         },
       },
-    });
+      {
+        allowedSubjectIds: new Set(['math']),
+        vacationPeriodPreview: preview,
+      }
+    );
+
+    expect(result.plans.summer?.weeks?.['1']?.math).toEqual([
+      expect.objectContaining({ title: '단원 정리' }),
+    ]);
   });
 
   it('migrates legacy keys through migrateLegacyVacationWeeklyPlanKey', () => {

@@ -236,6 +236,73 @@ export function buildRegularPeriodSegmentPreview(
   return segments;
 }
 
+export interface BlockedPeriodSpanPreviewItem {
+  periodKey: string;
+  label: string;
+  start: string;
+  end: string;
+  kind: 'vacation' | 'exam-prep' | 'exam';
+}
+
+function resolveBlockedSpanMeta(segmentStart: BoundaryMarker): {
+  periodKey: string;
+  label: string;
+  kind: BlockedPeriodSpanPreviewItem['kind'];
+} | null {
+  for (const slot of ['summer', 'winter'] as const) {
+    if (segmentStart === `${slot}-vacation-start`) {
+      return {
+        periodKey: `${slot}-vacation`,
+        label: VACATION_PERIOD_SLOT_LABELS[slot],
+        kind: 'vacation',
+      };
+    }
+  }
+
+  for (const slot of EXAM_ROUND_SLOTS) {
+    if (segmentStart === `${slot}-prep-start`) {
+      return {
+        periodKey: `${slot}-prep`,
+        label: `${EXAM_ROUND_LABELS[slot]} 시험대비`,
+        kind: 'exam-prep',
+      };
+    }
+
+    if (segmentStart === `${slot}-exam-start`) {
+      return {
+        periodKey: `${slot}-exam`,
+        label: `${EXAM_ROUND_LABELS[slot]} 시험`,
+        kind: 'exam',
+      };
+    }
+  }
+
+  return null;
+}
+
+export function buildBlockedPeriodSpanPreview(
+  input: BuildRegularPeriodSegmentsInput
+): BlockedPeriodSpanPreviewItem[] {
+  return collectBlockedSpans(input)
+    .flatMap((span) => {
+      const meta = resolveBlockedSpanMeta(span.segmentStart);
+      if (!meta) {
+        return [];
+      }
+
+      return [
+        {
+          periodKey: meta.periodKey,
+          label: meta.label,
+          start: span.start,
+          end: span.end,
+          kind: meta.kind,
+        },
+      ];
+    })
+    .sort((left, right) => left.start.localeCompare(right.start));
+}
+
 export function previewItemToRegularPeriod(
   preview: RegularPeriodSegmentPreviewItem
 ): VacationPeriod {

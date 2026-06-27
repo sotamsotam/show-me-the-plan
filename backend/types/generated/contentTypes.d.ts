@@ -663,6 +663,7 @@ export interface ApiStudyPlanTodoStudyPlanTodo
     >;
     validFrom: Schema.Attribute.Date;
     validUntil: Schema.Attribute.Date;
+    weeklyPlanSource: Schema.Attribute.JSON;
   };
 }
 

@@ -142,7 +142,7 @@ describe('exam period settings end-to-end scenarios', () => {
       examPrepWeeklyPlans: {
         'sem1-r2': {
           weeks: {
-            '4': { korean: '1회독' },
+            '4': { korean: [{ id: 'k-1', title: '1회독' }] },
           },
         },
       },
@@ -161,7 +161,7 @@ describe('exam period settings end-to-end scenarios', () => {
 
     expect(visiblePlans).toHaveLength(1);
     expect(visiblePlans[0]?.roundSlot).toBe('sem1-r2');
-    expect(visiblePlans[0]?.weeks[0]?.subjects[0]?.content).toBe('1회독');
+    expect(visiblePlans[0]?.weeks[0]?.subjects[0]?.items[0]?.title).toBe('1회독');
   });
 
   it('scenario 4: calendar memo events use saved exam dates', () => {
@@ -173,7 +173,7 @@ describe('exam period settings end-to-end scenarios', () => {
       plans: {
         'sem1-r1': {
           weeks: {
-            '4': { korean: '교과서 정리' },
+            '4': { korean: [{ id: 'k-2', title: '교과서 정리' }] },
           },
         },
       },

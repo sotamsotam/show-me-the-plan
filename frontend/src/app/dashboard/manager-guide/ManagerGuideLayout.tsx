@@ -66,9 +66,9 @@ export default function ManagerGuideLayout({ children }: ManagerGuideLayoutProps
   return (
     <main
       data-manager-guide-layout
-      className="flex w-full min-w-0 flex-col py-8 md:-mx-[50px] md:min-h-0 md:flex-1 md:overflow-hidden md:py-0"
+      className="flex w-full min-w-0 flex-col py-8 md:-mx-[50px] md:min-h-[calc(100dvh-4.5rem-env(safe-area-inset-top,0px))] md:flex-1 md:overflow-hidden md:py-0"
     >
-      <div className="flex w-full min-w-0 flex-col gap-6 md:min-h-0 md:flex-1 md:flex-row md:gap-0 md:min-h-[calc(100dvh-4.5rem-env(safe-area-inset-top,0px))]">
+      <div className="flex w-full min-w-0 flex-col gap-6 md:min-h-0 md:flex-1 md:flex-row md:gap-0">
         <nav
           aria-label="메니저 사용법 메뉴"
           className="overflow-hidden rounded-xl border border-gray-200 bg-white md:hidden dark:border-neutral-800 dark:bg-zinc-900"

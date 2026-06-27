@@ -21,8 +21,13 @@ const subjects = [
 const samplePlans: VacationWeeklyPlans = {
   summer: {
     weeks: {
-      '1': { korean: '국어 1주차', english: '영어 1주차' },
-      '2': { korean: '국어 2주차' },
+      '1': {
+        korean: [{ id: 'k-1', title: '국어 1주차' }],
+        english: [{ id: 'e-1', title: '영어 1주차' }],
+      },
+      '2': {
+        korean: [{ id: 'k-2', title: '국어 2주차' }],
+      },
     },
   },
 };
@@ -60,10 +65,12 @@ describe('applyTemplateToPeriod', () => {
       'overwrite'
     );
 
-    expect(result.plans.winter?.weeks).toEqual({
-      '1': { korean: '템플릿 1주차' },
-      '3': { english: '템플릿 3주차' },
-    });
+    expect(result.plans.winter?.weeks?.['1']?.korean).toEqual([
+      expect.objectContaining({ title: '템플릿 1주차' }),
+    ]);
+    expect(result.plans.winter?.weeks?.['3']?.english).toEqual([
+      expect.objectContaining({ title: '템플릿 3주차' }),
+    ]);
     expect(result.appliedWeekCount).toBe(2);
   });
 });

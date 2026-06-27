@@ -6,8 +6,9 @@ import {
   type ExamRoundSlot,
 } from '@/lib/exam-countdown';
 import {
-  getExamPrepWeeklyPlanContent,
-  MAX_EXAM_PREP_WEEKLY_PLAN_CONTENT_LENGTH,
+  examPrepWeeklyPlanItemsToMultilineText,
+  getExamPrepWeeklyPlanItems,
+  MAX_EXAM_PREP_WEEKLY_PLAN_ITEM_TITLE_LENGTH,
   type ExamPrepWeeklyPlans,
 } from '@/lib/exam-prep-weekly-plan';
 import {
@@ -80,7 +81,7 @@ function normalizeCellValue(value: unknown): string | null {
     return '';
   }
 
-  if (normalized.length > MAX_EXAM_PREP_WEEKLY_PLAN_CONTENT_LENGTH) {
+  if (normalized.length > MAX_EXAM_PREP_WEEKLY_PLAN_ITEM_TITLE_LENGTH) {
     return null;
   }
 
@@ -186,12 +187,14 @@ export function buildExamPrepExcelSheetRows(input: ExamPrepExcelExportInput): st
 
     for (const subject of input.subjects) {
       row.push(
-        getExamPrepWeeklyPlanContent(
-          input.plans,
-          input.roundSlot,
-          weekNumber,
-          subject.id
-        ) ?? ''
+        examPrepWeeklyPlanItemsToMultilineText(
+          getExamPrepWeeklyPlanItems(
+            input.plans,
+            input.roundSlot,
+            weekNumber,
+            subject.id
+          )
+        )
       );
     }
 
@@ -311,7 +314,7 @@ export function parseExamPrepExcelSheetRows(
       if (normalizedContent === null) {
         return {
           ok: false,
-          error: `${weekLabel} · ${headerRow[columnIndex]} 셀 내용이 ${MAX_EXAM_PREP_WEEKLY_PLAN_CONTENT_LENGTH}자를 초과합니다.`,
+          error: `${weekLabel} · ${headerRow[columnIndex]} 셀 내용이 ${MAX_EXAM_PREP_WEEKLY_PLAN_ITEM_TITLE_LENGTH}자를 초과합니다.`,
         };
       }
 

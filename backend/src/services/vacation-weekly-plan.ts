@@ -7,11 +7,28 @@ import {
   resolveVacationWeekDateRange,
 } from './vacation-week-date-range';
 import type { VacationPeriod } from './school-term-periods';
+import {
+  createWeeklyPlanItem,
+  getUnscheduledWeeklyPlanItems,
+  isScheduledWeeklyPlanItem,
+  mergeUnscheduledWeeklyPlanItems,
+  normalizeWeeklyPlanItem,
+  normalizeWeeklyPlanItemArray,
+  weeklyPlanItemsToMultilineText,
+  MAX_WEEKLY_PLAN_ITEMS_PER_CELL,
+  MAX_WEEKLY_PLAN_ITEM_TITLE_LENGTH,
+  type WeeklyPlanItem,
+} from './weekly-plan-item';
 
-export const MAX_VACATION_WEEKLY_PLAN_CONTENT_LENGTH = 500;
+export const MAX_VACATION_WEEKLY_PLAN_ITEM_TITLE_LENGTH = MAX_WEEKLY_PLAN_ITEM_TITLE_LENGTH;
+/** @deprecated use MAX_VACATION_WEEKLY_PLAN_ITEM_TITLE_LENGTH */
+export const MAX_VACATION_WEEKLY_PLAN_CONTENT_LENGTH = MAX_WEEKLY_PLAN_ITEM_TITLE_LENGTH;
+export const MAX_VACATION_WEEKLY_PLAN_ITEMS_PER_CELL = MAX_WEEKLY_PLAN_ITEMS_PER_CELL;
 export const MAX_VACATION_WEEKS = 16;
 
-export type VacationWeeklyPlanWeekSubjects = Record<string, string>;
+export type VacationWeeklyPlanItem = WeeklyPlanItem;
+
+export type VacationWeeklyPlanWeekSubjects = Record<string, VacationWeeklyPlanItem[]>;
 
 export interface VacationWeeklyPlanByPeriod {
   weeks: Partial<Record<string, VacationWeeklyPlanWeekSubjects>>;
@@ -33,48 +50,62 @@ export function createEmptyVacationWeeklyPlans(): VacationWeeklyPlans {
   return {};
 }
 
+export function createVacationWeeklyPlanItem(title: string, id?: string): VacationWeeklyPlanItem {
+  return createWeeklyPlanItem(title, id);
+}
+
+export function isScheduledVacationWeeklyPlanItem(item: VacationWeeklyPlanItem): boolean {
+  return isScheduledWeeklyPlanItem(item);
+}
+
+export function getUnscheduledVacationWeeklyPlanItems(
+  items: VacationWeeklyPlanItem[]
+): VacationWeeklyPlanItem[] {
+  return getUnscheduledWeeklyPlanItems(items);
+}
+
+export function mergeUnscheduledVacationWeeklyPlanItems(
+  existing: VacationWeeklyPlanItem[],
+  unscheduled: VacationWeeklyPlanItem[]
+): VacationWeeklyPlanItem[] {
+  return mergeUnscheduledWeeklyPlanItems(existing, unscheduled);
+}
+
+export function vacationWeeklyPlanItemsToMultilineText(items: VacationWeeklyPlanItem[]): string {
+  return weeklyPlanItemsToMultilineText(items);
+}
+
 function isVacationPeriodSlotKey(value: string): value is VacationPeriodSlot {
   return value === 'summer' || value === 'winter';
 }
 
-function normalizeWeekContent(value: unknown): string | null {
-  if (typeof value !== 'string') {
-    return null;
-  }
-
-  const normalized = value.replace(/\r\n/g, '\n').trim();
-  if (!normalized) {
-    return '';
-  }
-
-  if (normalized.length > MAX_VACATION_WEEKLY_PLAN_CONTENT_LENGTH) {
-    return null;
-  }
-
-  return normalized;
+function normalizeItem(value: unknown): VacationWeeklyPlanItem | null {
+  return normalizeWeeklyPlanItem(value);
 }
 
-function normalizeWeekSubjects(
-  value: unknown
-): VacationWeeklyPlanWeekSubjects | null {
+function normalizeItemArray(value: unknown): VacationWeeklyPlanItem[] | null {
+  return normalizeWeeklyPlanItemArray(value);
+}
+
+function normalizeWeekSubjects(value: unknown): VacationWeeklyPlanWeekSubjects | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     return null;
   }
 
   const subjects: VacationWeeklyPlanWeekSubjects = {};
 
-  for (const [subjectId, content] of Object.entries(value as Record<string, unknown>)) {
+  for (const [subjectId, subjectValue] of Object.entries(value as Record<string, unknown>)) {
     if (!subjectId.trim()) {
       continue;
     }
 
-    const normalizedContent = normalizeWeekContent(content);
-    if (normalizedContent === null) {
+    const items = normalizeItemArray(subjectValue);
+    if (items === null) {
       return null;
     }
 
-    if (normalizedContent) {
-      subjects[subjectId] = normalizedContent;
+    if (items.length > 0) {
+      subjects[subjectId] = items;
     }
   }
 
@@ -255,20 +286,26 @@ export function validateVacationWeeklyPlansInput(
 
       const subjects: VacationWeeklyPlanWeekSubjects = {};
 
-      for (const [subjectId, content] of Object.entries(weekValue as Record<string, unknown>)) {
+      for (const [subjectId, subjectItems] of Object.entries(weekValue as Record<string, unknown>)) {
         if (!options.allowedSubjectIds.has(subjectId)) {
           return { error: `등록되지 않은 과목입니다: ${subjectId}` };
         }
 
-        const normalizedContent = normalizeWeekContent(content);
-        if (normalizedContent === null) {
+        const items = normalizeItemArray(subjectItems);
+        if (items === null) {
+          if (Array.isArray(subjectItems) && subjectItems.length > MAX_VACATION_WEEKLY_PLAN_ITEMS_PER_CELL) {
+            return {
+              error: `한 과목·주차당 최대 ${MAX_VACATION_WEEKLY_PLAN_ITEMS_PER_CELL}개까지 입력할 수 있습니다.`,
+            };
+          }
+
           return {
-            error: `내용은 ${MAX_VACATION_WEEKLY_PLAN_CONTENT_LENGTH}자 이하여야 합니다.`,
+            error: `항목 제목은 ${MAX_VACATION_WEEKLY_PLAN_ITEM_TITLE_LENGTH}자 이하여야 합니다.`,
           };
         }
 
-        if (normalizedContent) {
-          subjects[subjectId] = normalizedContent;
+        if (items.length > 0) {
+          subjects[subjectId] = items;
         }
       }
 
@@ -285,12 +322,259 @@ export function validateVacationWeeklyPlansInput(
   return { plans };
 }
 
+export function areVacationWeeklyPlansEqual(
+  left: VacationWeeklyPlans,
+  right: VacationWeeklyPlans
+): boolean {
+  return (
+    JSON.stringify(resolveVacationWeeklyPlans(left)) ===
+    JSON.stringify(resolveVacationWeeklyPlans(right))
+  );
+}
+
+export function getVacationWeeklyPlanItems(
+  plans: VacationWeeklyPlans,
+  periodKey: VacationPeriodSlot,
+  weekNumber: number,
+  subjectId: string
+): VacationWeeklyPlanItem[] {
+  return plans[periodKey]?.weeks?.[String(weekNumber)]?.[subjectId] ?? [];
+}
+
+export function getUnscheduledVacationWeeklyPlanItemsForCell(
+  plans: VacationWeeklyPlans,
+  periodKey: VacationPeriodSlot,
+  weekNumber: number,
+  subjectId: string
+): VacationWeeklyPlanItem[] {
+  return getUnscheduledVacationWeeklyPlanItems(
+    getVacationWeeklyPlanItems(plans, periodKey, weekNumber, subjectId)
+  );
+}
+
+export function findVacationWeeklyPlanItem(
+  plans: VacationWeeklyPlans,
+  periodKey: VacationPeriodSlot,
+  weekNumber: number,
+  subjectId: string,
+  itemId: string
+): VacationWeeklyPlanItem | null {
+  return (
+    getVacationWeeklyPlanItems(plans, periodKey, weekNumber, subjectId).find(
+      (item) => item.id === itemId
+    ) ?? null
+  );
+}
+
+/** @deprecated templates / legacy callers — prefer getVacationWeeklyPlanItems */
 export function getVacationWeeklyPlanContent(
   plans: VacationWeeklyPlans,
   periodKey: VacationPeriodSlot,
   weekNumber: number,
   subjectId: string
 ): string | null {
-  const content = plans[periodKey]?.weeks?.[String(weekNumber)]?.[subjectId];
-  return content?.trim() ? content : null;
+  const text = vacationWeeklyPlanItemsToMultilineText(
+    getVacationWeeklyPlanItems(plans, periodKey, weekNumber, subjectId)
+  );
+  return text.trim() ? text : null;
 }
+
+export function writeVacationWeeklyPlanItemsForCell(
+  plans: VacationWeeklyPlans,
+  periodKey: VacationPeriodSlot,
+  weekNumber: number,
+  subjectId: string,
+  unscheduledItems: VacationWeeklyPlanItem[]
+): VacationWeeklyPlans {
+  const weekKey = String(weekNumber);
+  const periodPlan = plans[periodKey] ?? { weeks: {} };
+  const existing = periodPlan.weeks[weekKey]?.[subjectId] ?? [];
+  const merged = mergeUnscheduledVacationWeeklyPlanItems(existing, unscheduledItems);
+
+  const weekSubjects = { ...(periodPlan.weeks[weekKey] ?? {}) };
+
+  if (merged.length > 0) {
+    weekSubjects[subjectId] = merged;
+  } else {
+    delete weekSubjects[subjectId];
+  }
+
+  const nextWeeks = { ...periodPlan.weeks };
+  if (Object.keys(weekSubjects).length > 0) {
+    nextWeeks[weekKey] = weekSubjects;
+  } else {
+    delete nextWeeks[weekKey];
+  }
+
+  const nextPlans = { ...plans };
+  if (Object.keys(nextWeeks).length > 0) {
+    nextPlans[periodKey] = { weeks: nextWeeks };
+  } else {
+    delete nextPlans[periodKey];
+  }
+
+  return nextPlans;
+}
+
+export function setVacationWeeklyPlanItemScheduledTodoId(
+  plans: VacationWeeklyPlans,
+  periodKey: VacationPeriodSlot,
+  weekNumber: number,
+  subjectId: string,
+  itemId: string,
+  scheduledTodoId: number
+): VacationWeeklyPlans {
+  const weekKey = String(weekNumber);
+  const periodPlan = plans[periodKey];
+  if (!periodPlan?.weeks?.[weekKey]?.[subjectId]) {
+    return plans;
+  }
+
+  const items = periodPlan.weeks[weekKey]![subjectId]!.map((item) =>
+    item.id === itemId ? { ...item, scheduledTodoId } : item
+  );
+
+  return {
+    ...plans,
+    [periodKey]: {
+      weeks: {
+        ...periodPlan.weeks,
+        [weekKey]: {
+          ...periodPlan.weeks[weekKey],
+          [subjectId]: items,
+        },
+      },
+    },
+  };
+}
+
+export function clearVacationWeeklyPlanItemScheduledTodoId(
+  plans: VacationWeeklyPlans,
+  periodKey: VacationPeriodSlot,
+  weekNumber: number,
+  subjectId: string,
+  itemId: string
+): VacationWeeklyPlans {
+  const weekKey = String(weekNumber);
+  const periodPlan = plans[periodKey];
+  if (!periodPlan?.weeks?.[weekKey]?.[subjectId]) {
+    return plans;
+  }
+
+  const items = periodPlan.weeks[weekKey]![subjectId]!.map((item) => {
+    if (item.id !== itemId) {
+      return item;
+    }
+
+    const { scheduledTodoId: _removed, ...rest } = item;
+    return rest;
+  });
+
+  return {
+    ...plans,
+    [periodKey]: {
+      weeks: {
+        ...periodPlan.weeks,
+        [weekKey]: {
+          ...periodPlan.weeks[weekKey],
+          [subjectId]: items,
+        },
+      },
+    },
+  };
+}
+
+export function clearVacationWeeklyPlanScheduledTodoIdByTodoId(
+  plans: VacationWeeklyPlans,
+  scheduledTodoId: number
+): VacationWeeklyPlans {
+  if (!Number.isInteger(scheduledTodoId) || scheduledTodoId <= 0) {
+    return plans;
+  }
+
+  let changed = false;
+  const nextPlans: VacationWeeklyPlans = { ...plans };
+  const slots: VacationPeriodSlot[] = ['summer', 'winter'];
+
+  for (const periodKey of slots) {
+    const periodPlan = nextPlans[periodKey];
+    if (!periodPlan?.weeks) {
+      continue;
+    }
+
+    const nextWeeks = { ...periodPlan.weeks };
+
+    for (const [weekKey, weekSubjects] of Object.entries(nextWeeks)) {
+      if (!weekSubjects) {
+        continue;
+      }
+
+      const nextSubjects = { ...weekSubjects };
+
+      for (const [subjectId, items] of Object.entries(nextSubjects)) {
+        if (!items) {
+          continue;
+        }
+
+        const nextItems = items.map((item) => {
+          if (item.scheduledTodoId !== scheduledTodoId) {
+            return item;
+          }
+
+          changed = true;
+          const { scheduledTodoId: _removed, ...rest } = item;
+          return rest;
+        });
+
+        nextSubjects[subjectId] = nextItems;
+      }
+
+      nextWeeks[weekKey] = nextSubjects;
+    }
+
+    nextPlans[periodKey] = { weeks: nextWeeks };
+  }
+
+  return changed ? nextPlans : plans;
+}
+
+export function removeVacationWeeklyPlanItemFromCell(
+  plans: VacationWeeklyPlans,
+  periodKey: VacationPeriodSlot,
+  weekNumber: number,
+  subjectId: string,
+  itemId: string
+): VacationWeeklyPlans {
+  const weekKey = String(weekNumber);
+  const periodPlan = plans[periodKey];
+  if (!periodPlan?.weeks?.[weekKey]?.[subjectId]) {
+    return plans;
+  }
+
+  const remaining = periodPlan.weeks[weekKey]![subjectId]!.filter((item) => item.id !== itemId);
+  const weekSubjects = { ...(periodPlan.weeks[weekKey] ?? {}) };
+
+  if (remaining.length > 0) {
+    weekSubjects[subjectId] = remaining;
+  } else {
+    delete weekSubjects[subjectId];
+  }
+
+  const nextWeeks = { ...periodPlan.weeks };
+  if (Object.keys(weekSubjects).length > 0) {
+    nextWeeks[weekKey] = weekSubjects;
+  } else {
+    delete nextWeeks[weekKey];
+  }
+
+  const nextPlans = { ...plans };
+  if (Object.keys(nextWeeks).length > 0) {
+    nextPlans[periodKey] = { weeks: nextWeeks };
+  } else {
+    delete nextPlans[periodKey];
+  }
+
+  return nextPlans;
+}
+
+export { isVacationPeriodSlotKey };

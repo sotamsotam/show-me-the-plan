@@ -3,6 +3,7 @@
 import type { EventInput } from '@fullcalendar/core';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useExamCountdown } from '@/hooks/useExamCountdown';
+import { useExamPrepWeeklyPlansContext } from '@/hooks/useExamPrepWeeklyPlansContext';
 import { useNeisTimetableEnabled } from '@/hooks/useNeisTimetableEnabled';
 import { useStudentApi } from '@/hooks/useStudentApi';
 import { useStudyPlanTodosInRange } from '@/hooks/useStudyPlanTodosInRange';
@@ -59,6 +60,8 @@ export default function StudyPlanTodoPage() {
     [selectedDate]
   );
   const { countdown } = useExamCountdown({ referenceYmd });
+  const { context: examPrepPlansContext, refresh: refreshExamPrepPlans } =
+    useExamPrepWeeklyPlansContext();
   const [viewMode, setViewMode] = useState<DayViewMode>('combined');
   const [timetableEvents, setTimetableEvents] = useState<EventInput[]>([]);
   const [timetableLoading, setTimetableLoading] = useState(false);
@@ -393,6 +396,10 @@ export default function StudyPlanTodoPage() {
       <StudyPlanTodoExecutionModal
         open={modalOpen}
         todo={selectedEvent}
+        studyPlanTodo={
+          selectedEvent ? todosById.get(selectedEvent.todoId) ?? null : null
+        }
+        examPrepWeeksByRound={examPrepPlansContext.examPrepWeeksByRound}
         existingRecord={existingRecord}
         onClose={handleModalClose}
         onSaved={() => {
@@ -400,6 +407,9 @@ export default function StudyPlanTodoPage() {
             notifyExecutionSaved(selectedEvent.todoId, selectedEvent.date);
           }
           handleSaved();
+        }}
+        onWeeklyPlanChanged={() => {
+          void refreshExamPrepPlans();
         }}
       />
 

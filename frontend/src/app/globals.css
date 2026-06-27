@@ -1817,11 +1817,42 @@ body:has([data-dashboard-app]) {
   text-overflow: ellipsis;
   white-space: nowrap;
   padding: 3px 8px;
-  margin-bottom: 4px;
+  margin-bottom: 0;
   border: none;
   border-radius: 5px;
   background: var(--cal-event-badge-bg);
   color: var(--cal-event-badge-text);
+}
+
+.study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card .cal-event-subject-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  align-self: flex-start;
+  max-width: 100%;
+  min-width: 0;
+  margin-bottom: 4px;
+}
+
+.study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card .cal-event-subject-row--inline {
+  margin-bottom: 0;
+  min-width: 0;
+  flex-shrink: 1;
+}
+
+.study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card .cal-event-execution-icon {
+  flex-shrink: 0;
+}
+
+.study-plan-calendar .fc .fc-list-event.study-plan-event.cal-event-card .cal-event-list-row {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 6px;
+  min-width: 0;
+}
+
+.study-plan-calendar .fc .fc-list-event.study-plan-event.cal-event-card .cal-event-list-row .cal-event-title {
+  min-width: 0;
 }
 
 .study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card .cal-event-title--wrap {
@@ -1838,6 +1869,13 @@ body:has([data-dashboard-app]) {
   font-size: 10px;
   font-weight: 500;
   white-space: nowrap;
+}
+
+.study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card .cal-event-subject-row .cal-event-time--inline {
+  flex-shrink: 0;
+  margin-bottom: 0;
+  color: var(--cal-event-muted);
+  font-variant-numeric: tabular-nums;
 }
 
 /* 짧은 스터디 플랜 이벤트 (≤20분: 컴팩트+시간 생략, ≤10분: 한 줄) */
@@ -2087,8 +2125,13 @@ body:has([data-dashboard-app]) {
 
 .exam-prep-weekly-plan-table thead th {
   height: 3.25rem;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 2px solid #e5e7eb;
   background-color: #f9fafb;
+  text-align: center;
+}
+
+.exam-prep-weekly-plan-table thead th:not(:last-child) {
+  border-right: 1px solid #e5e7eb;
 }
 
 .exam-prep-weekly-plan-corner-cell {
@@ -2119,21 +2162,36 @@ body:has([data-dashboard-app]) {
   background-color: #fff;
 }
 
-.exam-prep-weekly-plan-table tbody tr {
-  border-bottom: 1px solid #f3f4f6;
+.exam-prep-weekly-plan-table tbody tr:not(:last-child) .exam-prep-weekly-plan-week-cell,
+.exam-prep-weekly-plan-table tbody tr:not(:last-child) .exam-prep-weekly-plan-subject-cell {
+  border-bottom: 2px solid #d1d5db;
 }
 
 .exam-prep-weekly-plan-subject-cell {
   background-color: #fff;
 }
 
+.exam-prep-weekly-plan-subject-cell:not(:last-child) {
+  border-right: 1px solid #e5e7eb;
+}
+
+.exam-prep-weekly-plan-table .exam-prep-weekly-plan-col-hover {
+  background-color: #f3f4f6;
+}
+
+.dark .exam-prep-weekly-plan-table .exam-prep-weekly-plan-col-hover {
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
 .dark .exam-prep-weekly-plan-table thead th {
-  border-bottom-color: #404040;
+  border-bottom: 2px solid #404040;
   background-color: rgba(39, 39, 42, 0.6);
 }
 
 .dark .exam-prep-weekly-plan-corner-cell,
-.dark .exam-prep-weekly-plan-week-cell {
+.dark .exam-prep-weekly-plan-week-cell,
+.dark .exam-prep-weekly-plan-table thead th:not(:last-child),
+.dark .exam-prep-weekly-plan-subject-cell:not(:last-child) {
   border-right-color: #404040;
 }
 
@@ -2142,8 +2200,9 @@ body:has([data-dashboard-app]) {
   background-color: #18181b;
 }
 
-.dark .exam-prep-weekly-plan-table tbody tr {
-  border-bottom-color: #262626;
+.dark .exam-prep-weekly-plan-table tbody tr:not(:last-child) .exam-prep-weekly-plan-week-cell,
+.dark .exam-prep-weekly-plan-table tbody tr:not(:last-child) .exam-prep-weekly-plan-subject-cell {
+  border-bottom: 2px solid #525252;
 }
 
 @media (min-width: 768px) {

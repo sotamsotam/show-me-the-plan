@@ -190,6 +190,16 @@ async function setupPermissions(strapi: Core.Strapi) {
   await ensureRolePermission(
     strapi,
     'authenticated',
+    'api::user-profile.user-profile.carryOverExamPrepWeeklyPlanItem'
+  );
+  await ensureRolePermission(
+    strapi,
+    'authenticated',
+    'api::user-profile.user-profile.deleteExamPrepWeeklyPlanItem'
+  );
+  await ensureRolePermission(
+    strapi,
+    'authenticated',
     'api::user-profile.user-profile.getExamPrepWeeklyPlanTemplates'
   );
   await ensureRolePermission(
@@ -459,6 +469,8 @@ async function setupPermissions(strapi: Core.Strapi) {
     'api::user-profile.user-profile.updateExamPrepSettings',
     'api::user-profile.user-profile.getExamPrepWeeklyPlans',
     'api::user-profile.user-profile.updateExamPrepWeeklyPlans',
+    'api::user-profile.user-profile.carryOverExamPrepWeeklyPlanItem',
+    'api::user-profile.user-profile.deleteExamPrepWeeklyPlanItem',
     'api::user-profile.user-profile.getExamPrepWeeklyPlanTemplates',
     'api::user-profile.user-profile.createExamPrepWeeklyPlanTemplate',
     'api::user-profile.user-profile.deleteExamPrepWeeklyPlanTemplate',

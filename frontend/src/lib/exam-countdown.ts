@@ -660,6 +660,43 @@ export function resolveExamPrepPeriodsFromPreview(
   });
 }
 
+/** Inclusive prep start through exam last day; `end` is exclusive for study-plan-todos API (ISO dates). */
+export function resolveStudyPlanTodoQueryRangeForExamPrep(
+  preview: ExamRoundPreviewItem[],
+  settings: ExamPrepWeeksByRound
+): { start: string; end: string } | null {
+  const periods = resolveExamPrepPeriodsFromPreview(preview, settings);
+
+  if (periods.length === 0) {
+    return null;
+  }
+
+  let startYmd = periods[0]!.prepStart;
+  let lastInclusiveDayYmd = periods[0]!.prepEnd;
+
+  for (const period of periods) {
+    if (period.prepStart < startYmd) {
+      startYmd = period.prepStart;
+    }
+    if (period.prepEnd > lastInclusiveDayYmd) {
+      lastInclusiveDayYmd = period.prepEnd;
+    }
+  }
+
+  return {
+    start: ymdToIsoDateForStudyPlanApi(startYmd),
+    end: ymdToIsoDateForStudyPlanApi(addDays(lastInclusiveDayYmd, 1)),
+  };
+}
+
+function ymdToIsoDateForStudyPlanApi(ymd: string): string {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(ymd)) {
+    return ymd;
+  }
+
+  return `${ymd.slice(0, 4)}-${ymd.slice(4, 6)}-${ymd.slice(6, 8)}`;
+}
+
 export function resolveActiveExamCountdownFromPreview(
   preview: ExamRoundPreviewItem[],
   settings: ExamPrepWeeksByRound,

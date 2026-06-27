@@ -81,6 +81,22 @@ export default {
       },
     },
     {
+      method: 'POST',
+      path: '/user-profiles/exam-prep-weekly-plan-items/carry-over',
+      handler: 'user-profile.carryOverExamPrepWeeklyPlanItem',
+      config: {
+        auth: {},
+      },
+    },
+    {
+      method: 'DELETE',
+      path: '/user-profiles/exam-prep-weekly-plan-items',
+      handler: 'user-profile.deleteExamPrepWeeklyPlanItem',
+      config: {
+        auth: {},
+      },
+    },
+    {
       method: 'GET',
       path: '/user-profiles/exam-prep-weekly-plan-templates',
       handler: 'user-profile.getExamPrepWeeklyPlanTemplates',

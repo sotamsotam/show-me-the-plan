@@ -53,6 +53,9 @@
     "executionRecords": {
       "type": "json"
     },
+    "weeklyPlanSource": {
+      "type": "json"
+    },
     "user": {
       "type": "relation",
       "relation": "manyToOne",

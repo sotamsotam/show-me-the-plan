@@ -58,7 +58,12 @@ describe('resolveVisibleVacationWeekPlans', () => {
             weekNumber: 2,
             weekStart: '20260727',
             weekEnd: '20260802',
-            subjects: [{ subjectId: 'math', content: '여름방학 2주차 복습' }],
+            subjects: [
+              {
+                subjectId: 'math',
+                items: [expect.objectContaining({ title: '여름방학 2주차 복습' })],
+              },
+            ],
           },
         ],
       },
@@ -77,7 +82,7 @@ describe('resolveVisibleWeeklyPlanSections', () => {
     examPrepWeeklyPlans: {
       'sem1-r2': {
         weeks: {
-          '4': { korean: '교과서 1-3단원 1회독' },
+          '4': { korean: [{ id: 'k-1', title: '교과서 1-3단원 1회독' }] },
         },
       },
     },

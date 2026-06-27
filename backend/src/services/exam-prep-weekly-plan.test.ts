@@ -2,11 +2,15 @@ import { describe, expect, it } from 'vitest';
 
 import { createDefaultExamPrepWeeksByRound } from './exam-countdown';
 import {
+  clearExamPrepWeeklyPlanScheduledTodoIdByTodoId,
   createEmptyExamPrepWeeklyPlans,
-  getExamPrepWeeklyPlanContent,
-  MAX_EXAM_PREP_WEEKLY_PLAN_CONTENT_LENGTH,
+  createExamPrepWeeklyPlanItem,
+  getExamPrepWeeklyPlanItems,
+  getUnscheduledExamPrepWeeklyPlanItemsForCell,
+  MAX_EXAM_PREP_WEEKLY_PLAN_ITEM_TITLE_LENGTH,
   resolveExamPrepWeeklyPlans,
   validateExamPrepWeeklyPlansInput,
+  writeExamPrepWeeklyPlanItemsForCell,
 } from './exam-prep-weekly-plan';
 
 const allowedSubjectIds = new Set(['korean', 'english', 'math']);
@@ -19,17 +23,16 @@ describe('resolveExamPrepWeeklyPlans', () => {
     expect(resolveExamPrepWeeklyPlans('invalid')).toEqual({});
   });
 
-  it('normalizes nested weeks and trims empty content', () => {
+  it('normalizes nested weeks and trims item titles', () => {
     expect(
       resolveExamPrepWeeklyPlans({
         'sem1-r2': {
           weeks: {
             '4': {
-              korean: '  교과서 1-3단원  ',
-              english: '   ',
+              korean: [{ id: 'item-1', title: '  교과서 1-3단원  ' }],
             },
             '1': {
-              math: '기출 정리',
+              math: [{ id: 'item-3', title: '기출 정리' }],
             },
           },
         },
@@ -38,17 +41,17 @@ describe('resolveExamPrepWeeklyPlans', () => {
       'sem1-r2': {
         weeks: {
           '4': {
-            korean: '교과서 1-3단원',
+            korean: [{ id: 'item-1', title: '교과서 1-3단원' }],
           },
           '1': {
-            math: '기출 정리',
+            math: [{ id: 'item-3', title: '기출 정리' }],
           },
         },
       },
     });
   });
 
-  it('ignores unknown round slots and invalid week numbers', () => {
+  it('ignores legacy string cells and unknown round slots', () => {
     expect(
       resolveExamPrepWeeklyPlans({
         'invalid-slot': {
@@ -56,11 +59,16 @@ describe('resolveExamPrepWeeklyPlans', () => {
             '1': { korean: '무시' },
           },
         },
+        'sem1-r2': {
+          weeks: {
+            '4': { korean: 'legacy text' },
+          },
+        },
         'sem2-r1': {
           weeks: {
-            '0': { korean: '무시' },
-            '13': { korean: '무시' },
-            '2': { english: '유지' },
+            '0': { korean: [{ id: 'a', title: '무시' }] },
+            '13': { korean: [{ id: 'b', title: '무시' }] },
+            '2': { english: [{ id: 'c', title: '유지' }] },
           },
         },
       })
@@ -68,7 +76,7 @@ describe('resolveExamPrepWeeklyPlans', () => {
       'sem2-r1': {
         weeks: {
           '2': {
-            english: '유지',
+            english: [{ id: 'c', title: '유지' }],
           },
         },
       },
@@ -83,8 +91,8 @@ describe('validateExamPrepWeeklyPlansInput', () => {
         {
           'sem1-r2': {
             weeks: {
-              '4': { korean: '1회독' },
-              '1': { english: '단어 암기' },
+              '4': { korean: [{ id: 'a', title: '1회독' }] },
+              '1': { english: [{ id: 'b', title: '단어 암기' }] },
             },
           },
         },
@@ -94,8 +102,8 @@ describe('validateExamPrepWeeklyPlansInput', () => {
       plans: {
         'sem1-r2': {
           weeks: {
-            '4': { korean: '1회독' },
-            '1': { english: '단어 암기' },
+            '4': { korean: [{ id: 'a', title: '1회독' }] },
+            '1': { english: [{ id: 'b', title: '단어 암기' }] },
           },
         },
       },
@@ -108,7 +116,7 @@ describe('validateExamPrepWeeklyPlansInput', () => {
         {
           'sem1-r2': {
             weeks: {
-              '5': { korean: '범위 초과' },
+              '5': { korean: [{ id: 'a', title: '범위 초과' }] },
             },
           },
         },
@@ -119,13 +127,13 @@ describe('validateExamPrepWeeklyPlansInput', () => {
     });
   });
 
-  it('rejects unknown subjects and overly long content', () => {
+  it('rejects unknown subjects and overly long item titles', () => {
     expect(
       validateExamPrepWeeklyPlansInput(
         {
           'sem1-r2': {
             weeks: {
-              '2': { unknown: '내용' },
+              '2': { unknown: [{ id: 'a', title: '내용' }] },
             },
           },
         },
@@ -140,30 +148,92 @@ describe('validateExamPrepWeeklyPlansInput', () => {
         {
           'sem1-r2': {
             weeks: {
-              '2': { korean: 'a'.repeat(MAX_EXAM_PREP_WEEKLY_PLAN_CONTENT_LENGTH + 1) },
+              '2': {
+                korean: [
+                  {
+                    id: 'a',
+                    title: 'a'.repeat(MAX_EXAM_PREP_WEEKLY_PLAN_ITEM_TITLE_LENGTH + 1),
+                  },
+                ],
+              },
             },
           },
         },
         { allowedSubjectIds, examPrepWeeksByRound }
       )
     ).toEqual({
-      error: `내용은 ${MAX_EXAM_PREP_WEEKLY_PLAN_CONTENT_LENGTH}자 이하여야 합니다.`,
+      error: `항목 제목은 ${MAX_EXAM_PREP_WEEKLY_PLAN_ITEM_TITLE_LENGTH}자 이하여야 합니다.`,
     });
   });
 });
 
-describe('getExamPrepWeeklyPlanContent', () => {
-  it('returns stored content for a round, week, and subject', () => {
+describe('getExamPrepWeeklyPlanItems', () => {
+  it('returns stored items for a round, week, and subject', () => {
     const plans = resolveExamPrepWeeklyPlans({
       'sem1-r2': {
         weeks: {
-          '3': { math: '오답노트' },
+          '3': { math: [{ id: 'item-1', title: '오답노트' }] },
         },
       },
     });
 
-    expect(getExamPrepWeeklyPlanContent(plans, 'sem1-r2', 3, 'math')).toBe('오답노트');
-    expect(getExamPrepWeeklyPlanContent(plans, 'sem1-r2', 4, 'math')).toBeNull();
+    expect(getExamPrepWeeklyPlanItems(plans, 'sem1-r2', 3, 'math')).toEqual([
+      { id: 'item-1', title: '오답노트' },
+    ]);
+    expect(getExamPrepWeeklyPlanItems(plans, 'sem1-r2', 4, 'math')).toEqual([]);
     expect(createEmptyExamPrepWeeklyPlans()).toEqual({});
+  });
+});
+
+describe('writeExamPrepWeeklyPlanItemsForCell', () => {
+  it('preserves scheduled items when updating unscheduled items', () => {
+    const plans = resolveExamPrepWeeklyPlans({
+      'sem1-r2': {
+        weeks: {
+          '4': {
+            korean: [
+              { id: 'scheduled', title: '배치됨', scheduledTodoId: 10 },
+              { id: 'pending', title: '대기' },
+            ],
+          },
+        },
+      },
+    });
+
+    const next = writeExamPrepWeeklyPlanItemsForCell(
+      plans,
+      'sem1-r2',
+      4,
+      'korean',
+      [createExamPrepWeeklyPlanItem('새 항목', 'new-item')]
+    );
+
+    expect(getUnscheduledExamPrepWeeklyPlanItemsForCell(next, 'sem1-r2', 4, 'korean')).toEqual([
+      { id: 'new-item', title: '새 항목' },
+    ]);
+    expect(next['sem1-r2']?.weeks?.['4']?.korean).toEqual([
+      { id: 'scheduled', title: '배치됨', scheduledTodoId: 10 },
+      { id: 'new-item', title: '새 항목' },
+    ]);
+  });
+});
+
+describe('clearExamPrepWeeklyPlanScheduledTodoIdByTodoId', () => {
+  it('clears scheduledTodoId from matching items across weeks', () => {
+    const plans = resolveExamPrepWeeklyPlans({
+      'sem1-r2': {
+        weeks: {
+          '4': {
+            korean: [{ id: 'scheduled', title: '배치됨', scheduledTodoId: 10 }],
+          },
+        },
+      },
+    });
+
+    const next = clearExamPrepWeeklyPlanScheduledTodoIdByTodoId(plans, 10);
+
+    expect(getUnscheduledExamPrepWeeklyPlanItemsForCell(next, 'sem1-r2', 4, 'korean')).toEqual([
+      { id: 'scheduled', title: '배치됨' },
+    ]);
   });
 });

@@ -31,16 +31,25 @@ const samplePlans: ExamPrepWeeklyPlans = {
   'sem1-r1': {
     weeks: {
       '4': {
-        korean: '국어 1주차',
-        english: '영어 1주차',
-        'custom-essay': '논술 1주차',
+        korean: [{ id: 'k1', title: '국어 1주차' }],
+        english: [{ id: 'e1', title: '영어 1주차' }],
+        'custom-essay': [{ id: 'c1', title: '논술 1주차' }],
       },
       '3': {
-        korean: '국어 2주차',
+        korean: [{ id: 'k2', title: '국어 2주차' }],
       },
     },
   },
 };
+
+function cellTitles(
+  plans: ExamPrepWeeklyPlans,
+  roundSlot: keyof ExamPrepWeeklyPlans,
+  week: string,
+  subjectId: string
+): string[] {
+  return (plans[roundSlot]?.weeks?.[week]?.[subjectId] ?? []).map((item) => item.title);
+}
 
 describe('hasExamPrepRoundContent', () => {
   it('detects whether the selected round has any content', () => {
@@ -127,15 +136,9 @@ describe('applyTemplateToRound', () => {
 
     expect(result.appliedWeekCount).toBe(2);
     expect(result.skippedSubjectKeys).toEqual(['science']);
-    expect(result.plans['sem1-r2']?.weeks).toEqual({
-      '4': {
-        korean: '템플릿 국어 1주차',
-        english: '템플릿 영어 1주차',
-      },
-      '1': {
-        korean: '템플릿 국어 4주차',
-      },
-    });
+    expect(cellTitles(result.plans, 'sem1-r2', '4', 'korean')).toEqual(['템플릿 국어 1주차']);
+    expect(cellTitles(result.plans, 'sem1-r2', '4', 'english')).toEqual(['템플릿 영어 1주차']);
+    expect(cellTitles(result.plans, 'sem1-r2', '1', 'korean')).toEqual(['템플릿 국어 4주차']);
   });
 
   it('only fills empty cells in fill-empty mode', () => {
@@ -148,14 +151,16 @@ describe('applyTemplateToRound', () => {
       'fill-empty'
     );
 
-    expect(result.plans['sem1-r1']?.weeks?.['4']).toEqual({
-      korean: '국어 1주차',
-      english: '영어 1주차',
-      'custom-essay': '논술 1주차',
-    });
-    expect(result.plans['sem1-r1']?.weeks?.['1']).toEqual({
-      korean: '템플릿 국어 4주차',
-    });
+    expect(result.plans['sem1-r1']?.weeks?.['4']?.korean).toEqual([
+      { id: 'k1', title: '국어 1주차' },
+    ]);
+    expect(result.plans['sem1-r1']?.weeks?.['4']?.english).toEqual([
+      { id: 'e1', title: '영어 1주차' },
+    ]);
+    expect(result.plans['sem1-r1']?.weeks?.['4']?.['custom-essay']).toEqual([
+      { id: 'c1', title: '논술 1주차' },
+    ]);
+    expect(cellTitles(result.plans, 'sem1-r1', '1', 'korean')).toEqual(['템플릿 국어 4주차']);
   });
 
   it('ignores template weeks above the target week count', () => {
@@ -169,12 +174,8 @@ describe('applyTemplateToRound', () => {
     );
 
     expect(result.appliedWeekCount).toBe(1);
-    expect(result.plans['sem1-r1']?.weeks).toEqual({
-      '2': {
-        korean: '템플릿 국어 1주차',
-        english: '템플릿 영어 1주차',
-      },
-    });
+    expect(cellTitles(result.plans, 'sem1-r1', '2', 'korean')).toEqual(['템플릿 국어 1주차']);
+    expect(cellTitles(result.plans, 'sem1-r1', '2', 'english')).toEqual(['템플릿 영어 1주차']);
   });
 
   it('maps template ordinals across different week counts', () => {
@@ -193,10 +194,8 @@ describe('applyTemplateToRound', () => {
       'overwrite'
     );
 
-    expect(result.plans['sem2-r1']?.weeks).toEqual({
-      '4': { korean: 'D-6 국어' },
-      '3': { korean: 'D-5 국어' },
-    });
+    expect(cellTitles(result.plans, 'sem2-r1', '4', 'korean')).toEqual(['D-6 국어']);
+    expect(cellTitles(result.plans, 'sem2-r1', '3', 'korean')).toEqual(['D-5 국어']);
   });
 
   it('does not duplicate content into lower prep weeks for ordinal templates', () => {
@@ -215,10 +214,8 @@ describe('applyTemplateToRound', () => {
       'overwrite'
     );
 
-    expect(result.plans['sem1-r2']?.weeks).toEqual({
-      '6': { korean: 'D-6 국어' },
-      '5': { korean: 'D-5 국어' },
-    });
+    expect(cellTitles(result.plans, 'sem1-r2', '6', 'korean')).toEqual(['D-6 국어']);
+    expect(cellTitles(result.plans, 'sem1-r2', '5', 'korean')).toEqual(['D-5 국어']);
   });
 
   it('does not duplicate legacy absolute week keys into lower prep weeks', () => {
@@ -237,10 +234,8 @@ describe('applyTemplateToRound', () => {
       'overwrite'
     );
 
-    expect(result.plans['sem1-r2']?.weeks).toEqual({
-      '6': { korean: 'D-6 국어' },
-      '5': { korean: 'D-5 국어' },
-    });
+    expect(cellTitles(result.plans, 'sem1-r2', '6', 'korean')).toEqual(['D-6 국어']);
+    expect(cellTitles(result.plans, 'sem1-r2', '5', 'korean')).toEqual(['D-5 국어']);
   });
 });
 

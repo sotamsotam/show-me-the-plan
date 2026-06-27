@@ -2,11 +2,18 @@ import { randomUUID } from 'node:crypto';
 
 import type { VacationPeriodSlot } from './vacation-period-settings';
 import {
+  getUnscheduledVacationWeeklyPlanItemsForCell,
   getVacationWeeklyPlanContent,
+  getVacationWeeklyPlanItems,
   MAX_VACATION_WEEKLY_PLAN_CONTENT_LENGTH,
   MAX_VACATION_WEEKS,
+  writeVacationWeeklyPlanItemsForCell,
   type VacationWeeklyPlans,
 } from './vacation-weekly-plan';
+import {
+  parseWeeklyPlanItemTitlesFromMultilineText,
+  titlesToWeeklyPlanItems,
+} from './weekly-plan-item';
 import {
   isLegacyStudyPlanSubject,
   LEGACY_SUBJECT_LABELS,
@@ -347,31 +354,16 @@ function writePeriodWeekContent(
   subjectId: string,
   content: string
 ): VacationWeeklyPlans {
-  const weekKey = String(weekNumber);
-  const periodPlan = plans[periodKey] ?? { weeks: {} };
-  const weekSubjects = { ...(periodPlan.weeks[weekKey] ?? {}) };
-
-  if (content.trim()) {
-    weekSubjects[subjectId] = content;
-  } else {
-    delete weekSubjects[subjectId];
-  }
-
-  const nextWeeks = { ...periodPlan.weeks };
-  if (Object.keys(weekSubjects).length > 0) {
-    nextWeeks[weekKey] = weekSubjects;
-  } else {
-    delete nextWeeks[weekKey];
-  }
-
-  const nextPlans = { ...plans };
-  if (Object.keys(nextWeeks).length > 0) {
-    nextPlans[periodKey] = { weeks: nextWeeks };
-  } else {
-    delete nextPlans[periodKey];
-  }
-
-  return nextPlans;
+  const unscheduledItems = titlesToWeeklyPlanItems(
+    parseWeeklyPlanItemTitlesFromMultilineText(content)
+  );
+  return writeVacationWeeklyPlanItemsForCell(
+    plans,
+    periodKey,
+    weekNumber,
+    subjectId,
+    unscheduledItems
+  );
 }
 
 export function hasVacationPeriodContent(
@@ -384,8 +376,8 @@ export function hasVacationPeriodContent(
   }
 
   for (const weekSubjects of Object.values(periodPlan.weeks)) {
-    for (const content of Object.values(weekSubjects ?? {})) {
-      if (content.trim()) {
+    for (const items of Object.values(weekSubjects ?? {})) {
+      if ((items ?? []).length > 0) {
         return true;
       }
     }
@@ -529,10 +521,14 @@ export function applyTemplateToPeriod(
         continue;
       }
 
-      const currentContent =
-        getVacationWeeklyPlanContent(nextPlans, periodKey, weekNumber, subjectId) ?? '';
+      const currentUnscheduled = getUnscheduledVacationWeeklyPlanItemsForCell(
+        nextPlans,
+        periodKey,
+        weekNumber,
+        subjectId
+      );
 
-      if (mode === 'fill-empty' && currentContent.trim()) {
+      if (mode === 'fill-empty' && currentUnscheduled.length > 0) {
         continue;
       }
 

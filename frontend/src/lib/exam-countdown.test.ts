@@ -14,6 +14,7 @@ import {
   resolvePrepPeriodStart,
   resolvePrepWeekDateRange,
   resolvePrepWeekNumber,
+  resolveStudyPlanTodoQueryRangeForExamPrep,
   createDefaultExamPrepWeeksByRound,
   formatExamCountdownLabel,
 } from './exam-countdown';
@@ -246,6 +247,28 @@ describe('resolveExamPrepPeriodsFromPreview', () => {
         roundSlot: 'sem1-r2',
       },
     ]);
+  });
+});
+
+describe('resolveStudyPlanTodoQueryRangeForExamPrep', () => {
+  it('covers prep weeks through exam last day with exclusive API end', () => {
+    expect(
+      resolveStudyPlanTodoQueryRangeForExamPrep(
+        [
+          {
+            slot: 'sem1-r2',
+            label: '1학기 2회고사',
+            firstDay: '20260610',
+            lastDay: '20260612',
+            hasSchedule: true,
+          },
+        ],
+        createDefaultExamPrepWeeksByRound(4)
+      )
+    ).toEqual({
+      start: '2026-05-11',
+      end: '2026-06-13',
+    });
   });
 });
 

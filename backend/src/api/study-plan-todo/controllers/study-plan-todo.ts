@@ -29,6 +29,21 @@ import {
   handleExecutionNotificationUpdate,
   syncTodoNotificationQueueFromRaw,
 } from '../../../services/study-plan-todo-notify';
+import {
+  clearExamPrepWeeklyPlanItemScheduledTodoId,
+  clearExamPrepWeeklyPlanScheduledTodoIdByTodoId,
+  resolveExamPrepWeeklyPlans,
+} from '../../../services/exam-prep-weekly-plan';
+import {
+  clearRegularWeeklyPlanItemScheduledTodoId,
+  clearRegularWeeklyPlanScheduledTodoIdByTodoId,
+  resolveRegularWeeklyPlans,
+} from '../../../services/regular-weekly-plan';
+import {
+  clearVacationWeeklyPlanItemScheduledTodoId,
+  clearVacationWeeklyPlanScheduledTodoIdByTodoId,
+  resolveVacationWeeklyPlans,
+} from '../../../services/vacation-weekly-plan';
 
 const UID = 'api::study-plan-todo.study-plan-todo' as const;
 
@@ -52,6 +67,89 @@ async function findOwnedTodo(strapi: Core.Strapi, userId: number, id: number) {
   return strapi.db.query(UID).findOne({
     where: { id, user: userId },
   }) as Promise<Record<string, unknown> | null>;
+}
+
+async function revertWeeklyPlansOnTodoDelete(
+  strapi: Core.Strapi,
+  userId: number,
+  todo: ReturnType<typeof toStudyPlanTodoRecord>
+): Promise<void> {
+  const profile = await strapi.db.query('api::user-profile.user-profile').findOne({
+    where: { user: userId },
+  });
+
+  if (!profile) {
+    return;
+  }
+
+  const currentExamPlans = resolveExamPrepWeeklyPlans(profile.examPrepWeeklyPlans);
+  const currentVacationPlans = resolveVacationWeeklyPlans(profile.vacationWeeklyPlans);
+  const currentRegularPlans = resolveRegularWeeklyPlans(profile.regularWeeklyPlans);
+  let nextExamPlans = currentExamPlans;
+  let nextVacationPlans = currentVacationPlans;
+  let nextRegularPlans = currentRegularPlans;
+  const source = todo.weeklyPlanSource;
+
+  if (source?.kind === 'exam-prep') {
+    nextExamPlans = clearExamPrepWeeklyPlanItemScheduledTodoId(
+      nextExamPlans,
+      source.roundSlot,
+      source.weekNumber,
+      source.subjectId,
+      source.itemId
+    );
+  }
+
+  if (source?.kind === 'vacation') {
+    nextVacationPlans = clearVacationWeeklyPlanItemScheduledTodoId(
+      nextVacationPlans,
+      source.periodSlot,
+      source.weekNumber,
+      source.subjectId,
+      source.itemId
+    );
+  }
+
+  if (source?.kind === 'regular') {
+    nextRegularPlans = clearRegularWeeklyPlanItemScheduledTodoId(
+      nextRegularPlans,
+      source.periodKey,
+      source.weekNumber,
+      source.subjectId,
+      source.itemId
+    );
+  }
+
+  nextExamPlans = clearExamPrepWeeklyPlanScheduledTodoIdByTodoId(nextExamPlans, todo.id);
+  nextVacationPlans = clearVacationWeeklyPlanScheduledTodoIdByTodoId(
+    nextVacationPlans,
+    todo.id
+  );
+  nextRegularPlans = clearRegularWeeklyPlanScheduledTodoIdByTodoId(nextRegularPlans, todo.id);
+
+  const examChanged = nextExamPlans !== currentExamPlans;
+  const vacationChanged = nextVacationPlans !== currentVacationPlans;
+  const regularChanged = nextRegularPlans !== currentRegularPlans;
+
+  if (!examChanged && !vacationChanged && !regularChanged) {
+    return;
+  }
+
+  const data: Record<string, unknown> = {};
+  if (examChanged) {
+    data.examPrepWeeklyPlans = nextExamPlans;
+  }
+  if (vacationChanged) {
+    data.vacationWeeklyPlans = nextVacationPlans;
+  }
+  if (regularChanged) {
+    data.regularWeeklyPlans = nextRegularPlans;
+  }
+
+  await strapi.db.query('api::user-profile.user-profile').update({
+    where: { id: profile.id },
+    data,
+  });
 }
 
 function parseOccurrenceDate(raw: string): string | null {
@@ -217,6 +315,10 @@ export default factories.createCoreController(UID, ({ strapi }) => ({
       date: body.date ?? current.date ?? undefined,
       excludedDates: body.excludedDates ?? current.excludedDates,
       overrides: body.overrides ?? current.overrides,
+      weeklyPlanSource:
+        body.weeklyPlanSource !== undefined
+          ? body.weeklyPlanSource
+          : current.weeklyPlanSource ?? undefined,
     };
 
     const fullError = validateStudyPlanTodoInput(merged, { profileSubjects });
@@ -262,6 +364,9 @@ export default factories.createCoreController(UID, ({ strapi }) => ({
       return ctx.notFound('스터디 플랜을 찾을 수 없습니다.');
     }
 
+    const todo = toStudyPlanTodoRecord(existing);
+
+    await revertWeeklyPlansOnTodoDelete(strapi, owner.userId, todo);
     await cancelAllPendingForTodo(strapi, id, 'cancelled');
     await strapi.db.query(UID).delete({ where: { id } });
 

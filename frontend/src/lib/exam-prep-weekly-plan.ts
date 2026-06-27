@@ -8,10 +8,30 @@ import {
 } from '@/lib/exam-countdown';
 import type { ExamPeriodSettings } from '@/lib/exam-period-settings';
 import type { UserSubject } from '@/lib/user-subject';
+import {
+  appendWeeklyPlanItemsFromTitles,
+  createWeeklyPlanItem,
+  getUnscheduledWeeklyPlanItems,
+  isScheduledWeeklyPlanItem,
+  mergeUnscheduledWeeklyPlanItems,
+  normalizeWeeklyPlanItem,
+  parseWeeklyPlanItemTitlesFromMultilineText,
+  reorderWeeklyPlanItems,
+  titlesToWeeklyPlanItems,
+  weeklyPlanItemsToMultilineText,
+  MAX_WEEKLY_PLAN_ITEMS_PER_CELL,
+  MAX_WEEKLY_PLAN_ITEM_TITLE_LENGTH,
+  type WeeklyPlanItem,
+} from '@/lib/weekly-plan-item';
 
-export const MAX_EXAM_PREP_WEEKLY_PLAN_CONTENT_LENGTH = 500;
+export const MAX_EXAM_PREP_WEEKLY_PLAN_ITEM_TITLE_LENGTH = MAX_WEEKLY_PLAN_ITEM_TITLE_LENGTH;
+/** @deprecated use MAX_EXAM_PREP_WEEKLY_PLAN_ITEM_TITLE_LENGTH */
+export const MAX_EXAM_PREP_WEEKLY_PLAN_CONTENT_LENGTH = MAX_EXAM_PREP_WEEKLY_PLAN_ITEM_TITLE_LENGTH;
+export const MAX_EXAM_PREP_WEEKLY_PLAN_ITEMS_PER_CELL = MAX_WEEKLY_PLAN_ITEMS_PER_CELL;
 
-export type ExamPrepWeeklyPlanWeekSubjects = Record<string, string>;
+export type ExamPrepWeeklyPlanItem = WeeklyPlanItem;
+
+export type ExamPrepWeeklyPlanWeekSubjects = Record<string, ExamPrepWeeklyPlanItem[]>;
 
 export interface ExamPrepWeeklyPlanByRound {
   weeks: Partial<Record<string, ExamPrepWeeklyPlanWeekSubjects>>;
@@ -23,48 +43,105 @@ export function createEmptyExamPrepWeeklyPlans(): ExamPrepWeeklyPlans {
   return {};
 }
 
+export function createExamPrepWeeklyPlanItem(title: string, id?: string): ExamPrepWeeklyPlanItem {
+  return createWeeklyPlanItem(title, id);
+}
+
+export function isScheduledExamPrepWeeklyPlanItem(item: ExamPrepWeeklyPlanItem): boolean {
+  return isScheduledWeeklyPlanItem(item);
+}
+
+export function getUnscheduledExamPrepWeeklyPlanItems(
+  items: ExamPrepWeeklyPlanItem[]
+): ExamPrepWeeklyPlanItem[] {
+  return getUnscheduledWeeklyPlanItems(items);
+}
+
+export function mergeUnscheduledExamPrepWeeklyPlanItems(
+  existing: ExamPrepWeeklyPlanItem[],
+  unscheduled: ExamPrepWeeklyPlanItem[]
+): ExamPrepWeeklyPlanItem[] {
+  return mergeUnscheduledWeeklyPlanItems(existing, unscheduled);
+}
+
+export function titlesToExamPrepWeeklyPlanItems(titles: string[]): ExamPrepWeeklyPlanItem[] {
+  return titlesToWeeklyPlanItems(titles);
+}
+
+export { parseWeeklyPlanItemTitlesFromMultilineText };
+
+export function appendExamPrepWeeklyPlanItemsFromTitles(
+  items: ExamPrepWeeklyPlanItem[],
+  titles: string[]
+): { items: ExamPrepWeeklyPlanItem[] } | { error: string } {
+  return appendWeeklyPlanItemsFromTitles(items, titles, {
+    maxTitleLength: MAX_EXAM_PREP_WEEKLY_PLAN_ITEM_TITLE_LENGTH,
+    maxItemsPerCell: MAX_EXAM_PREP_WEEKLY_PLAN_ITEMS_PER_CELL,
+  });
+}
+
+export function reorderExamPrepWeeklyPlanItems(
+  items: ExamPrepWeeklyPlanItem[],
+  fromIndex: number,
+  toIndex: number
+): ExamPrepWeeklyPlanItem[] {
+  return reorderWeeklyPlanItems(items, fromIndex, toIndex);
+}
+
+export function examPrepWeeklyPlanItemsToMultilineText(items: ExamPrepWeeklyPlanItem[]): string {
+  return weeklyPlanItemsToMultilineText(items);
+}
+
 function isExamRoundSlot(value: string): value is ExamRoundSlot {
   return (EXAM_ROUND_SLOTS as readonly string[]).includes(value);
 }
 
-function normalizeWeekContent(value: unknown): string | null {
-  if (typeof value !== 'string') {
-    return null;
-  }
-
-  const normalized = value.replace(/\r\n/g, '\n').trim();
-  if (!normalized) {
-    return '';
-  }
-
-  if (normalized.length > MAX_EXAM_PREP_WEEKLY_PLAN_CONTENT_LENGTH) {
-    return null;
-  }
-
-  return normalized;
+function normalizeItem(value: unknown): ExamPrepWeeklyPlanItem | null {
+  return normalizeWeeklyPlanItem(value);
 }
 
-function normalizeWeekSubjects(
-  value: unknown
-): ExamPrepWeeklyPlanWeekSubjects | null {
+function normalizeItemArray(value: unknown): ExamPrepWeeklyPlanItem[] | null {
+  if (!Array.isArray(value)) {
+    return null;
+  }
+
+  if (value.length > MAX_EXAM_PREP_WEEKLY_PLAN_ITEMS_PER_CELL) {
+    return null;
+  }
+
+  const items: ExamPrepWeeklyPlanItem[] = [];
+
+  for (const entry of value) {
+    const item = normalizeItem(entry);
+    if (!item) {
+      return null;
+    }
+
+    items.push(item);
+  }
+
+  return items;
+}
+
+function normalizeWeekSubjects(value: unknown): ExamPrepWeeklyPlanWeekSubjects | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     return null;
   }
 
   const subjects: ExamPrepWeeklyPlanWeekSubjects = {};
 
-  for (const [subjectId, content] of Object.entries(value as Record<string, unknown>)) {
+  for (const [subjectId, subjectValue] of Object.entries(value as Record<string, unknown>)) {
     if (!subjectId.trim()) {
       continue;
     }
 
-    const normalizedContent = normalizeWeekContent(content);
-    if (normalizedContent === null) {
+    const items = normalizeItemArray(subjectValue);
+    if (items === null) {
       return null;
     }
 
-    if (normalizedContent) {
-      subjects[subjectId] = normalizedContent;
+    if (items.length > 0) {
+      subjects[subjectId] = items;
     }
   }
 
@@ -193,20 +270,26 @@ export function validateExamPrepWeeklyPlansInput(
 
       const subjects: ExamPrepWeeklyPlanWeekSubjects = {};
 
-      for (const [subjectId, content] of Object.entries(weekValue as Record<string, unknown>)) {
+      for (const [subjectId, subjectItems] of Object.entries(weekValue as Record<string, unknown>)) {
         if (!options.allowedSubjectIds.has(subjectId)) {
           return { error: `등록되지 않은 과목입니다: ${subjectId}` };
         }
 
-        const normalizedContent = normalizeWeekContent(content);
-        if (normalizedContent === null) {
+        const items = normalizeItemArray(subjectItems);
+        if (items === null) {
+          if (Array.isArray(subjectItems) && subjectItems.length > MAX_EXAM_PREP_WEEKLY_PLAN_ITEMS_PER_CELL) {
+            return {
+              error: `한 과목·주차당 최대 ${MAX_EXAM_PREP_WEEKLY_PLAN_ITEMS_PER_CELL}개까지 입력할 수 있습니다.`,
+            };
+          }
+
           return {
-            error: `내용은 ${MAX_EXAM_PREP_WEEKLY_PLAN_CONTENT_LENGTH}자 이하여야 합니다.`,
+            error: `항목 제목은 ${MAX_EXAM_PREP_WEEKLY_PLAN_ITEM_TITLE_LENGTH}자 이하여야 합니다.`,
           };
         }
 
-        if (normalizedContent) {
-          subjects[subjectId] = normalizedContent;
+        if (items.length > 0) {
+          subjects[subjectId] = items;
         }
       }
 
@@ -233,14 +316,235 @@ export function areExamPrepWeeklyPlansEqual(
   );
 }
 
-export function getExamPrepWeeklyPlanContent(
+export function getExamPrepWeeklyPlanItems(
   plans: ExamPrepWeeklyPlans,
   roundSlot: ExamRoundSlot,
   weekNumber: number,
   subjectId: string
-): string | null {
-  const content = plans[roundSlot]?.weeks?.[String(weekNumber)]?.[subjectId];
-  return content?.trim() ? content : null;
+): ExamPrepWeeklyPlanItem[] {
+  return plans[roundSlot]?.weeks?.[String(weekNumber)]?.[subjectId] ?? [];
+}
+
+export function getUnscheduledExamPrepWeeklyPlanItemsForCell(
+  plans: ExamPrepWeeklyPlans,
+  roundSlot: ExamRoundSlot,
+  weekNumber: number,
+  subjectId: string
+): ExamPrepWeeklyPlanItem[] {
+  return getUnscheduledExamPrepWeeklyPlanItems(
+    getExamPrepWeeklyPlanItems(plans, roundSlot, weekNumber, subjectId)
+  );
+}
+
+export function findExamPrepWeeklyPlanItem(
+  plans: ExamPrepWeeklyPlans,
+  roundSlot: ExamRoundSlot,
+  weekNumber: number,
+  subjectId: string,
+  itemId: string
+): ExamPrepWeeklyPlanItem | null {
+  return (
+    getExamPrepWeeklyPlanItems(plans, roundSlot, weekNumber, subjectId).find(
+      (item) => item.id === itemId
+    ) ?? null
+  );
+}
+
+export function writeExamPrepWeeklyPlanItemsForCell(
+  plans: ExamPrepWeeklyPlans,
+  roundSlot: ExamRoundSlot,
+  weekNumber: number,
+  subjectId: string,
+  unscheduledItems: ExamPrepWeeklyPlanItem[]
+): ExamPrepWeeklyPlans {
+  const weekKey = String(weekNumber);
+  const roundPlan = plans[roundSlot] ?? { weeks: {} };
+  const existing = roundPlan.weeks[weekKey]?.[subjectId] ?? [];
+  const merged = mergeUnscheduledExamPrepWeeklyPlanItems(existing, unscheduledItems);
+
+  const weekSubjects = { ...(roundPlan.weeks[weekKey] ?? {}) };
+
+  if (merged.length > 0) {
+    weekSubjects[subjectId] = merged;
+  } else {
+    delete weekSubjects[subjectId];
+  }
+
+  const nextWeeks = { ...roundPlan.weeks };
+  if (Object.keys(weekSubjects).length > 0) {
+    nextWeeks[weekKey] = weekSubjects;
+  } else {
+    delete nextWeeks[weekKey];
+  }
+
+  const nextPlans = { ...plans };
+  if (Object.keys(nextWeeks).length > 0) {
+    nextPlans[roundSlot] = { weeks: nextWeeks };
+  } else {
+    delete nextPlans[roundSlot];
+  }
+
+  return nextPlans;
+}
+
+export function setExamPrepWeeklyPlanItemScheduledTodoId(
+  plans: ExamPrepWeeklyPlans,
+  roundSlot: ExamRoundSlot,
+  weekNumber: number,
+  subjectId: string,
+  itemId: string,
+  scheduledTodoId: number
+): ExamPrepWeeklyPlans {
+  const weekKey = String(weekNumber);
+  const roundPlan = plans[roundSlot];
+  if (!roundPlan?.weeks?.[weekKey]?.[subjectId]) {
+    return plans;
+  }
+
+  const items = roundPlan.weeks[weekKey]![subjectId]!.map((item) =>
+    item.id === itemId ? { ...item, scheduledTodoId } : item
+  );
+
+  return {
+    ...plans,
+    [roundSlot]: {
+      weeks: {
+        ...roundPlan.weeks,
+        [weekKey]: {
+          ...roundPlan.weeks[weekKey],
+          [subjectId]: items,
+        },
+      },
+    },
+  };
+}
+
+export function removeExamPrepWeeklyPlanItemFromCell(
+  plans: ExamPrepWeeklyPlans,
+  roundSlot: ExamRoundSlot,
+  weekNumber: number,
+  subjectId: string,
+  itemId: string
+): ExamPrepWeeklyPlans {
+  const weekKey = String(weekNumber);
+  const roundPlan = plans[roundSlot];
+  if (!roundPlan?.weeks?.[weekKey]?.[subjectId]) {
+    return plans;
+  }
+
+  const remaining = roundPlan.weeks[weekKey]![subjectId]!.filter((item) => item.id !== itemId);
+  const weekSubjects = { ...(roundPlan.weeks[weekKey] ?? {}) };
+
+  if (remaining.length > 0) {
+    weekSubjects[subjectId] = remaining;
+  } else {
+    delete weekSubjects[subjectId];
+  }
+
+  const nextWeeks = { ...roundPlan.weeks };
+  if (Object.keys(weekSubjects).length > 0) {
+    nextWeeks[weekKey] = weekSubjects;
+  } else {
+    delete nextWeeks[weekKey];
+  }
+
+  const nextPlans = { ...plans };
+  if (Object.keys(nextWeeks).length > 0) {
+    nextPlans[roundSlot] = { weeks: nextWeeks };
+  } else {
+    delete nextPlans[roundSlot];
+  }
+
+  return nextPlans;
+}
+
+export function clearExamPrepWeeklyPlanItemScheduledTodoId(
+  plans: ExamPrepWeeklyPlans,
+  roundSlot: ExamRoundSlot,
+  weekNumber: number,
+  subjectId: string,
+  itemId: string
+): ExamPrepWeeklyPlans {
+  const weekKey = String(weekNumber);
+  const roundPlan = plans[roundSlot];
+  if (!roundPlan?.weeks?.[weekKey]?.[subjectId]) {
+    return plans;
+  }
+
+  const items = roundPlan.weeks[weekKey]![subjectId]!.map((item) => {
+    if (item.id !== itemId) {
+      return item;
+    }
+
+    const { scheduledTodoId: _removed, ...rest } = item;
+    return rest;
+  });
+
+  return {
+    ...plans,
+    [roundSlot]: {
+      weeks: {
+        ...roundPlan.weeks,
+        [weekKey]: {
+          ...roundPlan.weeks[weekKey],
+          [subjectId]: items,
+        },
+      },
+    },
+  };
+}
+
+export function clearExamPrepWeeklyPlanScheduledTodoIdByTodoId(
+  plans: ExamPrepWeeklyPlans,
+  scheduledTodoId: number
+): ExamPrepWeeklyPlans {
+  if (!Number.isInteger(scheduledTodoId) || scheduledTodoId <= 0) {
+    return plans;
+  }
+
+  let changed = false;
+  const nextPlans: ExamPrepWeeklyPlans = { ...plans };
+
+  for (const roundSlot of EXAM_ROUND_SLOTS) {
+    const roundPlan = nextPlans[roundSlot];
+    if (!roundPlan?.weeks) {
+      continue;
+    }
+
+    const nextWeeks = { ...roundPlan.weeks };
+
+    for (const [weekKey, weekSubjects] of Object.entries(nextWeeks)) {
+      if (!weekSubjects) {
+        continue;
+      }
+
+      const nextSubjects = { ...weekSubjects };
+
+      for (const [subjectId, items] of Object.entries(nextSubjects)) {
+        if (!items) {
+          continue;
+        }
+
+        const nextItems = items.map((item) => {
+          if (item.scheduledTodoId !== scheduledTodoId) {
+            return item;
+          }
+
+          changed = true;
+          const { scheduledTodoId: _removed, ...rest } = item;
+          return rest;
+        });
+
+        nextSubjects[subjectId] = nextItems;
+      }
+
+      nextWeeks[weekKey] = nextSubjects;
+    }
+
+    nextPlans[roundSlot] = { weeks: nextWeeks };
+  }
+
+  return changed ? nextPlans : plans;
 }
 
 export interface ExamPrepWeeklyPlansContextResponse {

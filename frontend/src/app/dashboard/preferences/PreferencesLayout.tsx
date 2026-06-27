@@ -1,12 +1,14 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { useEffect, useState, type ReactNode } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { ChevronRightIcon } from '@/components/ChevronRightIcon';
 import PreferencesNavIcon from './PreferencesNavIcon';
+import { useDeviceTier } from '@/hooks/useDeviceTier';
 
 const PREFERENCES_SIDEBAR_COLLAPSED_KEY = 'preferences-sidebar-collapsed';
+const SUBJECT_TAGS_HREF = '/dashboard/preferences/subject-tags';
 
 const PREFERENCES_NAV_ITEMS = [
   {
@@ -82,11 +84,31 @@ function readSidebarCollapsed(): boolean {
 
 export default function PreferencesLayout({ children }: PreferencesLayoutProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const deviceTier = useDeviceTier();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  const navItems = useMemo(() => {
+    if (deviceTier === 'phone') {
+      return PREFERENCES_NAV_ITEMS.filter((item) => item.href === SUBJECT_TAGS_HREF);
+    }
+
+    return [...PREFERENCES_NAV_ITEMS];
+  }, [deviceTier]);
 
   useEffect(() => {
     setSidebarCollapsed(readSidebarCollapsed());
   }, []);
+
+  useEffect(() => {
+    if (deviceTier !== 'phone') {
+      return;
+    }
+
+    if (pathname.startsWith('/dashboard/preferences') && pathname !== SUBJECT_TAGS_HREF) {
+      router.replace(SUBJECT_TAGS_HREF);
+    }
+  }, [deviceTier, pathname, router]);
 
   const toggleSidebar = () => {
     setSidebarCollapsed((collapsed) => {
@@ -99,14 +121,14 @@ export default function PreferencesLayout({ children }: PreferencesLayoutProps) 
   return (
     <main
       data-preferences-layout
-      className="flex w-full min-w-0 flex-col py-8 md:min-h-0 md:flex-1 md:overflow-hidden md:py-0"
+      className="flex w-full min-w-0 flex-col py-8 md:min-h-[calc(100dvh-4.5rem-env(safe-area-inset-top,0px))] md:flex-1 md:overflow-hidden md:py-0"
     >
-      <div className="flex w-full min-w-0 flex-col gap-6 md:min-h-0 md:flex-1 md:flex-row md:gap-0 md:min-h-[calc(100dvh-4.5rem-env(safe-area-inset-top,0px))]">
+      <div className="flex w-full min-w-0 flex-col gap-6 md:min-h-0 md:flex-1 md:flex-row md:gap-0">
         <nav
           aria-label="설정 메뉴"
           className="overflow-hidden rounded-xl border border-gray-200 bg-white md:hidden dark:border-neutral-800 dark:bg-zinc-900"
         >
-          {PREFERENCES_NAV_ITEMS.map((item, index) => {
+          {navItems.map((item, index) => {
             const isActive = pathname === item.href;
 
             return (
@@ -165,7 +187,7 @@ export default function PreferencesLayout({ children }: PreferencesLayoutProps) 
               aria-label="설정 메뉴"
               className="flex w-60 flex-col gap-0.5"
             >
-              {PREFERENCES_NAV_ITEMS.map((item) => {
+              {navItems.map((item) => {
                 const isActive = pathname === item.href;
 
                 return (

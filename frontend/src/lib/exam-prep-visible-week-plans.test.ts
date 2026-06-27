@@ -22,6 +22,10 @@ function visibleRange(startYmd: string, endExclusiveYmd: string): VisibleDateRan
   };
 }
 
+function planItem(id: string, title: string) {
+  return { id, title };
+}
+
 describe('resolveVisiblePrepWeekPlans', () => {
   const examPrepWeeksByRound = createDefaultExamPrepWeeksByRound(4);
   const subjects = [
@@ -36,20 +40,20 @@ describe('resolveVisiblePrepWeekPlans', () => {
       'sem1-r2': {
         weeks: {
           '4': {
-            korean: '교과서 1-3단원 1회독',
+            korean: [planItem('k4', '교과서 1-3단원 1회독')],
           },
           '3': {
-            english: '문법 정리',
+            english: [planItem('e3', '문법 정리')],
           },
           '1': {
-            english: '단어 암기',
+            english: [planItem('e1', '단어 암기')],
           },
         },
       },
       'sem2-r1': {
         weeks: {
           '1': {
-            korean: '2학기 기출 정리',
+            korean: [planItem('k2', '2학기 기출 정리')],
           },
         },
       },
@@ -88,7 +92,12 @@ describe('resolveVisiblePrepWeekPlans', () => {
           weekNumber: 4,
           weekStart: '20260511',
           weekEnd: '20260517',
-          subjects: [{ subjectId: 'korean', content: '교과서 1-3단원 1회독' }],
+          subjects: [
+            {
+              subjectId: 'korean',
+              items: [planItem('k4', '교과서 1-3단원 1회독')],
+            },
+          ],
         },
       ],
     });
@@ -106,7 +115,7 @@ describe('resolveVisiblePrepWeekPlans', () => {
         weekNumber: 1,
         weekStart: '20260601',
         weekEnd: '20260609',
-        subjects: [{ subjectId: 'english', content: '단어 암기' }],
+        subjects: [{ subjectId: 'english', items: [planItem('e1', '단어 암기')] }],
       },
     ]);
   });
@@ -121,7 +130,7 @@ describe('resolveVisiblePrepWeekPlans', () => {
     expect(rounds[0]?.weeks.map((week) => week.weekNumber)).toEqual([3]);
     expect(rounds[0]?.weeks[0]?.subjects[0]).toEqual({
       subjectId: 'english',
-      content: '문법 정리',
+      items: [planItem('e3', '문법 정리')],
     });
   });
 
@@ -139,7 +148,7 @@ describe('resolveVisiblePrepWeekPlans', () => {
           weekNumber: 1,
           weekStart: '20261012',
           weekEnd: '20261019',
-          subjects: [{ subjectId: 'korean', content: '2학기 기출 정리' }],
+          subjects: [{ subjectId: 'korean', items: [planItem('k2', '2학기 기출 정리')] }],
         },
       ],
     });
@@ -155,7 +164,7 @@ describe('resolveVisiblePrepWeekPlans', () => {
       plans: {
         'sem1-r2': {
           weeks: {
-            '4': { korean: '   ' },
+            '4': { korean: [] },
           },
         },
       },

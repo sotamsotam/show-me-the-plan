@@ -8,7 +8,10 @@ import {
   type ExamRoundPreviewItem,
   type ExamRoundSlot,
 } from '@/lib/exam-countdown';
-import type { ExamPrepWeeklyPlans } from '@/lib/exam-prep-weekly-plan';
+import {
+  getUnscheduledExamPrepWeeklyPlanItems,
+  type ExamPrepWeeklyPlans,
+} from '@/lib/exam-prep-weekly-plan';
 import { EXAM_PREP_MEMO_EVENT_TYPE } from '@/lib/exam-prep-memo';
 import { subjectClassName } from '@/lib/calendar-design-tokens';
 import { enrichCalendarEventWithSubjectColor } from '@/lib/subject-color';
@@ -40,9 +43,10 @@ function addDaysYmd(ymd: string, days: number): string {
 function buildExamPrepMemoEventId(
   roundSlot: ExamRoundSlot,
   weekNumber: number,
-  subjectId: string
+  subjectId: string,
+  itemId: string
 ): string {
-  return `exam-prep-memo-${roundSlot}-${weekNumber}-${subjectId}`;
+  return `exam-prep-memo-${roundSlot}-${weekNumber}-${subjectId}-${itemId}`;
 }
 
 export function buildExamPrepWeeklyPlanEvents(
@@ -75,44 +79,42 @@ export function buildExamPrepWeeklyPlanEvents(
         continue;
       }
 
-      for (const [subjectId, content] of Object.entries(weekSubjects)) {
-        const trimmedContent = content.trim();
-        if (!trimmedContent) {
-          continue;
-        }
+      for (const [subjectId, items] of Object.entries(weekSubjects)) {
+        for (const item of getUnscheduledExamPrepWeeklyPlanItems(items ?? [])) {
+          const subjectLabel = getSubjectLabel(subjectId, input.subjects);
 
-        const subjectLabel = getSubjectLabel(subjectId, input.subjects);
-
-        events.push(
-          enrichCalendarEventWithSubjectColor(
-            {
-              id: buildExamPrepMemoEventId(roundSlot, weekNumber, subjectId),
-              title: `[${subjectLabel}] ${trimmedContent}`,
-              start: ymdToIsoDate(range.start),
-              end: ymdToIsoDate(addDaysYmd(range.end, 1)),
-              allDay: true,
-              editable: false,
-              startEditable: false,
-              durationEditable: false,
-              classNames: [
-                'exam-prep-memo-event',
-                'cal-event-card',
-                subjectClassName(subjectId, input.subjects),
-              ],
-              extendedProps: {
-                type: EXAM_PREP_MEMO_EVENT_TYPE,
-                roundSlot,
-                weekNumber,
-                subjectId,
-                content: trimmedContent,
-                weekStart: range.start,
-                weekEnd: range.end,
+          events.push(
+            enrichCalendarEventWithSubjectColor(
+              {
+                id: buildExamPrepMemoEventId(roundSlot, weekNumber, subjectId, item.id),
+                title: `[${subjectLabel}] ${item.title}`,
+                start: ymdToIsoDate(range.start),
+                end: ymdToIsoDate(addDaysYmd(range.end, 1)),
+                allDay: true,
+                editable: false,
+                startEditable: false,
+                durationEditable: false,
+                classNames: [
+                  'exam-prep-memo-event',
+                  'cal-event-card',
+                  subjectClassName(subjectId, input.subjects),
+                ],
+                extendedProps: {
+                  type: EXAM_PREP_MEMO_EVENT_TYPE,
+                  roundSlot,
+                  weekNumber,
+                  subjectId,
+                  itemId: item.id,
+                  content: item.title,
+                  weekStart: range.start,
+                  weekEnd: range.end,
+                },
               },
-            },
-            subjectId,
-            input.subjects
-          )
-        );
+              subjectId,
+              input.subjects
+            )
+          );
+        }
       }
     }
   }

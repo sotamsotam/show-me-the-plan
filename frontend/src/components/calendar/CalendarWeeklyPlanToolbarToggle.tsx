@@ -5,6 +5,7 @@ import { useEffect, useRef, type RefObject } from 'react';
 interface CalendarWeeklyPlanToolbarToggleProps {
   containerRef: RefObject<HTMLElement | null>;
   toolbarVersion: number;
+  activeViewType: string;
   visible: boolean;
   open: boolean;
   onToggle: () => void;
@@ -21,7 +22,16 @@ function syncWeeklyPlanToggleButton(
     return undefined;
   }
 
-  let host = leftChunk.querySelector('[data-weekly-plan-toggle-host]') as HTMLElement | null;
+  const existingHost = leftChunk.querySelector(
+    '[data-weekly-plan-toggle-host]'
+  ) as HTMLElement | null;
+
+  if (!visible) {
+    existingHost?.remove();
+    return undefined;
+  }
+
+  let host = existingHost;
 
   if (!host) {
     host = document.createElement('span');
@@ -34,12 +44,6 @@ function syncWeeklyPlanToggleButton(
     } else {
       leftChunk.appendChild(host);
     }
-  }
-
-  host.hidden = !visible;
-
-  if (!visible) {
-    return undefined;
   }
 
   let button = host.querySelector('button') as HTMLButtonElement | null;
@@ -65,6 +69,7 @@ function syncWeeklyPlanToggleButton(
 export default function CalendarWeeklyPlanToolbarToggle({
   containerRef,
   toolbarVersion,
+  activeViewType,
   visible,
   open,
   onToggle,
@@ -98,7 +103,7 @@ export default function CalendarWeeklyPlanToolbarToggle({
       window.clearTimeout(timeoutId);
       cleanup?.();
     };
-  }, [containerRef, open, toolbarVersion, visible]);
+  }, [activeViewType, containerRef, open, toolbarVersion, visible]);
 
   return null;
 }

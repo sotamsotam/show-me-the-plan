@@ -8,13 +8,16 @@ import {
   resolvePrepWeekDateRange,
   type ExamRoundSlot,
 } from '@/lib/exam-countdown';
-import { getExamPrepWeeklyPlanContent } from '@/lib/exam-prep-weekly-plan';
+import {
+  getUnscheduledExamPrepWeeklyPlanItems,
+  type ExamPrepWeeklyPlanItem,
+} from '@/lib/exam-prep-weekly-plan';
 import type { ExamPrepWeeklyPlansContext } from '@/lib/exam-prep-weekly-plans-context';
 import type { UserSubject } from '@/lib/user-subject';
 
 export interface VisiblePrepWeekPlanSubject {
   subjectId: string;
-  content: string;
+  items: ExamPrepWeeklyPlanItem[];
 }
 
 export interface VisiblePrepWeekPlanWeek {
@@ -159,15 +162,12 @@ export function resolveVisiblePrepWeekPlans(
       const subjects: VisiblePrepWeekPlanSubject[] = [];
 
       for (const subjectId of orderSubjectIds(Object.keys(weekSubjects), context.subjects)) {
-        const content = getExamPrepWeeklyPlanContent(
-          context.plans,
-          roundSlot,
-          weekNumber,
-          subjectId
+        const items = getUnscheduledExamPrepWeeklyPlanItems(
+          weekSubjects[subjectId] ?? []
         );
 
-        if (content) {
-          subjects.push({ subjectId, content });
+        if (items.length > 0) {
+          subjects.push({ subjectId, items });
         }
       }
 

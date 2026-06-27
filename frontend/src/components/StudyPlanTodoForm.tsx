@@ -28,6 +28,7 @@ import {
   type StudyPlanTitleParts,
 } from '@/lib/study-plan-title-builder';
 import { findUserSubject } from '@/lib/user-subject';
+import type { WeeklyPlanSource } from '@/lib/weekly-plan-source';
 
 export type StudyPlanTodoFormMode = 'create' | 'once' | 'series' | 'occurrence';
 
@@ -49,8 +50,9 @@ interface StudyPlanTodoFormProps {
   todo?: StudyPlanTodo | null;
   occurrenceDate?: string;
   initial?: StudyPlanTodoFormInitial;
+  weeklyPlanSource?: WeeklyPlanSource | null;
   onClose: () => void;
-  onSaved: () => void;
+  onSaved: (todoId?: number) => void;
 }
 
 function todayIsoDate(): string {
@@ -136,6 +138,7 @@ export default function StudyPlanTodoForm({
   todo,
   occurrenceDate,
   initial,
+  weeklyPlanSource,
   onClose,
   onSaved,
 }: StudyPlanTodoFormProps) {
@@ -337,43 +340,54 @@ export default function StudyPlanTodoForm({
           setError(data.error ?? '스터디 플랜 저장에 실패했습니다.');
           return;
         }
-      } else {
-        const payload: StudyPlanTodoInput = {
-          subject,
-          title,
-          startTime,
-          endTime,
-          recurrenceType: mode === 'series' ? 'weekly' : recurrenceType,
-        };
 
-        if (mode === 'series' || (mode === 'create' && recurrenceType === 'weekly')) {
-          payload.daysOfWeek = daysOfWeek;
-          payload.validFrom = validFrom;
-          payload.validUntil = validUntil;
-        } else {
-          payload.date = resolveStudyDayDate(date, startTime);
-        }
-
-        const res = await fetch(
-          withStudent(
-            isEdit ? `/api/study-plan-todos/${todo!.id}` : '/api/study-plan-todos'
-          ),
-          {
-            method: isEdit ? 'PUT' : 'POST',
-            credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
-          }
-        );
-        const data = await res.json();
-
-        if (!res.ok) {
-          setError(data.error ?? '스터디 플랜 저장에 실패했습니다.');
-          return;
-        }
+        onSaved();
+        onClose();
+        return;
       }
 
-      onSaved();
+      const payload: StudyPlanTodoInput = {
+        subject,
+        title,
+        startTime,
+        endTime,
+        recurrenceType: mode === 'series' ? 'weekly' : recurrenceType,
+      };
+
+      if (mode === 'series' || (mode === 'create' && recurrenceType === 'weekly')) {
+        payload.daysOfWeek = daysOfWeek;
+        payload.validFrom = validFrom;
+        payload.validUntil = validUntil;
+      } else {
+        payload.date = resolveStudyDayDate(date, startTime);
+      }
+
+      if (mode === 'create' && weeklyPlanSource) {
+        payload.weeklyPlanSource = weeklyPlanSource;
+      }
+
+      const res = await fetch(
+        withStudent(
+          isEdit ? `/api/study-plan-todos/${todo!.id}` : '/api/study-plan-todos'
+        ),
+        {
+          method: isEdit ? 'PUT' : 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        }
+      );
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error ?? '스터디 플랜 저장에 실패했습니다.');
+        return;
+      }
+
+      const savedTodoId =
+        mode === 'create' && data.todo?.id != null ? Number(data.todo.id) : undefined;
+
+      onSaved(savedTodoId);
       onClose();
     } catch {
       setError('스터디 플랜 저장에 실패했습니다.');

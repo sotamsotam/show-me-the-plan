@@ -7,8 +7,12 @@ import {
   type ExamRoundSlot,
 } from './exam-countdown';
 import {
-  getExamPrepWeeklyPlanContent,
-  MAX_EXAM_PREP_WEEKLY_PLAN_CONTENT_LENGTH,
+  examPrepWeeklyPlanItemsToMultilineText,
+  getExamPrepWeeklyPlanItems,
+  getUnscheduledExamPrepWeeklyPlanItemsForCell,
+  titlesToExamPrepWeeklyPlanItems,
+  writeExamPrepWeeklyPlanItemsForCell,
+  MAX_EXAM_PREP_WEEKLY_PLAN_ITEM_TITLE_LENGTH,
   type ExamPrepWeeklyPlans,
 } from './exam-prep-weekly-plan';
 import {
@@ -50,7 +54,7 @@ function normalizeWeekContent(value: unknown): string | null {
     return '';
   }
 
-  if (normalized.length > MAX_EXAM_PREP_WEEKLY_PLAN_CONTENT_LENGTH) {
+  if (normalized.length > MAX_EXAM_PREP_WEEKLY_PLAN_ITEM_TITLE_LENGTH) {
     return null;
   }
 
@@ -350,31 +354,14 @@ function writeRoundWeekContent(
   subjectId: string,
   content: string
 ): ExamPrepWeeklyPlans {
-  const weekKey = String(weekNumber);
-  const roundPlan = plans[roundSlot] ?? { weeks: {} };
-  const weekSubjects = { ...(roundPlan.weeks[weekKey] ?? {}) };
-
-  if (content.trim()) {
-    weekSubjects[subjectId] = content;
-  } else {
-    delete weekSubjects[subjectId];
-  }
-
-  const nextWeeks = { ...roundPlan.weeks };
-  if (Object.keys(weekSubjects).length > 0) {
-    nextWeeks[weekKey] = weekSubjects;
-  } else {
-    delete nextWeeks[weekKey];
-  }
-
-  const nextPlans = { ...plans };
-  if (Object.keys(nextWeeks).length > 0) {
-    nextPlans[roundSlot] = { weeks: nextWeeks };
-  } else {
-    delete nextPlans[roundSlot];
-  }
-
-  return nextPlans;
+  const unscheduledItems = titlesToExamPrepWeeklyPlanItems(content.split('\n'));
+  return writeExamPrepWeeklyPlanItemsForCell(
+    plans,
+    roundSlot,
+    weekNumber,
+    subjectId,
+    unscheduledItems
+  );
 }
 
 export function hasExamPrepRoundContent(
@@ -387,8 +374,8 @@ export function hasExamPrepRoundContent(
   }
 
   for (const weekSubjects of Object.values(roundPlan.weeks)) {
-    for (const content of Object.values(weekSubjects ?? {})) {
-      if (content.trim()) {
+    for (const items of Object.values(weekSubjects ?? {})) {
+      if ((items ?? []).length > 0) {
         return true;
       }
     }
@@ -490,8 +477,8 @@ function getRoundWeekContentForExtract(
     return '';
   }
 
-  return (
-    getExamPrepWeeklyPlanContent(plans, roundSlot, absoluteWeek, subjectId) ?? ''
+  return examPrepWeeklyPlanItemsToMultilineText(
+    getExamPrepWeeklyPlanItems(plans, roundSlot, absoluteWeek, subjectId)
   );
 }
 
@@ -627,15 +614,14 @@ export function applyTemplateToRound(
         continue;
       }
 
-      const currentContent =
-        getExamPrepWeeklyPlanContent(
-          nextPlans,
-          roundSlot,
-          targetWeekNumber,
-          subjectId
-        ) ?? '';
+      const currentUnscheduled = getUnscheduledExamPrepWeeklyPlanItemsForCell(
+        nextPlans,
+        roundSlot,
+        targetWeekNumber,
+        subjectId
+      );
 
-      if (mode === 'fill-empty' && currentContent.trim()) {
+      if (mode === 'fill-empty' && currentUnscheduled.length > 0) {
         continue;
       }
 

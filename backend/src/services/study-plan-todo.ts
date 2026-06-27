@@ -19,6 +19,7 @@ import {
   isAllowedPlanSubject,
   parseUserSubjects,
 } from './user-subject-validation';
+import { normalizeWeeklyPlanSource, type WeeklyPlanSource } from './weekly-plan-source';
 
 export {
   buildAllowedPlanSubjectIds,
@@ -76,6 +77,7 @@ export interface StudyPlanTodoInput {
   date?: string;
   excludedDates?: string[];
   overrides?: Record<string, StudyPlanOccurrenceOverride>;
+  weeklyPlanSource?: WeeklyPlanSource | null;
 }
 
 export interface StudyPlanTodoRecord {
@@ -92,6 +94,7 @@ export interface StudyPlanTodoRecord {
   excludedDates: string[];
   overrides: Record<string, StudyPlanOccurrenceOverride>;
   executionRecords: Record<string, StudyPlanExecutionRecord>;
+  weeklyPlanSource: WeeklyPlanSource | null;
 }
 
 export interface ExpandedStudyPlanTodoEvent {
@@ -315,6 +318,7 @@ export function toStudyPlanTodoRecord(raw: Record<string, unknown>): StudyPlanTo
     excludedDates: normalizeExcludedDates(raw.excludedDates),
     overrides: normalizeOverrides(raw.overrides),
     executionRecords: normalizeExecutionRecords(raw.executionRecords),
+    weeklyPlanSource: normalizeWeeklyPlanSource(raw.weeklyPlanSource),
   };
 }
 
@@ -332,6 +336,7 @@ export interface StudyPlanTodoResponse {
   excludedDates: string[];
   overrides: Record<string, StudyPlanOccurrenceOverride>;
   executionRecords: Record<string, StudyPlanExecutionRecord>;
+  weeklyPlanSource: WeeklyPlanSource | null;
 }
 
 export interface StudyPlanTodoSerializeRange {
@@ -398,6 +403,7 @@ export function serializeStudyPlanTodo(
     executionRecords: range
       ? filterRecordMapByDateRange(todo.executionRecords, range.start, range.end)
       : todo.executionRecords,
+    weeklyPlanSource: todo.weeklyPlanSource,
   };
 }
 
@@ -914,6 +920,14 @@ export function validateStudyPlanTodoInput(
     }
   }
 
+  if (!partial || has('weeklyPlanSource')) {
+    if (input.weeklyPlanSource !== undefined && input.weeklyPlanSource !== null) {
+      if (!normalizeWeeklyPlanSource(input.weeklyPlanSource)) {
+        return 'weeklyPlanSource 형식이 올바르지 않습니다.';
+      }
+    }
+  }
+
   return null;
 }
 
@@ -942,6 +956,13 @@ export function buildStudyPlanTodoData(input: StudyPlanTodoInput): Record<string
     data.overrides = normalizeOverrides(input.overrides ?? {});
   } else {
     data.date = input.date;
+  }
+
+  if (input.weeklyPlanSource !== undefined) {
+    data.weeklyPlanSource =
+      input.weeklyPlanSource === null
+        ? null
+        : normalizeWeeklyPlanSource(input.weeklyPlanSource);
   }
 
   return data;

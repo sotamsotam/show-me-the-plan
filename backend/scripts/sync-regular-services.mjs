@@ -13,6 +13,7 @@ function transform(content, file) {
     .replace(/@\/lib\/school-term-periods/g, './school-term-periods')
     .replace(/@\/lib\/regular-period-segments/g, './regular-period-segments')
     .replace(/@\/lib\/regular-weekly-plan/g, './regular-weekly-plan')
+    .replace(/@\/lib\/weekly-plan-item/g, './weekly-plan-item')
     .replace(/@\/lib\/user-subject/g, './user-subject');
 
   if (file === 'regular-weekly-plan.ts') {

@@ -2,10 +2,16 @@ import { randomUUID } from 'node:crypto';
 
 import {
   getRegularWeeklyPlanContent,
+  getUnscheduledRegularWeeklyPlanItemsForCell,
   MAX_REGULAR_WEEKLY_PLAN_CONTENT_LENGTH,
   MAX_REGULAR_WEEKS,
+  writeRegularWeeklyPlanItemsForCell,
   type RegularWeeklyPlans,
 } from './regular-weekly-plan';
+import {
+  parseWeeklyPlanItemTitlesFromMultilineText,
+  titlesToWeeklyPlanItems,
+} from './weekly-plan-item';
 import {
   isLegacyStudyPlanSubject,
   LEGACY_SUBJECT_LABELS,
@@ -355,31 +361,16 @@ function writePeriodWeekContent(
   subjectId: string,
   content: string
 ): RegularWeeklyPlans {
-  const weekKey = String(weekNumber);
-  const periodPlan = plans[periodKey] ?? { weeks: {} };
-  const weekSubjects = { ...(periodPlan.weeks[weekKey] ?? {}) };
-
-  if (content.trim()) {
-    weekSubjects[subjectId] = content;
-  } else {
-    delete weekSubjects[subjectId];
-  }
-
-  const nextWeeks = { ...periodPlan.weeks };
-  if (Object.keys(weekSubjects).length > 0) {
-    nextWeeks[weekKey] = weekSubjects;
-  } else {
-    delete nextWeeks[weekKey];
-  }
-
-  const nextPlans = { ...plans };
-  if (Object.keys(nextWeeks).length > 0) {
-    nextPlans[periodKey] = { weeks: nextWeeks };
-  } else {
-    delete nextPlans[periodKey];
-  }
-
-  return nextPlans;
+  const unscheduledItems = titlesToWeeklyPlanItems(
+    parseWeeklyPlanItemTitlesFromMultilineText(content)
+  );
+  return writeRegularWeeklyPlanItemsForCell(
+    plans,
+    periodKey,
+    weekNumber,
+    subjectId,
+    unscheduledItems
+  );
 }
 
 export function hasRegularPeriodContent(
@@ -392,8 +383,8 @@ export function hasRegularPeriodContent(
   }
 
   for (const weekSubjects of Object.values(periodPlan.weeks)) {
-    for (const content of Object.values(weekSubjects ?? {})) {
-      if (content.trim()) {
+    for (const items of Object.values(weekSubjects ?? {})) {
+      if ((items ?? []).length > 0) {
         return true;
       }
     }
@@ -537,10 +528,14 @@ export function applyTemplateToPeriod(
         continue;
       }
 
-      const currentContent =
-        getRegularWeeklyPlanContent(nextPlans, periodKey, weekNumber, subjectId) ?? '';
+      const currentUnscheduled = getUnscheduledRegularWeeklyPlanItemsForCell(
+        nextPlans,
+        periodKey,
+        weekNumber,
+        subjectId
+      );
 
-      if (mode === 'fill-empty' && currentContent.trim()) {
+      if (mode === 'fill-empty' && currentUnscheduled.length > 0) {
         continue;
       }
 

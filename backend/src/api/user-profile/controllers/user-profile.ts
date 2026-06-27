@@ -75,6 +75,11 @@ import {
   validateExamPrepWeeklyPlansInput,
 } from '../../../services/exam-prep-weekly-plan';
 import {
+  carryOverExamPrepWeeklyPlanItem,
+  deleteExamPrepWeeklyPlanItem,
+} from '../../../services/exam-prep-weekly-plan-unachieved';
+import { cancelAllPendingForTodo } from '../../../services/study-plan-todo-notify';
+import {
   appendExamPrepWeeklyPlanTemplate,
   createEmptyExamPrepWeeklyPlanTemplates,
   removeExamPrepWeeklyPlanTemplate,
@@ -109,6 +114,50 @@ import {
   resolveRegularWeeklyPlanTemplates,
   validateCreateRegularWeeklyPlanTemplateInput,
 } from '../../../services/regular-weekly-plan-template';
+
+const STUDY_PLAN_TODO_UID = 'api::study-plan-todo.study-plan-todo' as const;
+
+async function deleteOwnedStudyPlanTodoWithoutWeeklyPlanRevert(
+  strapi: Core.Strapi,
+  userId: number,
+  todoId: number
+): Promise<{ ok: true } | { ok: false; error: string; status: number }> {
+  if (!Number.isInteger(todoId) || todoId <= 0) {
+    return { ok: false, error: '유효한 todo id가 필요합니다.', status: 400 };
+  }
+
+  const existing = await strapi.db.query(STUDY_PLAN_TODO_UID).findOne({
+    where: { id: todoId, user: userId },
+  });
+
+  if (!existing) {
+    return { ok: false, error: '스터디 플랜을 찾을 수 없습니다.', status: 404 };
+  }
+
+  await cancelAllPendingForTodo(strapi, todoId, 'cancelled');
+  await strapi.db.query(STUDY_PLAN_TODO_UID).delete({ where: { id: todoId } });
+
+  return { ok: true };
+}
+
+function parseExamPrepWeeklyPlanItemRef(body: Record<string, unknown>) {
+  const roundSlot = typeof body.roundSlot === 'string' ? body.roundSlot.trim() : '';
+  const weekNumber = Number(body.weekNumber ?? body.fromWeek);
+  const subjectId = typeof body.subjectId === 'string' ? body.subjectId.trim() : '';
+  const itemId = typeof body.itemId === 'string' ? body.itemId.trim() : '';
+
+  if (
+    !roundSlot ||
+    !Number.isInteger(weekNumber) ||
+    weekNumber < 1 ||
+    !subjectId ||
+    !itemId
+  ) {
+    return null;
+  }
+
+  return { roundSlot, weekNumber, subjectId, itemId };
+}
 
 async function findRegistrationConflict(
   strapi: Core.Strapi,
@@ -1076,6 +1125,174 @@ export default factories.createCoreController(
           error instanceof Error
             ? error.message
             : '시험기간 주차별 공부계획 저장에 실패했습니다.';
+        return ctx.badRequest(message);
+      }
+    },
+
+    async carryOverExamPrepWeeklyPlanItem(ctx) {
+      const user = ctx.state.user;
+
+      if (!user) {
+        return ctx.unauthorized('로그인이 필요합니다.');
+      }
+
+      const body = ctx.request.body as Record<string, unknown> & {
+        studentUserId?: number;
+      };
+      const { studentUserId } = body;
+      const ref = parseExamPrepWeeklyPlanItemRef(body);
+      const toWeek = Number(body.toWeek);
+
+      if (!ref || !Number.isInteger(toWeek) || toWeek < 1) {
+        return ctx.badRequest('roundSlot, weekNumber, toWeek, subjectId, itemId가 필요합니다.');
+      }
+
+      const target = await resolveTargetUserId(strapi, user.id, studentUserId);
+      if ('error' in target) {
+        return ctx.forbidden(target.error);
+      }
+
+      const result = await findStudentProfileForExamPrep(strapi, user.id, studentUserId);
+
+      if ('error' in result) {
+        return result.status === 403
+          ? ctx.forbidden(result.error)
+          : ctx.badRequest(result.error);
+      }
+
+      const subjects = resolveProfileSubjects(result.profile.subjects ?? null);
+      const examPrepSettings = formatExamPrepSettings(result.profile);
+      const currentPlans = resolveExamPrepWeeklyPlans(result.profile.examPrepWeeklyPlans);
+      const item = currentPlans[ref.roundSlot as keyof typeof currentPlans]?.weeks?.[
+        String(ref.weekNumber)
+      ]?.[ref.subjectId]?.find((entry) => entry.id === ref.itemId);
+
+      if (!item?.scheduledTodoId) {
+        return ctx.badRequest('배치된 공부 계획 항목만 이월할 수 있습니다.');
+      }
+
+      const carryResult = carryOverExamPrepWeeklyPlanItem(currentPlans, {
+        roundSlot: ref.roundSlot as Parameters<typeof carryOverExamPrepWeeklyPlanItem>[1]['roundSlot'],
+        weekNumber: ref.weekNumber,
+        subjectId: ref.subjectId,
+        itemId: ref.itemId,
+        toWeek,
+      });
+
+      if ('error' in carryResult) {
+        return ctx.badRequest(carryResult.error);
+      }
+
+      const validated = validateExamPrepWeeklyPlansInput(carryResult.plans, {
+        allowedSubjectIds: buildAllowedPlanSubjectIds(subjects),
+        examPrepWeeksByRound: examPrepSettings.examPrepWeeksByRound,
+      });
+
+      if ('error' in validated) {
+        return ctx.badRequest(validated.error);
+      }
+
+      try {
+        await updateProfileRecord(strapi, result.profile, {
+          examPrepWeeklyPlans: validated.plans,
+        });
+
+        const deleteResult = await deleteOwnedStudyPlanTodoWithoutWeeklyPlanRevert(
+          strapi,
+          target.userId,
+          item.scheduledTodoId
+        );
+
+        if (deleteResult.ok === false) {
+          return ctx.badRequest(deleteResult.error);
+        }
+
+        return ctx.send({
+          examPrepWeeklyPlans: validated.plans,
+        });
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : '공부 계획 이월에 실패했습니다.';
+        return ctx.badRequest(message);
+      }
+    },
+
+    async deleteExamPrepWeeklyPlanItem(ctx) {
+      const user = ctx.state.user;
+
+      if (!user) {
+        return ctx.unauthorized('로그인이 필요합니다.');
+      }
+
+      const body = ctx.request.body as Record<string, unknown> & {
+        studentUserId?: number;
+      };
+      const { studentUserId } = body;
+      const ref = parseExamPrepWeeklyPlanItemRef(body);
+
+      if (!ref) {
+        return ctx.badRequest('roundSlot, weekNumber, subjectId, itemId가 필요합니다.');
+      }
+
+      const target = await resolveTargetUserId(strapi, user.id, studentUserId);
+      if ('error' in target) {
+        return ctx.forbidden(target.error);
+      }
+
+      const result = await findStudentProfileForExamPrep(strapi, user.id, studentUserId);
+
+      if ('error' in result) {
+        return result.status === 403
+          ? ctx.forbidden(result.error)
+          : ctx.badRequest(result.error);
+      }
+
+      const subjects = resolveProfileSubjects(result.profile.subjects ?? null);
+      const examPrepSettings = formatExamPrepSettings(result.profile);
+      const currentPlans = resolveExamPrepWeeklyPlans(result.profile.examPrepWeeklyPlans);
+      const deleteResult = deleteExamPrepWeeklyPlanItem(currentPlans, {
+        roundSlot: ref.roundSlot as Parameters<typeof deleteExamPrepWeeklyPlanItem>[1]['roundSlot'],
+        weekNumber: ref.weekNumber,
+        subjectId: ref.subjectId,
+        itemId: ref.itemId,
+      });
+
+      if ('error' in deleteResult) {
+        return ctx.badRequest(deleteResult.error);
+      }
+
+      const validated = validateExamPrepWeeklyPlansInput(deleteResult.plans, {
+        allowedSubjectIds: buildAllowedPlanSubjectIds(subjects),
+        examPrepWeeksByRound: examPrepSettings.examPrepWeeksByRound,
+      });
+
+      if ('error' in validated) {
+        return ctx.badRequest(validated.error);
+      }
+
+      try {
+        await updateProfileRecord(strapi, result.profile, {
+          examPrepWeeklyPlans: validated.plans,
+        });
+
+        if (deleteResult.scheduledTodoId) {
+          const todoDeleteResult = await deleteOwnedStudyPlanTodoWithoutWeeklyPlanRevert(
+            strapi,
+            target.userId,
+            deleteResult.scheduledTodoId
+          );
+
+          if (todoDeleteResult.ok === false) {
+            return ctx.badRequest(todoDeleteResult.error);
+          }
+        }
+
+        return ctx.send({
+          examPrepWeeklyPlans: validated.plans,
+        });
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : '공부 계획 항목 삭제에 실패했습니다.';
         return ctx.badRequest(message);
       }
     },

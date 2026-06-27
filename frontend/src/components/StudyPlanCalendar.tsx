@@ -9,9 +9,10 @@ import type {
   EventContentArg,
   EventInput,
   EventMountArg,
+  EventReceiveArg,
 } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
-import interactionPlugin from '@fullcalendar/interaction';
+import interactionPlugin, { Draggable } from '@fullcalendar/interaction';
 import listPlugin from '@fullcalendar/list';
 import FullCalendar from '@fullcalendar/react';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -35,6 +36,7 @@ import CalendarExamCountdownBadge from '@/components/calendar/CalendarExamCountd
 import CalendarPrintToolbarButton from '@/components/calendar/CalendarPrintToolbarButton';
 import CalendarWeeklyPlanToolbarToggle from '@/components/calendar/CalendarWeeklyPlanToolbarToggle';
 import WeeklyPlanPanel from '@/components/calendar/WeeklyPlanPanel';
+import WeeklyPlanCarryOverModal from '@/components/calendar/WeeklyPlanCarryOverModal';
 import MobileFab from '@/components/MobileFab';
 import { buildCalendarEditHint } from '@/lib/calendar-edit-hint';
 import { useExamCountdown } from '@/hooks/useExamCountdown';
@@ -43,6 +45,7 @@ import { useVacationPeriodSettings } from '@/hooks/useVacationPeriodSettings';
 import { useRegularWeeklyPlansContext } from '@/hooks/useRegularWeeklyPlansContext';
 import { useVacationWeeklyPlansContext } from '@/hooks/useVacationWeeklyPlansContext';
 import { useExamPrepDayHeader } from '@/hooks/useExamPrepDayHeader';
+import { useDeviceTier } from '@/hooks/useDeviceTier';
 import type { VisibleDateRange } from '@/lib/exam-prep-visible-week-plans';
 import { isVisibleRangeInAnyWeeklyPlanPeriod } from '@/lib/weekly-plan-panel';
 import {
@@ -64,6 +67,26 @@ import { mountCalendarEventSubjectColor } from '@/lib/subject-color';
 import { printWeeklySchedule } from '@/lib/print-weekly-schedule';
 import { printMonthlySchedule } from '@/lib/print-monthly-schedule';
 import { formatIsoDate, formatOccurrenceDateLabel } from '@/lib/user-schedule';
+import { getWeeksForSlot } from '@/lib/exam-countdown';
+import {
+  resolveDefaultCarryOverWeek,
+  resolveUnachievedWeeklyPlanItems,
+  type UnachievedWeeklyPlanItem,
+} from '@/lib/exam-prep-weekly-plan-unachieved';
+import {
+  buildCarryOverPayload,
+  requestCarryOverExamPrepWeeklyPlanItem,
+  requestDeleteExamPrepWeeklyPlanItem,
+} from '@/lib/exam-prep-weekly-plan-item-actions';
+import { setExamPrepWeeklyPlanItemScheduledTodoId } from '@/lib/exam-prep-weekly-plan';
+import { setVacationWeeklyPlanItemScheduledTodoId } from '@/lib/vacation-weekly-plan';
+import { setRegularWeeklyPlanItemScheduledTodoId } from '@/lib/regular-weekly-plan';
+import {
+  buildWeeklyPlanTodoCreatePayload,
+  isYmdInInclusiveRange,
+  readWeeklyPlanPlacementFromElement,
+  type WeeklyPlanPlacementContext,
+} from '@/lib/weekly-plan-placement';
 
 const CALENDAR_PLUGINS = [dayGridPlugin, timeGridPlugin, listPlugin, interactionPlugin];
 
@@ -314,17 +337,23 @@ export default function StudyPlanCalendar() {
   const [selectedTodo, setSelectedTodo] = useState<StudyPlanTodo | null>(null);
   const [selectedOccurrenceDate, setSelectedOccurrenceDate] = useState('');
   const [formInitial, setFormInitial] = useState<StudyPlanTodoFormInitial | undefined>();
+  const [weeklyPlanPlacement, setWeeklyPlanPlacement] =
+    useState<WeeklyPlanPlacementContext | null>(null);
   const calendarRef = useRef<FullCalendar>(null);
   const calendarContainerRef = useRef<HTMLDivElement>(null);
   const [toolbarVersion, setToolbarVersion] = useState(0);
   const [weeklyPlanPanelOpen, setWeeklyPlanPanelOpen] = useState(() => !getIsMobileViewport());
+  const [carryOverTarget, setCarryOverTarget] = useState<UnachievedWeeklyPlanItem | null>(null);
+  const [carryOverWeek, setCarryOverWeek] = useState(1);
+  const [carryOverLoading, setCarryOverLoading] = useState(false);
+  const [carryOverError, setCarryOverError] = useState('');
   const [visibleRange, setVisibleRange] = useState<VisibleDateRange | null>(null);
   const { countdown, examPrepPeriods } = useExamCountdown({ visibleRange });
-  const { context: examPrepPlansContext, loading: examPrepPlansLoading } =
+  const { context: examPrepPlansContext, loading: examPrepPlansLoading, refresh: refreshExamPrepPlans } =
     useExamPrepWeeklyPlansContext();
-  const { context: vacationPlansContext, loading: vacationPlansLoading } =
+  const { context: vacationPlansContext, loading: vacationPlansLoading, refresh: refreshVacationPlans } =
     useVacationWeeklyPlansContext();
-  const { context: regularPlansContext, loading: regularPlansLoading } =
+  const { context: regularPlansContext, loading: regularPlansLoading, refresh: refreshRegularPlans } =
     useRegularWeeklyPlansContext();
   const { vacationPeriods } = useVacationPeriodSettings();
   const { dayHeaderClassNames: examPrepDayHeaderClassNames, dayHeaderContent: examPrepDayHeaderContent } =
@@ -335,10 +364,20 @@ export default function StudyPlanCalendar() {
   const editSessionRef = useRef<StudyPlanEditSession | null>(null);
   const occurrenceOnlyKeysRef = useRef<Set<string>>(new Set());
   const savingDragRef = useRef(false);
+  const weeklyPlanPlacementRef = useRef<WeeklyPlanPlacementContext | null>(null);
+  const deviceTier = useDeviceTier();
 
   useEffect(() => {
     editSessionRef.current = editSession;
   }, [editSession]);
+
+  const clearWeeklyPlanPlacement = useCallback(() => {
+    setWeeklyPlanPlacement(null);
+  }, []);
+
+  useEffect(() => {
+    weeklyPlanPlacementRef.current = weeklyPlanPlacement;
+  }, [weeklyPlanPlacement]);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia(MOBILE_MEDIA_QUERY);
@@ -416,8 +455,8 @@ export default function StudyPlanCalendar() {
   );
 
   const todoEvents = useMemo(
-    () => expandedEventsToCalendarEvents(expandedTodoEvents, profileSubjects),
-    [expandedTodoEvents, profileSubjects]
+    () => expandedEventsToCalendarEvents(expandedTodoEvents, profileSubjects, studyPlanTodos),
+    [expandedTodoEvents, profileSubjects, studyPlanTodos]
   );
 
   const { backgroundEvents, allDayEvents: allDayScheduleEvents } = useMemo(
@@ -480,7 +519,8 @@ export default function StudyPlanCalendar() {
     setSelectedOccurrenceDate('');
     setFormInitial(undefined);
     setFormMode('create');
-  }, []);
+    clearWeeklyPlanPlacement();
+  }, [clearWeeklyPlanPlacement]);
 
   const fetchTimetableEvents = useCallback(
     async (start: Date, end: Date) => {
@@ -577,8 +617,9 @@ export default function StudyPlanCalendar() {
       setDraftEvent(null);
     }
     clearEditSession();
+    clearWeeklyPlanPlacement();
     closeAllModals();
-  }, [formMode, closeAllModals, clearEditSession]);
+  }, [formMode, closeAllModals, clearEditSession, clearWeeklyPlanPlacement]);
 
   const openCreateForm = useCallback((initial?: StudyPlanTodoFormInitial) => {
     clearEditSession();
@@ -633,6 +674,182 @@ export default function StudyPlanCalendar() {
     []
   );
 
+  const linkWeeklyPlanPlacementToTodo = useCallback(
+    async (placement: WeeklyPlanPlacementContext, todoId: number) => {
+      if (placement.kind === 'vacation') {
+        const nextPlans = setVacationWeeklyPlanItemScheduledTodoId(
+          vacationPlansContext.plans,
+          placement.periodSlot,
+          placement.weekNumber,
+          placement.subjectId,
+          placement.itemId,
+          todoId
+        );
+
+        const res = await fetch(withStudent('/api/profile/vacation-weekly-plans'), {
+          method: 'PUT',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ vacationWeeklyPlans: nextPlans }),
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          return {
+            ok: false as const,
+            error: (data.error as string) ?? '방학기간 주차별 공부계획 연결 저장에 실패했습니다.',
+          };
+        }
+
+        void refreshVacationPlans();
+        return { ok: true as const };
+      }
+
+      if (placement.kind === 'regular') {
+        const nextPlans = setRegularWeeklyPlanItemScheduledTodoId(
+          regularPlansContext.plans,
+          placement.periodKey,
+          placement.weekNumber,
+          placement.subjectId,
+          placement.itemId,
+          todoId
+        );
+
+        const res = await fetch(withStudent('/api/profile/regular-weekly-plans'), {
+          method: 'PUT',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ regularWeeklyPlans: nextPlans }),
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          return {
+            ok: false as const,
+            error: (data.error as string) ?? '평소기간 주차별 공부계획 연결 저장에 실패했습니다.',
+          };
+        }
+
+        void refreshRegularPlans();
+        return { ok: true as const };
+      }
+
+      const nextPlans = setExamPrepWeeklyPlanItemScheduledTodoId(
+        examPrepPlansContext.plans,
+        placement.roundSlot,
+        placement.weekNumber,
+        placement.subjectId,
+        placement.itemId,
+        todoId
+      );
+
+      const res = await fetch(withStudent('/api/profile/exam-prep-weekly-plans'), {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ examPrepWeeklyPlans: nextPlans }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        return {
+          ok: false as const,
+          error: (data.error as string) ?? '주차별 공부계획 연결 저장에 실패했습니다.',
+        };
+      }
+
+      void refreshExamPrepPlans();
+      return { ok: true as const };
+    },
+    [
+      examPrepPlansContext.plans,
+      refreshExamPrepPlans,
+      refreshRegularPlans,
+      refreshVacationPlans,
+      regularPlansContext.plans,
+      vacationPlansContext.plans,
+      withStudent,
+    ]
+  );
+
+  const saveWeeklyPlanPlacement = useCallback(
+    async (placement: WeeklyPlanPlacementContext, start: Date, end: Date) => {
+      if (savingDragRef.current) {
+        return { ok: false as const, error: '스터디 플랜을 저장하는 중입니다.' };
+      }
+
+      const dateYmd = formatIsoDate(start);
+      if (!isYmdInInclusiveRange(dateYmd, placement.weekStart, placement.weekEnd)) {
+        return { ok: false as const, error: '해당 주차 날짜 범위에만 배치할 수 있습니다.' };
+      }
+
+      const { date, startTime, endTime } = parseEventDateTimeRange(start, end);
+      const timeError = validateScheduleTimeRange(startTime, endTime);
+      if (timeError) {
+        return { ok: false as const, error: timeError };
+      }
+
+      savingDragRef.current = true;
+      setSavingDrag(true);
+      setError('');
+
+      try {
+        const res = await fetch(withStudent('/api/study-plan-todos'), {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(buildWeeklyPlanTodoCreatePayload(placement, start, end)),
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          return {
+            ok: false as const,
+            error: (data.error as string) ?? '스터디 플랜 저장에 실패했습니다.',
+          };
+        }
+
+        const todoId = Number(data.todo?.id);
+        if (!Number.isInteger(todoId) || todoId < 1) {
+          return { ok: false as const, error: '스터디 플랜 저장에 실패했습니다.' };
+        }
+
+        const linkResult = await linkWeeklyPlanPlacementToTodo(placement, todoId);
+        if (!linkResult.ok) {
+          return linkResult;
+        }
+
+        clearWeeklyPlanPlacement();
+        invalidateStudyPlanTodos(studentUserId);
+        await refetchStudyPlanTodos(true);
+        clearEditSession();
+
+        return { ok: true as const };
+      } catch {
+        return { ok: false as const, error: '스터디 플랜 저장에 실패했습니다.' };
+      } finally {
+        savingDragRef.current = false;
+        setSavingDrag(false);
+      }
+    },
+    [
+      clearEditSession,
+      clearWeeklyPlanPlacement,
+      linkWeeklyPlanPlacementToTodo,
+      refetchStudyPlanTodos,
+      studentUserId,
+      withStudent,
+    ]
+  );
+
+  const handleWeeklyPlanPanelItemClick = useCallback(
+    (placement: WeeklyPlanPlacementContext) => {
+      setWeeklyPlanPlacement(placement);
+      setError('');
+    },
+    []
+  );
+
   const handleSelect = useCallback(
     (arg: DateSelectArg) => {
       if (isListCalendarView(arg.view.type) || arg.view.type === 'dayGridMonth') {
@@ -640,10 +857,61 @@ export default function StudyPlanCalendar() {
       }
 
       arg.view.calendar.unselect();
+
+      const placement = weeklyPlanPlacementRef.current;
+      if (placement) {
+        const dateYmd = formatIsoDate(arg.start);
+        if (!isYmdInInclusiveRange(dateYmd, placement.weekStart, placement.weekEnd)) {
+          setError('해당 주차 날짜 범위에만 배치할 수 있습니다.');
+          return;
+        }
+
+        const end =
+          arg.end.getTime() - arg.start.getTime() >= DRAFT_DURATION_MS
+            ? arg.end
+            : new Date(arg.start.getTime() + DRAFT_DURATION_MS);
+
+        void saveWeeklyPlanPlacement(placement, arg.start, end).then((result) => {
+          if (!result.ok) {
+            setError(result.error);
+          }
+        });
+        return;
+      }
+
       clearEditSession();
       setDraftEvent(createDraftFromSelection(arg.start, arg.end));
     },
-    [clearEditSession]
+    [clearEditSession, saveWeeklyPlanPlacement]
+  );
+
+  const handleEventReceive = useCallback(
+    (arg: EventReceiveArg) => {
+      arg.revert();
+
+      const props = arg.event.extendedProps as Record<string, unknown>;
+      const placementFromEvent = props.weeklyPlanPlacement as
+        | WeeklyPlanPlacementContext
+        | undefined;
+      const placement =
+        placementFromEvent ??
+        (arg.draggedEl ? readWeeklyPlanPlacementFromElement(arg.draggedEl) : null);
+      const start = arg.event.start;
+
+      if (!placement || !start) {
+        setError('공부 계획 항목을 불러오지 못했습니다. 다시 드래그해 주세요.');
+        return;
+      }
+
+      const end = arg.event.end ?? new Date(start.getTime() + DRAFT_DURATION_MS);
+
+      void saveWeeklyPlanPlacement(placement, start, end).then((result) => {
+        if (!result.ok) {
+          setError(result.error);
+        }
+      });
+    },
+    [saveWeeklyPlanPlacement]
   );
 
   const handleNavLinkDayClick = useCallback((date: Date) => {
@@ -1024,6 +1292,8 @@ export default function StudyPlanCalendar() {
       clearEditSession();
       closeAllModals();
       refreshCalendar();
+      void refreshExamPrepPlans();
+      void refreshVacationPlans();
     } catch {
       setError('이 날짜 스터디 플랜 삭제에 실패했습니다.');
     }
@@ -1031,6 +1301,8 @@ export default function StudyPlanCalendar() {
     clearEditSession,
     closeAllModals,
     refreshCalendar,
+    refreshExamPrepPlans,
+    refreshVacationPlans,
     selectedOccurrenceDate,
     selectedTodo,
     withStudent,
@@ -1039,8 +1311,11 @@ export default function StudyPlanCalendar() {
   const handleSaved = useCallback(() => {
     setDraftEvent(null);
     clearEditSession();
+    clearWeeklyPlanPlacement();
     refreshCalendar();
-  }, [clearEditSession, refreshCalendar]);
+    void refreshExamPrepPlans();
+    void refreshVacationPlans();
+  }, [clearEditSession, clearWeeklyPlanPlacement, refreshCalendar, refreshExamPrepPlans, refreshVacationPlans]);
 
   const editHint = useMemo(
     () =>
@@ -1086,9 +1361,155 @@ export default function StudyPlanCalendar() {
     );
   }, [examPrepPlansContext, regularPlansContext, vacationPlansContext, visibleRange]);
 
+  const showWeeklyPlanPanelInView = showWeeklyPlanPanel && !isMonthView;
+
+  useEffect(() => {
+    if (deviceTier !== 'desktop' || !weeklyPlanPanelOpen || !showWeeklyPlanPanelInView) {
+      return;
+    }
+
+    const panel = document.querySelector('.exam-prep-panel');
+    if (!panel) {
+      return;
+    }
+
+    const draggable = new Draggable(panel, {
+      itemSelector: '.exam-prep-panel-item',
+      eventData(eventEl) {
+        const placement = readWeeklyPlanPlacementFromElement(eventEl as HTMLElement);
+
+        return {
+          title: placement?.title ?? '공부 계획',
+          duration: { hours: 1 },
+          extendedProps: {
+            type: 'weekly-plan-drag',
+            weeklyPlanPlacement: placement,
+          },
+        };
+      },
+    });
+
+    return () => {
+      draggable.destroy();
+    };
+  }, [
+    deviceTier,
+    weeklyPlanPanelOpen,
+    showWeeklyPlanPanelInView,
+    examPrepPlansContext.plans,
+    vacationPlansContext,
+    regularPlansContext,
+    visibleRange,
+  ]);
+
   const handleWeeklyPlanPanelToggle = useCallback(() => {
     setWeeklyPlanPanelOpen((value) => !value);
   }, []);
+
+  const unachievedItems = useMemo(() => {
+    if (!showWeeklyPlanPanel) {
+      return [];
+    }
+
+    return resolveUnachievedWeeklyPlanItems(
+      examPrepPlansContext.plans,
+      studyPlanTodos,
+      formatIsoDate(new Date())
+    );
+  }, [showWeeklyPlanPanel, examPrepPlansContext.plans, studyPlanTodos]);
+
+  const carryOverWeekOptions = useMemo(() => {
+    if (!carryOverTarget) {
+      return [];
+    }
+
+    const maxWeek = getWeeksForSlot(
+      carryOverTarget.roundSlot,
+      examPrepPlansContext.examPrepWeeksByRound
+    );
+
+    return Array.from({ length: maxWeek }, (_, index) => index + 1).filter(
+      (week) => week !== carryOverTarget.weekNumber
+    );
+  }, [carryOverTarget, examPrepPlansContext.examPrepWeeksByRound]);
+
+  const refreshWeeklyPlanData = useCallback(() => {
+    refreshCalendar();
+    void refreshExamPrepPlans();
+    void refreshVacationPlans();
+  }, [refreshCalendar, refreshExamPrepPlans, refreshVacationPlans]);
+
+  const handleCarryOverItem = useCallback(
+    (item: UnachievedWeeklyPlanItem) => {
+      const defaultWeek = resolveDefaultCarryOverWeek(
+        item.weekNumber,
+        examPrepPlansContext.examPrepWeeksByRound,
+        item.roundSlot
+      );
+
+      setCarryOverError('');
+      setCarryOverTarget(item);
+      setCarryOverWeek(defaultWeek ?? item.weekNumber + 1);
+    },
+    [examPrepPlansContext.examPrepWeeksByRound]
+  );
+
+  const handleConfirmCarryOver = useCallback(async () => {
+    if (!carryOverTarget) {
+      return;
+    }
+
+    setCarryOverLoading(true);
+    setCarryOverError('');
+
+    const result = await requestCarryOverExamPrepWeeklyPlanItem(
+      withStudent,
+      buildCarryOverPayload(
+        carryOverTarget.roundSlot,
+        carryOverTarget.weekNumber,
+        carryOverTarget.subjectId,
+        carryOverTarget.item.id,
+        carryOverWeek
+      )
+    );
+
+    setCarryOverLoading(false);
+
+    if (!result.ok) {
+      setCarryOverError(result.error ?? '공부 계획 이월에 실패했습니다.');
+      return;
+    }
+
+    setCarryOverTarget(null);
+    refreshWeeklyPlanData();
+  }, [carryOverTarget, carryOverWeek, refreshWeeklyPlanData, withStudent]);
+
+  const handleDeleteUnachievedItem = useCallback(
+    async (item: UnachievedWeeklyPlanItem) => {
+      if (
+        !confirm(
+          `「${item.item.title}」을(를) 주차별 공부계획에서 삭제할까요? 연결된 캘린더 일정도 함께 삭제됩니다.`
+        )
+      ) {
+        return;
+      }
+
+      const result = await requestDeleteExamPrepWeeklyPlanItem(withStudent, {
+        roundSlot: item.roundSlot,
+        weekNumber: item.weekNumber,
+        subjectId: item.subjectId,
+        itemId: item.item.id,
+      });
+
+      if (!result.ok) {
+        setError(result.error ?? '공부 계획 항목 삭제에 실패했습니다.');
+        return;
+      }
+
+      refreshWeeklyPlanData();
+    },
+    [refreshWeeklyPlanData, withStudent]
+  );
 
   const showPrintButton =
     !isMobile &&
@@ -1145,7 +1566,7 @@ export default function StudyPlanCalendar() {
       )}
 
       <div className="study-plan-calendar-shell w-full">
-        {showWeeklyPlanPanel && weeklyPlanPanelOpen && !isMobile ? (
+        {showWeeklyPlanPanelInView && weeklyPlanPanelOpen && !isMobile ? (
           <WeeklyPlanPanel
             range={visibleRange}
             examContext={examPrepPlansContext}
@@ -1154,6 +1575,11 @@ export default function StudyPlanCalendar() {
             loading={examPrepPlansLoading || vacationPlansLoading || regularPlansLoading}
             collapsible={isMobile}
             defaultCollapsed={isMobile}
+            placementItemId={deviceTier === 'tablet' ? weeklyPlanPlacement?.itemId : null}
+            onItemClick={deviceTier === 'tablet' ? handleWeeklyPlanPanelItemClick : undefined}
+            unachievedItems={unachievedItems}
+            onCarryOverItem={handleCarryOverItem}
+            onDeleteUnachievedItem={handleDeleteUnachievedItem}
           />
         ) : null}
 
@@ -1175,7 +1601,8 @@ export default function StudyPlanCalendar() {
           <CalendarWeeklyPlanToolbarToggle
             containerRef={calendarContainerRef}
             toolbarVersion={toolbarVersion}
-            visible={showWeeklyPlanPanel && !isMobile}
+            activeViewType={activeViewType}
+            visible={showWeeklyPlanPanelInView && !isMobile}
             open={weeklyPlanPanelOpen}
             onToggle={handleWeeklyPlanPanelToggle}
           />
@@ -1188,6 +1615,20 @@ export default function StudyPlanCalendar() {
               void handlePrintSchedule();
             }}
           />
+          {weeklyPlanPlacement && deviceTier === 'tablet' ? (
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-100">
+              <span>
+                「{weeklyPlanPlacement.title}」 배치 중 — 해당 주차 날짜를 탭하세요.
+              </span>
+              <button
+                type="button"
+                className="rounded-md border border-amber-300 px-2.5 py-1 text-xs font-medium hover:bg-amber-100 dark:border-amber-800 dark:hover:bg-amber-900/50"
+                onClick={clearWeeklyPlanPlacement}
+              >
+                취소
+              </button>
+            </div>
+          ) : null}
           {mobileHelpText ? (
             <p className="mb-3 text-sm text-gray-500 dark:text-gray-400">
               {mobileHelpText}
@@ -1211,6 +1652,8 @@ export default function StudyPlanCalendar() {
             eventClick={handleEventClick}
             eventDidMount={handleEventDidMount}
             eventChange={handleEventChange}
+            eventReceive={handleEventReceive}
+            droppable={deviceTier === 'desktop' && showWeeklyPlanPanelInView && weeklyPlanPanelOpen}
             eventContent={renderEventContent}
             displayEventTime={isListView}
             eventTimeFormat={{
@@ -1281,6 +1724,27 @@ export default function StudyPlanCalendar() {
       {isMobile && (
         <MobileFab label="스터디 플랜 추가" onClick={() => openCreateForm()} />
       )}
+
+      <WeeklyPlanCarryOverModal
+        open={Boolean(carryOverTarget)}
+        itemTitle={carryOverTarget?.item.title ?? ''}
+        fromWeek={carryOverTarget?.weekNumber ?? 1}
+        weekOptions={carryOverWeekOptions}
+        selectedWeek={carryOverWeek}
+        loading={carryOverLoading}
+        error={carryOverError}
+        onSelectedWeekChange={setCarryOverWeek}
+        onConfirm={() => {
+          void handleConfirmCarryOver();
+        }}
+        onClose={() => {
+          if (carryOverLoading) {
+            return;
+          }
+          setCarryOverTarget(null);
+          setCarryOverError('');
+        }}
+      />
     </div>
   );
 }

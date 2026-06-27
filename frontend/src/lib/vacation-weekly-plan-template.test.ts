@@ -29,12 +29,12 @@ const samplePlans: VacationWeeklyPlans = {
   summer: {
     weeks: {
       '1': {
-        korean: '국어 1주차',
-        english: '영어 1주차',
-        'custom-essay': '논술 1주차',
+        korean: [{ id: 'k-1', title: '국어 1주차' }],
+        english: [{ id: 'e-1', title: '영어 1주차' }],
+        'custom-essay': [{ id: 'c-1', title: '논술 1주차' }],
       },
       '2': {
-        korean: '국어 2주차',
+        korean: [{ id: 'k-2', title: '국어 2주차' }],
       },
     },
   },
@@ -84,9 +84,9 @@ describe('applyTemplateToPeriod', () => {
     );
 
     expect(result.skippedSubjectKeys).toEqual(['science']);
-    expect(result.plans.winter?.weeks?.['1']).toEqual({
-      korean: '템플릿 국어 1주차',
-    });
+    expect(result.plans.winter?.weeks?.['1']?.korean).toEqual([
+      expect.objectContaining({ title: '템플릿 국어 1주차' }),
+    ]);
   });
 
   it('maps ordinal weeks directly to vacation week numbers', () => {
@@ -105,10 +105,12 @@ describe('applyTemplateToPeriod', () => {
       'overwrite'
     );
 
-    expect(result.plans.summer?.weeks).toEqual({
-      '1': { korean: '1주차 국어' },
-      '2': { korean: '2주차 국어' },
-    });
+    expect(result.plans.summer?.weeks?.['1']?.korean).toEqual([
+      expect.objectContaining({ title: '1주차 국어' }),
+    ]);
+    expect(result.plans.summer?.weeks?.['2']?.korean).toEqual([
+      expect.objectContaining({ title: '2주차 국어' }),
+    ]);
   });
 
   it('applies only up to the target week count', () => {
@@ -127,9 +129,10 @@ describe('applyTemplateToPeriod', () => {
       'overwrite'
     );
 
-    expect(result.plans.summer?.weeks).toEqual({
-      '1': { korean: '1주차' },
-    });
+    expect(result.plans.summer?.weeks?.['1']?.korean).toEqual([
+      expect.objectContaining({ title: '1주차' }),
+    ]);
+    expect(result.plans.summer?.weeks?.['5']).toBeUndefined();
   });
 });
 

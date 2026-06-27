@@ -1,9 +1,10 @@
 'use client';
 
 import type { EventContentArg } from '@fullcalendar/core';
+import ExecutionStatusCheckbox from '@/components/ExecutionStatusCheckbox';
 import ScheduleAttachmentViewer from '@/components/ScheduleAttachmentViewer';
 import { readEventAttachments } from '@/lib/schedule-attachment';
-import type { StudyPlanSubject } from '@/lib/study-plan-todo';
+import type { CheckboxVisualState, StudyPlanSubject } from '@/lib/study-plan-todo';
 import { formatStudyPlanEventTitle, getSubjectLabel } from '@/lib/study-plan-todo';
 import type { ProfileSubjectsInput } from '@/lib/user-subject';
 import {
@@ -166,6 +167,57 @@ function getStudyPlanLayoutTier(durationMin: number): StudyPlanLayoutTier {
   return 'full';
 }
 
+function resolveStudyPlanExecutionStatus(arg: EventContentArg): CheckboxVisualState {
+  const status = arg.event.extendedProps.executionStatus;
+
+  if (
+    status === 'completed' ||
+    status === 'partial' ||
+    status === 'incomplete' ||
+    status === 'pending'
+  ) {
+    return status;
+  }
+
+  return 'pending';
+}
+
+function StudyPlanSubjectWithStatus({
+  subjectLabel,
+  executionStatus,
+  subjectClassName,
+  inline = false,
+  timeText,
+}: {
+  subjectLabel: string;
+  executionStatus: CheckboxVisualState;
+  subjectClassName: string;
+  inline?: boolean;
+  timeText?: string;
+}) {
+  return (
+    <span className={`cal-event-subject-row${inline ? ' cal-event-subject-row--inline' : ''}`}>
+      <ExecutionStatusCheckbox
+        status={executionStatus}
+        size="xs"
+        className="cal-event-execution-icon"
+      />
+      <span
+        className={
+          inline
+            ? 'cal-event-subject cal-event-subject--inline'
+            : subjectClassName
+        }
+      >
+        {subjectLabel}
+      </span>
+      {timeText ? (
+        <span className="cal-event-time cal-event-time--inline">{timeText}</span>
+      ) : null}
+    </span>
+  );
+}
+
 function buildStudyPlanInnerClassName(tier: StudyPlanLayoutTier): string {
   const classes = ['cal-event-inner', 'cal-event-inner--study-plan'];
 
@@ -263,10 +315,23 @@ export function renderCalendarEventContent(
 
   if (isListView) {
     const listTitle = resolveListDisplayTitle(arg, subjects);
+    const executionStatus =
+      type === 'study-plan' ? resolveStudyPlanExecutionStatus(arg) : null;
 
     return (
       <div className="cal-event-inner cal-event-inner--list">
-        <span className="cal-event-title cal-event-title--wrap">{listTitle}</span>
+        {executionStatus ? (
+          <span className="cal-event-list-row">
+            <ExecutionStatusCheckbox
+              status={executionStatus}
+              size="xs"
+              className="cal-event-execution-icon"
+            />
+            <span className="cal-event-title cal-event-title--wrap">{listTitle}</span>
+          </span>
+        ) : (
+          <span className="cal-event-title cal-event-title--wrap">{listTitle}</span>
+        )}
       </div>
     );
   }
@@ -283,18 +348,34 @@ export function renderCalendarEventContent(
     const subjectLabel = studyPlanSubject
       ? getSubjectLabel(studyPlanSubject, subjects)
       : null;
+    const executionStatus = resolveStudyPlanExecutionStatus(arg);
     const layoutTier = getStudyPlanLayoutTier(durationMin);
-    const showTime = layoutTier === 'full' && Boolean(timeText);
+    const showTimeInline = layoutTier === 'full' && Boolean(timeText);
     const tooltip = buildStudyPlanEventTooltip(timeText, subjectLabel, title);
     const innerClassName = buildStudyPlanInnerClassName(layoutTier);
+    const subjectClassName =
+      layoutTier === 'compact'
+        ? 'cal-event-subject cal-event-subject--compact'
+        : 'cal-event-subject';
 
     if (layoutTier === 'minimal') {
       return (
         <div className={innerClassName} title={tooltip}>
           <div className="cal-event-inline">
             {subjectLabel ? (
-              <span className="cal-event-subject cal-event-subject--inline">{subjectLabel}</span>
-            ) : null}
+              <StudyPlanSubjectWithStatus
+                subjectLabel={subjectLabel}
+                executionStatus={executionStatus}
+                subjectClassName={subjectClassName}
+                inline
+              />
+            ) : (
+              <ExecutionStatusCheckbox
+                status={executionStatus}
+                size="xs"
+                className="cal-event-execution-icon"
+              />
+            )}
             {subjectLabel && title ? (
               <span className="cal-event-inline-sep" aria-hidden="true">
                 ·
@@ -309,15 +390,12 @@ export function renderCalendarEventContent(
     return (
       <div className={innerClassName} title={layoutTier === 'full' ? undefined : tooltip}>
         {subjectLabel ? (
-          <span
-            className={
-              layoutTier === 'compact'
-                ? 'cal-event-subject cal-event-subject--compact'
-                : 'cal-event-subject'
-            }
-          >
-            {subjectLabel}
-          </span>
+          <StudyPlanSubjectWithStatus
+            subjectLabel={subjectLabel}
+            executionStatus={executionStatus}
+            subjectClassName={subjectClassName}
+            timeText={showTimeInline ? timeText : undefined}
+          />
         ) : null}
         <div
           className={
@@ -328,7 +406,6 @@ export function renderCalendarEventContent(
         >
           {title}
         </div>
-        {showTime ? <div className="cal-event-time">{timeText}</div> : null}
       </div>
     );
   }

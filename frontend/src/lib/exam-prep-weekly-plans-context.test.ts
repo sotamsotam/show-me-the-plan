@@ -14,7 +14,7 @@ describe('resolveExamPrepWeeklyPlansContext', () => {
       examPrepWeeklyPlans: {
         'sem1-r2': {
           weeks: {
-            '4': { korean: '  1회독  ' },
+            '4': { korean: [{ id: 'item-1', title: '  1회독  ' }] },
           },
         },
       },
@@ -33,7 +33,7 @@ describe('resolveExamPrepWeeklyPlansContext', () => {
     expect(context.plans).toEqual({
       'sem1-r2': {
         weeks: {
-          '4': { korean: '1회독' },
+          '4': { korean: [{ id: 'item-1', title: '1회독' }] },
         },
       },
     });

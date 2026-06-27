@@ -1,8 +1,10 @@
 import { formatYmdLocal } from '@/lib/exam-countdown';
 import {
-  getVacationWeeklyPlanContent,
+  getUnscheduledVacationWeeklyPlanItems,
+  getVacationWeeklyPlanItems,
   previewItemToVacationPeriod,
   type VacationPeriodPreviewItem,
+  type VacationWeeklyPlanItem,
   type VacationWeeklyPlans,
 } from '@/lib/vacation-weekly-plan';
 import type { VacationWeeklyPlansContext } from '@/lib/vacation-weekly-plans-context';
@@ -12,7 +14,7 @@ import type { VisibleDateRange } from '@/lib/exam-prep-visible-week-plans';
 
 export interface VisibleVacationWeekPlanSubject {
   subjectId: string;
-  content: string;
+  items: VacationWeeklyPlanItem[];
 }
 
 export interface VisibleVacationWeekPlanWeek {
@@ -121,15 +123,12 @@ export function resolveVisibleVacationWeekPlans(
       const subjects: VisibleVacationWeekPlanSubject[] = [];
 
       for (const subjectId of orderSubjectIds(Object.keys(weekSubjects), context.subjects)) {
-        const content = getVacationWeeklyPlanContent(
-          context.plans,
-          preview.periodKey,
-          weekNumber,
-          subjectId
+        const items = getUnscheduledVacationWeeklyPlanItems(
+          getVacationWeeklyPlanItems(context.plans, preview.periodKey, weekNumber, subjectId)
         );
 
-        if (content) {
-          subjects.push({ subjectId, content });
+        if (items.length > 0) {
+          subjects.push({ subjectId, items });
         }
       }
 

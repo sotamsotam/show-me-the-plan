@@ -1,3 +1,4 @@
+import type { WeeklyPlanItem } from '@/lib/weekly-plan-item';
 import { formatPrepWeekLabel } from '@/lib/exam-countdown';
 import type { ExamPrepWeeklyPlansContext } from '@/lib/exam-prep-weekly-plans-context';
 import {
@@ -21,6 +22,7 @@ export type WeeklyPlanSectionKind = 'exam' | 'vacation' | 'regular';
 export interface VisibleWeeklyPlanSubject {
   subjectId: string;
   content: string;
+  items?: WeeklyPlanItem[];
 }
 
 export interface VisibleWeeklyPlanWeek {
@@ -75,7 +77,11 @@ export function resolveVisibleWeeklyPlanSections(
         weekEnd: week.weekEnd,
         showWeekLabel: true,
         weekLabel: formatPrepWeekLabel(week.weekNumber),
-        subjects: week.subjects,
+        subjects: week.subjects.map((subject) => ({
+          subjectId: subject.subjectId,
+          content: '',
+          items: subject.items,
+        })),
       })),
     });
   }
@@ -91,7 +97,11 @@ export function resolveVisibleWeeklyPlanSections(
         weekEnd: week.weekEnd,
         showWeekLabel: false,
         weekLabel: null,
-        subjects: week.subjects,
+        subjects: week.subjects.map((subject) => ({
+          subjectId: subject.subjectId,
+          content: '',
+          items: subject.items,
+        })),
       })),
     });
   }
@@ -107,7 +117,11 @@ export function resolveVisibleWeeklyPlanSections(
         weekEnd: week.weekEnd,
         showWeekLabel: false,
         weekLabel: null,
-        subjects: week.subjects,
+        subjects: week.subjects.map((subject) => ({
+          subjectId: subject.subjectId,
+          content: '',
+          items: subject.items,
+        })),
       })),
     });
   }
