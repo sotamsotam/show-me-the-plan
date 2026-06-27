@@ -116,6 +116,8 @@ export default function ResolutionAnimatedTitle({
       return;
     }
 
+    const resolvedSegments = segments;
+
     let cancelled = false;
     const wait = (ms: number) =>
       new Promise<void>((resolve) => {
@@ -129,10 +131,10 @@ export default function ResolutionAnimatedTitle({
       setDone(false);
       setShowCursor(true);
 
-      for (let index = 0; index <= segments.phaseOneEnd.length; index += 1) {
+      for (let index = 0; index <= resolvedSegments.phaseOneEnd.length; index += 1) {
         if (cancelled) return;
-        setDisplay(segments.phaseOneEnd.slice(0, index));
-        if (index < segments.phaseOneEnd.length) {
+        setDisplay(resolvedSegments.phaseOneEnd.slice(0, index));
+        if (index < resolvedSegments.phaseOneEnd.length) {
           await wait(CHAR_DELAY_MS);
         }
       }
@@ -140,8 +142,8 @@ export default function ResolutionAnimatedTitle({
       await wait(PAUSE_BEFORE_DELETE_MS);
       if (cancelled) return;
 
-      let current = segments.phaseOneEnd;
-      while (current.length > segments.backspaceEnd.length) {
+      let current = resolvedSegments.phaseOneEnd;
+      while (current.length > resolvedSegments.backspaceEnd.length) {
         if (cancelled) return;
         current = current.slice(0, -1);
         setDisplay(current);
@@ -151,16 +153,16 @@ export default function ResolutionAnimatedTitle({
       await wait(PAUSE_BEFORE_SECOND_MS);
       if (cancelled) return;
 
-      for (let index = 0; index <= segments.phaseTwo.length; index += 1) {
+      for (let index = 0; index <= resolvedSegments.phaseTwo.length; index += 1) {
         if (cancelled) return;
-        setDisplay(segments.backspaceEnd + segments.phaseTwo.slice(0, index));
-        if (index < segments.phaseTwo.length) {
+        setDisplay(resolvedSegments.backspaceEnd + resolvedSegments.phaseTwo.slice(0, index));
+        if (index < resolvedSegments.phaseTwo.length) {
           await wait(CHAR_DELAY_MS);
         }
       }
 
       if (cancelled) return;
-      setDisplay(segments.final);
+      setDisplay(resolvedSegments.final);
       setShowCursor(false);
       setDone(true);
     }

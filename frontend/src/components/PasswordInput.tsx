@@ -32,7 +32,7 @@ const defaultInputClassName =
   'w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 dark:border-neutral-700 dark:bg-zinc-800';
 
 interface PasswordInputProps
-  extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type'> {
+  extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type' | 'onChange' | 'value'> {
   value: string;
   onChange: (value: string) => void;
 }

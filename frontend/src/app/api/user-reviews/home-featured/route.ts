@@ -2,6 +2,8 @@ import { parseUserReviewError } from '@/lib/user-review';
 import { strapiFetch } from '@/lib/strapi';
 import { NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   const res = await strapiFetch('/api/user-reviews/home-featured');
   const data = await res.json();

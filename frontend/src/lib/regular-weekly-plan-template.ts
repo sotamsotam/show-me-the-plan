@@ -562,7 +562,7 @@ export function applyTemplateToPeriod(
 
   return {
     plans: nextPlans,
-    skippedSubjectKeys: [...skippedSubjectKeys].sort(),
+    skippedSubjectKeys: Array.from(skippedSubjectKeys).sort(),
     appliedWeekCount,
   };
 }

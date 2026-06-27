@@ -115,7 +115,7 @@ export function isReviewAuthorMember(
 export function canWriteUserReview(
   user: ReviewAuthorSession | null | undefined
 ): boolean {
-  if (!isReviewAuthorMember(user)) {
+  if (!user || !isReviewAuthorMember(user)) {
     return false;
   }
 

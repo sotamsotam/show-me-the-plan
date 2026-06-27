@@ -9,10 +9,9 @@ import type {
   EventContentArg,
   EventInput,
   EventMountArg,
-  EventReceiveArg,
 } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
-import interactionPlugin, { Draggable } from '@fullcalendar/interaction';
+import interactionPlugin, { Draggable, type EventReceiveArg } from '@fullcalendar/interaction';
 import listPlugin from '@fullcalendar/list';
 import FullCalendar from '@fullcalendar/react';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -111,7 +110,6 @@ const DESKTOP_MONTH_VIEW = 'dayGridMonth';
 const DESKTOP_DAY_VIEW = 'timeGridDay';
 
 const CALENDAR_HEIGHT = 660;
-const ALL_DAY_SLOT_HEIGHT = 30;
 const DRAFT_EVENT_ID = 'draft-study-plan';
 const DRAFT_DURATION_MS = 60 * 60 * 1000;
 const SLOT_MIN_TIME = '05:00:00';
@@ -1369,7 +1367,7 @@ export default function StudyPlanCalendar() {
     }
 
     const panel = document.querySelector('.exam-prep-panel');
-    if (!panel) {
+    if (!(panel instanceof HTMLElement)) {
       return;
     }
 
@@ -1667,7 +1665,6 @@ export default function StudyPlanCalendar() {
             slotLabelInterval="00:30:00"
             snapDuration="00:10:00"
             allDaySlot
-            allDaySlotHeight={ALL_DAY_SLOT_HEIGHT}
             height={isListView ? 'auto' : CALENDAR_HEIGHT}
             nowIndicator={!isListView}
             selectable={!isListView && !isMonthView && (!isMobile || isMobileDayView)}

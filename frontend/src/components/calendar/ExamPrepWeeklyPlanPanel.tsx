@@ -12,6 +12,7 @@ import {
   type VisiblePrepWeekPlanRound,
 } from '@/lib/exam-prep-visible-week-plans';
 import { getSubjectLabel } from '@/lib/user-subject';
+import { weeklyPlanItemsToMultilineText } from '@/lib/weekly-plan-item';
 
 const EXAM_PREP_WEEKLY_PLAN_SETTINGS_HREF = '/dashboard/preferences/exam-prep-weekly-plan';
 
@@ -85,7 +86,9 @@ function PanelContent({
                     <p className="exam-prep-panel-subject-label">
                       {getSubjectLabel(subject.subjectId, subjects)}
                     </p>
-                    <p className="exam-prep-panel-subject-content">{subject.content}</p>
+                    <p className="exam-prep-panel-subject-content">
+                      {weeklyPlanItemsToMultilineText(subject.items) || '-'}
+                    </p>
                   </li>
                 ))}
               </ul>

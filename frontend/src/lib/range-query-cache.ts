@@ -75,13 +75,13 @@ export function createRangeQueryCache<T>(
   }
 
   function invalidateByStudentPrefix(studentPrefix: string) {
-    for (const key of [...entries.keys()]) {
+    for (const key of Array.from(entries.keys())) {
       if (cacheKeyMatchesStudentPrefix(key, studentPrefix)) {
         entries.delete(key);
       }
     }
 
-    for (const key of [...inFlight.keys()]) {
+    for (const key of Array.from(inFlight.keys())) {
       if (cacheKeyMatchesStudentPrefix(key, studentPrefix)) {
         inFlight.delete(key);
       }

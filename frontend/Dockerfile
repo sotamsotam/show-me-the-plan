@@ -1,12 +1,14 @@
 FROM node:20-alpine AS base
 
 FROM base AS deps
-WORKDIR /app
-COPY package.json package-lock.json ./
+WORKDIR /app/frontend
+# Monorepo root package.json — required by frontend "file:.." dependency in package.json
+COPY package.json ../package.json
+COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
 
 FROM base AS builder
-WORKDIR /app
+WORKDIR /app/frontend
 ARG NEXT_PUBLIC_PORTONE_STORE_ID
 ARG NEXT_PUBLIC_PORTONE_CHANNEL_KEY
 ARG NEXT_PUBLIC_VAPID_PUBLIC_KEY
@@ -25,8 +27,8 @@ ENV NEXT_PUBLIC_CONTACT_EMAIL=$NEXT_PUBLIC_CONTACT_EMAIL
 ENV NEXT_PUBLIC_REPRESENTATIVE_NAME=$NEXT_PUBLIC_REPRESENTATIVE_NAME
 ENV NEXT_PUBLIC_BUSINESS_REG_NO=$NEXT_PUBLIC_BUSINESS_REG_NO
 ENV NEXT_PUBLIC_BUSINESS_ADDRESS=$NEXT_PUBLIC_BUSINESS_ADDRESS
-COPY --from=deps /app/node_modules ./node_modules
-COPY . .
+COPY --from=deps /app/frontend/node_modules ./node_modules
+COPY frontend/ .
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
@@ -36,9 +38,9 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
-COPY --from=builder /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder /app/frontend/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/frontend/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/frontend/.next/static ./.next/static
 USER nextjs
 EXPOSE 3000
 ENV PORT=3000

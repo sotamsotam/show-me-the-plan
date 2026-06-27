@@ -1,3 +1,14 @@
+# Production — pull pre-built images from GHCR (no build on VPS).
+#
+# Prerequisites:
+#   1. GitHub Actions "Publish Docker images" workflow has run on main.
+#   2. VPS: docker login ghcr.io (read:packages PAT if repo is private).
+#   3. Root .env with SMP_*_IMAGE and all runtime secrets (see .env.production.example).
+#
+# Usage:
+#   docker compose -f docker-compose.prod.yml pull
+#   docker compose -f docker-compose.prod.yml up -d
+
 services:
   postgres:
     image: postgres:16-alpine
@@ -19,8 +30,7 @@ services:
       retries: 10
 
   strapi:
-    build:
-      context: ./backend
+    image: ${SMP_STRAPI_IMAGE:?SMP_STRAPI_IMAGE is required}
     restart: unless-stopped
     depends_on:
       postgres:
@@ -71,23 +81,9 @@ services:
       UPLOAD_S3_FORCE_PATH_STYLE: ${UPLOAD_S3_FORCE_PATH_STYLE:-false}
     volumes:
       - strapi_uploads:/opt/app/public/uploads
-    ports:
-      - '1337:1337'
 
   frontend:
-    build:
-      context: .
-      dockerfile: frontend/Dockerfile
-      args:
-        NEXT_PUBLIC_PORTONE_STORE_ID: ${NEXT_PUBLIC_PORTONE_STORE_ID:-}
-        NEXT_PUBLIC_PORTONE_CHANNEL_KEY: ${NEXT_PUBLIC_PORTONE_CHANNEL_KEY:-}
-        NEXT_PUBLIC_VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
-        NEXT_PUBLIC_STRAPI_URL: ${NEXT_PUBLIC_STRAPI_URL:-${NEXTAUTH_URL}}
-        NEXT_PUBLIC_UPLOAD_BASE_URL: ${NEXT_PUBLIC_UPLOAD_BASE_URL:-}
-        NEXT_PUBLIC_CONTACT_EMAIL: ${NEXT_PUBLIC_CONTACT_EMAIL:-}
-        NEXT_PUBLIC_REPRESENTATIVE_NAME: ${NEXT_PUBLIC_REPRESENTATIVE_NAME:-}
-        NEXT_PUBLIC_BUSINESS_REG_NO: ${NEXT_PUBLIC_BUSINESS_REG_NO:-}
-        NEXT_PUBLIC_BUSINESS_ADDRESS: ${NEXT_PUBLIC_BUSINESS_ADDRESS:-}
+    image: ${SMP_FRONTEND_IMAGE:?SMP_FRONTEND_IMAGE is required}
     restart: unless-stopped
     depends_on:
       - strapi

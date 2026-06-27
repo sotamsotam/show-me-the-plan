@@ -4,12 +4,18 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { signOut } from 'next-auth/react';
 
-const NAV_ITEMS = [
+type NavItem = {
+  href: string;
+  label: string;
+  exact?: boolean;
+};
+
+const NAV_ITEMS: NavItem[] = [
   { href: '/ops', label: '대시보드', exact: true },
   { href: '/ops/members', label: '회원' },
   { href: '/ops/subscriptions', label: '구독' },
   { href: '/ops/managers/pending', label: '매니저 승인' },
-] as const;
+];
 
 export default function OpsNav({ username }: { username: string }) {
   const pathname = usePathname();

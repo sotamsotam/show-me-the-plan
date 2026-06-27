@@ -73,26 +73,27 @@ function getPrintContentBlock(pageRoot: HTMLElement): HTMLElement {
 }
 
 function applyPrintZoom(targetElement: HTMLElement, scale: number): void {
+  const style = targetElement.style;
+
   if (scale >= 0.999) {
-    targetElement.style.zoom = '';
-    targetElement.style.transform = '';
-    targetElement.style.transformOrigin = '';
-    targetElement.style.width = '';
+    style.removeProperty('zoom');
+    style.transform = '';
+    style.transformOrigin = '';
+    style.width = '';
     return;
   }
 
-  if ('zoom' in targetElement.style) {
-    targetElement.style.zoom = String(scale);
-    targetElement.style.transform = '';
-    targetElement.style.transformOrigin = '';
-    targetElement.style.width = '';
+  if ('zoom' in document.documentElement.style) {
+    style.setProperty('zoom', String(scale));
+    style.transform = '';
+    style.transformOrigin = '';
+    style.width = '';
     return;
   }
 
-  targetElement.style.zoom = '';
-  targetElement.style.transformOrigin = 'top left';
-  targetElement.style.transform = `scale(${scale})`;
-  targetElement.style.width = `${100 / scale}%`;
+  style.transformOrigin = 'top left';
+  style.transform = `scale(${scale})`;
+  style.width = `${100 / scale}%`;
 }
 
 function resetMonthlyPrintLayoutStyles(pageRoot: HTMLElement): void {
