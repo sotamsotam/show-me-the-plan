@@ -116,10 +116,11 @@ export function getWeekDatesContaining(date: string): string[] {
   });
 }
 
+/** Calendar month bounds for API range queries: [start, end) with exclusive end. */
 export function getMonthRange(date: string): { start: string; end: string } {
   const parsed = new Date(`${date}T12:00:00`);
   const start = new Date(parsed.getFullYear(), parsed.getMonth(), 1);
-  const end = new Date(parsed.getFullYear(), parsed.getMonth() + 1, 0);
+  const end = new Date(parsed.getFullYear(), parsed.getMonth() + 1, 1);
   return { start: formatIsoDate(start), end: formatIsoDate(end) };
 }
 
