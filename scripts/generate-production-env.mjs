@@ -6,14 +6,30 @@
  * 외부 서비스 키(NEIS, Brevo, PortOne, VAPID)는 PoC .env에서 복사하거나
  * 각 콘솔에서 발급 후 REPLACE_* 항목을 수동으로 채운다.
  */
-import { randomBytes } from 'node:crypto';
+import { createECDH, randomBytes } from 'node:crypto';
 import { writeFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import webPush from '../backend/node_modules/web-push/index.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, '..');
+
+function urlBase64(buffer) {
+  return buffer
+    .toString('base64')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+}
+
+function generateVAPIDKeys() {
+  const curve = createECDH('prime256v1');
+  curve.generateKeys();
+  return {
+    publicKey: urlBase64(curve.getPublicKey()),
+    privateKey: urlBase64(curve.getPrivateKey()),
+  };
+}
 
 const args = process.argv.slice(2);
 const domainIdx = args.indexOf('--domain');
@@ -23,7 +39,7 @@ const outPath = resolve(root, outIdx >= 0 ? args[outIdx + 1] : '.env');
 
 const b64 = () => randomBytes(32).toString('base64');
 const hex = () => randomBytes(16).toString('hex');
-const vapid = webPush.generateVAPIDKeys();
+const vapid = generateVAPIDKeys();
 
 const baseUrl = `https://${domain}`;
 
@@ -100,6 +116,10 @@ NEXT_PUBLIC_CONTACT_EMAIL=support@showmepl.com
 NEXT_PUBLIC_REPRESENTATIVE_NAME=REPLACE_REPRESENTATIVE_NAME
 NEXT_PUBLIC_BUSINESS_REG_NO=REPLACE_BUSINESS_REG_NO
 NEXT_PUBLIC_BUSINESS_ADDRESS=REPLACE_BUSINESS_ADDRESS
+
+# ── GHCR images (docker-compose.prod.yml) ────────────────────────
+SMP_FRONTEND_IMAGE=ghcr.io/sotamsotam/show-me-the-plan-frontend:latest
+SMP_STRAPI_IMAGE=ghcr.io/sotamsotam/show-me-the-plan-strapi:latest
 `;
 
 writeFileSync(outPath, content, { encoding: 'utf8', flag: 'wx' });

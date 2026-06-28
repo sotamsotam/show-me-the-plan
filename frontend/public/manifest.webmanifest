@@ -1,12 +1,12 @@
 {
-  "name": "Show Me The Plan",
-  "short_name": "Show Plan",
+  "name": "쇼미플",
+  "short_name": "쇼미플",
   "description": "계획을 플레이하는 순간, 공부는 퀘스트가 된다.",
   "start_url": "/app",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#ffffff",
+  "background_color": "#2563eb",
   "theme_color": "#2563eb",
   "lang": "ko",
   "icons": [

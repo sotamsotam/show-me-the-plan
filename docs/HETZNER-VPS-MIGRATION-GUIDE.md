@@ -271,9 +271,14 @@ cd routine-maker
 
 ### 4-4. Strapi Admin 최초 설정 (새 DB일 경우)
 
+> 상세: [`VPS-PRODUCTION-OPS.md`](./VPS-PRODUCTION-OPS.md) §2 — SSH 터널, 흔한 실수, localhost:1337 바인딩
+
 - [ ] SSH 터널로 Admin 접속 (로컬 PC에서)
   ```bash
-  ssh -L 1337:localhost:1337 deploy@<HETZNER_IP>
+  # 컨테이너 IP 확인 (VPS): docker inspect -f '...' show-me-the-plan-strapi-1
+  ssh -L 1337:<STRAPI_CONTAINER_IP>:1337 root@<HETZNER_IP>
+  # 또는 compose에 127.0.0.1:1337:1337 매핑 후:
+  # ssh -L 1337:localhost:1337 root@<HETZNER_IP>
   ```
 - [ ] 브라우저: `http://localhost:1337/admin`
 - [ ] 관리자 계정 생성

@@ -11,13 +11,13 @@ const notoSansKr = Noto_Sans_KR({
 });
 
 export const metadata: Metadata = {
-  title: 'Show Me The Plan',
+  title: '쇼미플',
   description: '계획을 플레이하는 순간, 공부는 퀘스트가 된다.',
   manifest: '/manifest.webmanifest',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'Show Me The Plan',
+    title: '쇼미플',
   },
   icons: {
     icon: [
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#1e3a5f',
+  themeColor: '#2563eb',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,

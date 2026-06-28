@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 const DISMISS_KEY = 'pwa-install-hint-dismissed';
 const DISMISS_DAYS = 7;
 
-type InstallPlatform = 'ios' | 'android';
+type InstallPlatform = 'ios' | 'android' | 'android-samsung';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -22,6 +22,22 @@ function isIosSafari(): boolean {
   const isIos = /iPad|iPhone|iPod/.test(ua);
   const isSafari = /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS/.test(ua);
   return isIos && isSafari;
+}
+
+function isSamsungInternet(): boolean {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  return /SamsungBrowser/i.test(window.navigator.userAgent);
+}
+
+function openInChrome() {
+  const { host, pathname, search, hash } = window.location;
+  const fallbackUrl = encodeURIComponent(window.location.href);
+  const intentUrl = `intent://${host}${pathname}${search}${hash}#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${fallbackUrl};end`;
+
+  window.location.href = intentUrl;
 }
 
 function isStandalone(): boolean {
@@ -78,6 +94,12 @@ export default function PwaInstallHint() {
       return;
     }
 
+    if (isSamsungInternet()) {
+      setPlatform('android-samsung');
+      setVisible(true);
+      return;
+    }
+
     function handleBeforeInstallPrompt(event: Event) {
       event.preventDefault();
       setDeferredPrompt(event as BeforeInstallPromptEvent);
@@ -126,32 +148,49 @@ export default function PwaInstallHint() {
     <div
       className={`fixed inset-x-0 z-[60] border-t border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900 shadow-lg dark:border-blue-800 dark:bg-blue-950 dark:text-blue-100 ${
         hasBottomNav
-          ? 'bottom-[calc(3.5rem+env(safe-area-inset-bottom))]'
-          : 'bottom-0 pb-[env(safe-area-inset-bottom)]'
+          ? "bottom-[calc(3.5rem+env(safe-area-inset-bottom))]"
+          : "bottom-0 pb-[env(safe-area-inset-bottom)]"
       }`}
     >
       <div className="mx-auto flex max-w-lg items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          {platform === 'ios' ? (
+          {platform === "ios" && (
             <p>
-              앱처럼 사용하려면 Safari 공유 버튼을 누른 뒤{' '}
+              앱처럼 사용하려면 Safari 공유 버튼을 누른 뒤{" "}
               <strong>홈 화면에 추가</strong>를 선택하세요.
             </p>
-          ) : (
-            <p>
-              Show Me The Plan을 홈 화면에 설치하면 앱처럼 더 편하게 사용할 수
-              있습니다.
-            </p>
           )}
-          {platform === 'android' && (
-            <button
-              type="button"
-              onClick={handleInstall}
-              disabled={installing || !deferredPrompt}
-              className="touch-press mt-2 min-h-11 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
-            >
-              {installing ? '설치 중...' : '앱 설치'}
-            </button>
+          {platform === "android" && (
+            <>
+              <p>
+                쇼미플을 홈 화면에 설치하면 앱처럼 더 편하게 사용할 수 있습니다.
+              </p>
+              <button
+                type="button"
+                onClick={handleInstall}
+                disabled={installing || !deferredPrompt}
+                className="touch-press mt-2 min-h-11 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+              >
+                {installing ? "설치 중..." : "앱 설치"}
+              </button>
+            </>
+          )}
+          {platform === "android-samsung" && (
+            <>
+              <p>
+                일부 브라우져(삼성브라우저) 앱 설치 시 보안 경고가 뜰 수
+                있습니다. 쇼미플앱은 안전하오니 **[무시하고 설치]**를 누르시거나 
+                <strong>Chrome</strong>브라우져 에서 접속한 뒤 설치하면 경고
+                없이 설치됩니다.
+              </p>
+              <button
+                type="button"
+                onClick={openInChrome}
+                className="touch-press mt-2 min-h-11 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+              >
+                Chrome에서 열기
+              </button>
+            </>
           )}
         </div>
         <button
