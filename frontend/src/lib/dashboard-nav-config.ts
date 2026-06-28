@@ -41,6 +41,8 @@ export const MORE_ROUTE_PREFIXES = [
   '/dashboard/settings',
 ] as const;
 
+export const MANAGER_MORE_ROUTE_PREFIXES = ['/dashboard/settings'] as const;
+
 const PAGE_TITLE_ENTRIES: Array<{ prefix: string; title: string; exact?: boolean }> = [
   { prefix: '/dashboard/todo', title: 'TODO' },
   { prefix: '/dashboard/schedule', title: '일상 스케줄' },
@@ -69,6 +71,12 @@ export function getDashboardPageTitle(pathname: string): string {
 
 export function isMoreRoute(pathname: string): boolean {
   return MORE_ROUTE_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+  );
+}
+
+export function isManagerMoreRoute(pathname: string): boolean {
+  return MANAGER_MORE_ROUTE_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
   );
 }

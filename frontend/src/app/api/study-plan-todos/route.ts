@@ -54,6 +54,7 @@ export async function GET(request: NextRequest) {
     todos: data.todos ?? [],
     events: expandedEventsToCalendarEvents(rawEvents),
     expandedEvents: rawEvents,
+    subjects: data.subjects ?? null,
   });
 }
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, type ReactNode } from 'react';
+import { useManagerStudent } from '@/contexts/ManagerStudentContext';
 import { useProfileSubjects } from '@/hooks/useProfileSubjects';
 import {
   getSubjectOptions,
@@ -20,7 +21,12 @@ interface ProfileSubjectsContextValue {
 const ProfileSubjectsContext = createContext<ProfileSubjectsContextValue | null>(null);
 
 export function ProfileSubjectsProvider({ children }: { children: ReactNode }) {
-  const { subjects, subjectOptions, loading, error, reload } = useProfileSubjects();
+  const { isManagerMode, selectedStudentId } = useManagerStudent();
+  const studentUserId = isManagerMode ? selectedStudentId : null;
+  const { subjects, subjectOptions, loading, error, reload } = useProfileSubjects({
+    studentUserId,
+    enabled: !isManagerMode || selectedStudentId !== null,
+  });
 
   return (
     <ProfileSubjectsContext.Provider

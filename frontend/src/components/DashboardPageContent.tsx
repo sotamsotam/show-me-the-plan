@@ -55,7 +55,7 @@ export default function DashboardPageContent() {
 
   if (approvedManager) {
     return (
-      <main className="w-full py-8 md:py-12">
+      <main className="w-full min-w-0 py-8 md:py-12">
         <div className="mb-6">
           <h1 className="mb-1 text-2xl font-semibold text-white">학생별 공부현황</h1>
           <p className="text-sm text-gray-300">

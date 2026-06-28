@@ -44,6 +44,7 @@ import {
   clearVacationWeeklyPlanScheduledTodoIdByTodoId,
   resolveVacationWeeklyPlans,
 } from '../../../services/vacation-weekly-plan';
+import { resolveProfileSubjects } from '../../../services/user-subject-validation';
 
 const UID = 'api::study-plan-todo.study-plan-todo' as const;
 
@@ -202,8 +203,14 @@ export default factories.createCoreController(UID, ({ strapi }) => ({
       rangeStart,
       rangeEnd
     );
+    const profileSubjects = resolveProfileSubjects(
+      await loadProfileSubjects(strapi, owner.userId)
+    );
 
-    return ctx.send(buildFindInRangeResponse(parsedInclude, todos, events));
+    return ctx.send({
+      ...buildFindInRangeResponse(parsedInclude, todos, events),
+      subjects: profileSubjects,
+    });
   },
 
   async findTitles(ctx) {

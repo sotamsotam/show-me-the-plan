@@ -69,6 +69,127 @@ function formatSchoolInfo(student: ManagedStudent): string {
   return SCHOOL_LEVEL_LABEL[student.schoolLevel] ?? student.schoolLevel;
 }
 
+function DetailToggleButton({
+  isDetailOpen,
+  disabled = false,
+  onClick,
+}: {
+  isDetailOpen: boolean;
+  disabled?: boolean;
+  onClick?: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-expanded={isDetailOpen}
+      className={`rounded-lg px-3 py-1.5 text-xs font-medium ${
+        disabled
+          ? 'border border-gray-200 text-gray-400 dark:border-neutral-700'
+          : isDetailOpen
+            ? 'bg-blue-600 text-white'
+            : 'border border-gray-300 hover:bg-gray-50 dark:border-neutral-700 dark:hover:bg-zinc-800'
+      }`}
+    >
+      {isDetailOpen ? '닫기' : '선택'}
+    </button>
+  );
+}
+
+interface ManagerOverviewStudentRowProps {
+  student: ManagedStudent;
+  rowData?: StudentRowData;
+  isDetailOpen: boolean;
+  selectedDate: string;
+  onToggleDetail: (userId: number) => void;
+  onStampSaved: (userId: number, stamp: TodoDayStamp) => void;
+}
+
+function ManagerOverviewStudentMobileCard({
+  student,
+  rowData,
+  isDetailOpen,
+  selectedDate,
+  onToggleDetail,
+  onStampSaved,
+}: ManagerOverviewStudentRowProps) {
+  const stats = rowData?.stats;
+
+  return (
+    <article
+      className={
+        isDetailOpen
+          ? 'bg-blue-50/60 px-4 py-4 dark:bg-blue-950/20 max-[360px]:px-3'
+          : 'px-4 py-4 max-[360px]:px-3'
+      }
+    >
+      <div className="space-y-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="font-medium text-gray-900 dark:text-gray-100">{student.username}</p>
+          <StudentSubscriptionBadge isAccessAllowed={student.isAccessAllowed} compact />
+        </div>
+        <p className="text-xs text-gray-500 dark:text-gray-400">
+          {formatManagedStudentLabel(student)}
+        </p>
+        <p className="text-sm text-gray-600 dark:text-gray-300">{formatSchoolInfo(student)}</p>
+      </div>
+
+      {rowData?.error ? (
+        <p className="mt-3 text-sm text-red-600 dark:text-red-400">{rowData.error}</p>
+      ) : (
+        <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3">
+          <div>
+            <dt className="text-xs text-gray-500 dark:text-gray-400">TODO</dt>
+            <dd className="mt-0.5 text-sm font-medium tabular-nums text-gray-900 dark:text-gray-100">
+              {stats?.totalTodos ?? '-'}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-xs text-gray-500 dark:text-gray-400">실행</dt>
+            <dd className="mt-0.5 text-sm font-medium tabular-nums text-gray-900 dark:text-gray-100">
+              {stats?.executedTodos ?? '-'}
+            </dd>
+          </div>
+          <div className="col-span-2">
+            <dt className="mb-1 text-xs text-gray-500 dark:text-gray-400">건수 실행률</dt>
+            <dd>
+              <ExecutionRateBar rate={stats?.countRate ?? null} className="mx-0 max-w-none" />
+            </dd>
+          </div>
+          <div className="col-span-2">
+            <dt className="mb-1 text-xs text-gray-500 dark:text-gray-400">시간 실행률</dt>
+            <dd>
+              <ExecutionRateBar rate={stats?.timeRate ?? null} className="mx-0 max-w-none" />
+            </dd>
+          </div>
+        </dl>
+      )}
+
+      <div className="mt-3 border-t border-gray-100 pt-3 dark:border-neutral-800">
+        <DetailToggleButton
+          isDetailOpen={isDetailOpen}
+          disabled={Boolean(rowData?.error)}
+          onClick={() => onToggleDetail(student.userId)}
+        />
+      </div>
+
+      {isDetailOpen && rowData && !rowData.error ? (
+        <div className="mt-4">
+          <ManagerOverviewTodoDetail
+            student={student}
+            date={selectedDate}
+            subjectGroups={rowData.subjectGroups}
+            stamp={rowData.stamp ?? null}
+            inline
+            onStampSaved={(stamp) => onStampSaved(student.userId, stamp)}
+          />
+        </div>
+      ) : null}
+    </article>
+  );
+}
+
 export default function ManagerOverviewDashboard() {
   const { students, loading: studentsLoading } = useManagerStudent();
   const [selectedDate, setSelectedDate] = useState(getTodayIsoDate);
@@ -175,7 +296,7 @@ export default function ManagerOverviewDashboard() {
   const isToday = selectedDate === getTodayIsoDate();
 
   return (
-    <section className="rounded-xl border border-gray-200 bg-white dark:border-neutral-800 dark:bg-zinc-900">
+    <section className="min-w-0 overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-neutral-800 dark:bg-zinc-900">
       <div className="border-b border-gray-200 p-4 dark:border-neutral-800 md:px-6 md:py-5">
         <div className="flex items-center justify-between gap-3">
           <button
@@ -253,118 +374,120 @@ export default function ManagerOverviewDashboard() {
           여기에 표시됩니다.
         </div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[800px] text-left text-sm">
-            <thead className="bg-gray-50 text-gray-600 dark:bg-zinc-800/50 dark:text-gray-300">
-              <tr>
-                <th className="px-6 py-3 font-medium">학생</th>
-                <th className="px-6 py-3 font-medium">학교 정보</th>
-                <th className="px-6 py-3 font-medium text-center">TODO</th>
-                <th className="px-6 py-3 font-medium text-center">실행</th>
-                <th className="min-w-[112px] px-4 py-3 font-medium text-center">건수 실행률</th>
-                <th className="min-w-[112px] px-4 py-3 font-medium text-center">시간 실행률</th>
-                <th className="px-6 py-3 font-medium text-center">상세</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-neutral-800">
-              {students.map((student) => {
-                const rowData = dataByUserId[student.userId];
-                const stats = rowData?.stats;
-                const isDetailOpen = selectedDetailUserId === student.userId;
+        <>
+          <div className="divide-y divide-gray-100 md:hidden dark:divide-neutral-800">
+            {students.map((student) => (
+              <ManagerOverviewStudentMobileCard
+                key={student.userId}
+                student={student}
+                rowData={dataByUserId[student.userId]}
+                isDetailOpen={selectedDetailUserId === student.userId}
+                selectedDate={selectedDate}
+                onToggleDetail={handleToggleDetail}
+                onStampSaved={handleStampSaved}
+              />
+            ))}
+          </div>
 
-                return (
-                  <Fragment key={student.userId}>
-                    <tr
-                      className={
-                        isDetailOpen
-                          ? 'bg-blue-50/60 dark:bg-blue-950/20'
-                          : 'hover:bg-gray-50 dark:hover:bg-zinc-800/40'
-                      }
-                    >
-                      <td className="px-6 py-4">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <p className="font-medium text-gray-900 dark:text-gray-100">
-                            {student.username}
+          <div className="hidden overflow-x-auto md:block">
+            <table className="w-full min-w-[800px] text-left text-sm">
+              <thead className="bg-gray-50 text-gray-600 dark:bg-zinc-800/50 dark:text-gray-300">
+                <tr>
+                  <th className="px-6 py-3 font-medium">학생</th>
+                  <th className="px-6 py-3 font-medium">학교 정보</th>
+                  <th className="px-6 py-3 font-medium text-center">TODO</th>
+                  <th className="px-6 py-3 font-medium text-center">실행</th>
+                  <th className="min-w-[112px] px-4 py-3 font-medium text-center">건수 실행률</th>
+                  <th className="min-w-[112px] px-4 py-3 font-medium text-center">시간 실행률</th>
+                  <th className="px-6 py-3 font-medium text-center">상세</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-neutral-800">
+                {students.map((student) => {
+                  const rowData = dataByUserId[student.userId];
+                  const stats = rowData?.stats;
+                  const isDetailOpen = selectedDetailUserId === student.userId;
+
+                  return (
+                    <Fragment key={student.userId}>
+                      <tr
+                        className={
+                          isDetailOpen
+                            ? 'bg-blue-50/60 dark:bg-blue-950/20'
+                            : 'hover:bg-gray-50 dark:hover:bg-zinc-800/40'
+                        }
+                      >
+                        <td className="px-6 py-4">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="font-medium text-gray-900 dark:text-gray-100">
+                              {student.username}
+                            </p>
+                            <StudentSubscriptionBadge isAccessAllowed={student.isAccessAllowed} compact />
+                          </div>
+                          <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                            {formatManagedStudentLabel(student)}
                           </p>
-                          <StudentSubscriptionBadge isAccessAllowed={student.isAccessAllowed} compact />
-                        </div>
-                        <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                          {formatManagedStudentLabel(student)}
-                        </p>
-                      </td>
-                      <td className="px-6 py-4 text-gray-600 dark:text-gray-300">
-                        {formatSchoolInfo(student)}
-                      </td>
-                      {rowData?.error ? (
-                        <>
-                          <td
-                            colSpan={4}
-                            className="px-6 py-4 text-sm text-red-600 dark:text-red-400"
-                          >
-                            {rowData.error}
-                          </td>
-                          <td className="px-6 py-4 text-center">
-                            <button
-                              type="button"
-                              disabled
-                              className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs text-gray-400 dark:border-neutral-700"
-                            >
-                              선택
-                            </button>
-                          </td>
-                        </>
-                      ) : (
-                        <>
-                          <td className="px-6 py-4 text-center tabular-nums text-gray-900 dark:text-gray-100">
-                            {stats?.totalTodos ?? '-'}
-                          </td>
-                          <td className="px-6 py-4 text-center tabular-nums text-gray-900 dark:text-gray-100">
-                            {stats?.executedTodos ?? '-'}
-                          </td>
-                          <td className="px-4 py-4">
-                            <ExecutionRateBar rate={stats?.countRate ?? null} />
-                          </td>
-                          <td className="px-4 py-4">
-                            <ExecutionRateBar rate={stats?.timeRate ?? null} />
-                          </td>
-                          <td className="px-6 py-4 text-center">
-                            <button
-                              type="button"
-                              onClick={() => handleToggleDetail(student.userId)}
-                              aria-expanded={isDetailOpen}
-                              className={`rounded-lg px-3 py-1.5 text-xs font-medium ${
-                                isDetailOpen
-                                  ? 'bg-blue-600 text-white'
-                                  : 'border border-gray-300 hover:bg-gray-50 dark:border-neutral-700 dark:hover:bg-zinc-800'
-                              }`}
-                            >
-                              {isDetailOpen ? '닫기' : '선택'}
-                            </button>
-                          </td>
-                        </>
-                      )}
-                    </tr>
-
-                    {isDetailOpen && rowData && !rowData.error && (
-                      <tr className="bg-blue-50/40 dark:bg-blue-950/10">
-                        <td colSpan={7} className="p-0">
-                          <ManagerOverviewTodoDetail
-                            student={student}
-                            date={selectedDate}
-                            subjectGroups={rowData.subjectGroups}
-                            stamp={rowData.stamp ?? null}
-                            inline
-                            onStampSaved={(stamp) => handleStampSaved(student.userId, stamp)}
-                          />
                         </td>
+                        <td className="px-6 py-4 text-gray-600 dark:text-gray-300">
+                          {formatSchoolInfo(student)}
+                        </td>
+                        {rowData?.error ? (
+                          <>
+                            <td
+                              colSpan={4}
+                              className="px-6 py-4 text-sm text-red-600 dark:text-red-400"
+                            >
+                              {rowData.error}
+                            </td>
+                            <td className="px-6 py-4 text-center">
+                              <DetailToggleButton isDetailOpen={isDetailOpen} disabled />
+                            </td>
+                          </>
+                        ) : (
+                          <>
+                            <td className="px-6 py-4 text-center tabular-nums text-gray-900 dark:text-gray-100">
+                              {stats?.totalTodos ?? '-'}
+                            </td>
+                            <td className="px-6 py-4 text-center tabular-nums text-gray-900 dark:text-gray-100">
+                              {stats?.executedTodos ?? '-'}
+                            </td>
+                            <td className="px-4 py-4">
+                              <ExecutionRateBar rate={stats?.countRate ?? null} />
+                            </td>
+                            <td className="px-4 py-4">
+                              <ExecutionRateBar rate={stats?.timeRate ?? null} />
+                            </td>
+                            <td className="px-6 py-4 text-center">
+                              <DetailToggleButton
+                                isDetailOpen={isDetailOpen}
+                                onClick={() => handleToggleDetail(student.userId)}
+                              />
+                            </td>
+                          </>
+                        )}
                       </tr>
-                    )}
-                  </Fragment>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+
+                      {isDetailOpen && rowData && !rowData.error && (
+                        <tr className="bg-blue-50/40 dark:bg-blue-950/10">
+                          <td colSpan={7} className="p-0">
+                            <ManagerOverviewTodoDetail
+                              student={student}
+                              date={selectedDate}
+                              subjectGroups={rowData.subjectGroups}
+                              stamp={rowData.stamp ?? null}
+                              inline
+                              onStampSaved={(stamp) => handleStampSaved(student.userId, stamp)}
+                            />
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
     </section>
   );

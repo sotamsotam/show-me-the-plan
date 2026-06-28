@@ -16,6 +16,7 @@ import {
 } from '@/components/DashboardNavIcons';
 import SettingsIcon from '@/components/SettingsIcon';
 import {
+  isManagerMoreRoute,
   isMoreRoute,
   MANAGER_NAV_ITEMS,
   STUDENT_MORE_ITEMS,
@@ -56,30 +57,69 @@ export default function DashboardBottomNav({ variant }: DashboardBottomNavProps)
   }
 
   if (variant === 'manager') {
-    return (
-      <nav
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md md:hidden dark:border-neutral-800 dark:bg-zinc-900/95"
-        aria-label="하단 메뉴"
-      >
-        <div className="flex h-14 items-stretch">
-          {MANAGER_NAV_ITEMS.map(({ href, label, shortLabel, exact }, index) => {
-            const active = isActive(href, exact);
-            const Icon = MANAGER_TAB_ICONS[index];
+    const moreActive = isManagerMoreRoute(pathname);
 
-            return (
-              <Link
-                key={href}
-                href={href}
-                className={tabButtonClass(active)}
-                aria-current={active ? 'page' : undefined}
-              >
-                <Icon className={`h-5 w-5 shrink-0 ${active ? 'stroke-[2.5]' : ''}`} />
-                <span className="truncate">{shortLabel ?? label}</span>
-              </Link>
-            );
-          })}
-        </div>
-      </nav>
+    return (
+      <>
+        <nav
+          className="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md md:hidden dark:border-neutral-800 dark:bg-zinc-900/95"
+          aria-label="하단 메뉴"
+        >
+          <div className="flex h-14 items-stretch">
+            {MANAGER_NAV_ITEMS.map(({ href, label, shortLabel, exact }, index) => {
+              const active = isActive(href, exact);
+              const Icon = MANAGER_TAB_ICONS[index];
+
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  className={tabButtonClass(active)}
+                  aria-current={active ? 'page' : undefined}
+                >
+                  <Icon className={`h-5 w-5 shrink-0 ${active ? 'stroke-[2.5]' : ''}`} />
+                  <span className="truncate">{shortLabel ?? label}</span>
+                </Link>
+              );
+            })}
+            <button
+              type="button"
+              className={tabButtonClass(moreActive || moreOpen)}
+              aria-expanded={moreOpen}
+              aria-label="더보기 메뉴"
+              onClick={() => setMoreOpen(true)}
+            >
+              <MoreNavIcon
+                className={`h-5 w-5 shrink-0 ${moreActive || moreOpen ? 'stroke-[2.5]' : ''}`}
+              />
+              <span>더보기</span>
+            </button>
+          </div>
+        </nav>
+
+        <ResponsiveOverlay
+          open={moreOpen}
+          onClose={() => setMoreOpen(false)}
+          title="더보기"
+          mobileVariant="sheet"
+        >
+          <nav className="flex flex-col gap-1 pb-2" aria-label="추가 메뉴">
+            <Link
+              href="/dashboard/settings"
+              onClick={() => setMoreOpen(false)}
+              className={`flex items-center gap-2 rounded-lg px-3 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-zinc-800 ${
+                isActive('/dashboard/settings')
+                  ? 'bg-blue-50 dark:bg-blue-950/40'
+                  : ''
+              }`}
+            >
+              <SettingsIcon className="h-4 w-4" />
+              내정보 수정
+            </Link>
+            <SignOutButton variant="menu" />
+          </nav>
+        </ResponsiveOverlay>
+      </>
     );
   }
 

@@ -45,10 +45,6 @@ export default function SubjectTagPresetsSection() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    reload();
-  }, [reload]);
-
-  useEffect(() => {
     setDraftSubjects(cloneSubjects(subjects));
   }, [subjects]);
 

@@ -1,6 +1,7 @@
 import type { EventInput } from '@fullcalendar/core';
 
 import type { ExpandedStudyPlanTodoEvent, PlanSubjectKey, StudyPlanTodo } from '@/lib/study-plan-todo';
+import type { UserSubject } from '@/lib/user-subject';
 
 export const STUDY_PLAN_TODO_INCLUDE = {
   calendar: 'events,meta',
@@ -37,6 +38,7 @@ export interface StudyPlanTodosApiResponse {
   todos?: StudyPlanTodo[];
   events?: EventInput[];
   expandedEvents?: ExpandedStudyPlanTodoEvent[];
+  subjects?: UserSubject[] | null;
   error?: string;
 }
 

@@ -5,7 +5,9 @@ import {
   buildStudentCachePrefix,
   createRangeQueryCache,
 } from '@/lib/range-query-cache';
+import { publishProfileSubjects } from '@/lib/profile-subjects-store';
 import type { ExpandedStudyPlanTodoEvent, StudyPlanTodo } from '@/lib/study-plan-todo';
+import type { UserSubject } from '@/lib/user-subject';
 import {
   buildStudyPlanTodosSearchParams,
   fetchStudyPlanTodosInRange,
@@ -20,12 +22,14 @@ export interface StudyPlanTodoRangeData {
   todos: StudyPlanTodo[];
   events: EventInput[];
   expandedEvents: ExpandedStudyPlanTodoEvent[];
+  subjects?: UserSubject[] | null;
 }
 
 async function fetchStudyPlanTodosFromApi(
   start: string,
   end: string,
-  withStudent: (url: string) => string
+  withStudent: (url: string) => string,
+  studentUserId: number | null
 ): Promise<StudyPlanTodoRangeData> {
   const params = buildStudyPlanTodosSearchParams({
     start,
@@ -40,10 +44,16 @@ async function fetchStudyPlanTodosFromApi(
     throw new Error(result.error);
   }
 
+  const subjects = result.data.subjects ?? null;
+  if (subjects) {
+    publishProfileSubjects(studentUserId, subjects);
+  }
+
   return {
     todos: result.data.todos ?? [],
     events: result.data.events ?? [],
     expandedEvents: result.data.expandedEvents ?? [],
+    subjects,
   };
 }
 
@@ -81,7 +91,7 @@ export async function getStudyPlanTodosInRange(
   return cache.getOrFetch(
     key,
     studentPrefix,
-    () => fetchStudyPlanTodosFromApi(options.start, options.end, withStudent),
+    () => fetchStudyPlanTodosFromApi(options.start, options.end, withStudent, options.studentUserId),
     fetchOptions
   );
 }

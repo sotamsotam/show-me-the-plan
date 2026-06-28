@@ -1,3 +1,4 @@
+import { appendStudentUserIdToPath } from '@/lib/api-student-query';
 import { getServerStrapiJwt } from '@/lib/auth';
 import { strapiFetch } from '@/lib/strapi';
 import { NextRequest, NextResponse } from 'next/server';
@@ -9,7 +10,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 });
   }
 
-  const res = await strapiFetch('/api/user-profiles/subjects', { jwt });
+  const path = appendStudentUserIdToPath('/api/user-profiles/subjects', request);
+  const res = await strapiFetch(path, { jwt });
   const data = await res.json();
 
   if (!res.ok) {

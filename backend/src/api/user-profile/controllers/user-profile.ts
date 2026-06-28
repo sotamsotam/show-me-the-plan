@@ -16,6 +16,7 @@ import {
 } from '../../../services/user-subject-validation';
 import {
   isApprovedManager,
+  resolveOwnerFromContext,
   resolveTargetUserId,
 } from '../../../services/manager-access';
 import {
@@ -273,13 +274,20 @@ function toStudentSchoolProfileForSeed(profile: {
 
 async function findStudentProfileForSubjects(
   strapi: Core.Strapi,
-  userId: number
+  userId: number,
+  studentUserId?: string | number | null
 ): Promise<
   | { profile: { id: number; documentId?: string; schoolLevel: string; subjects?: unknown } }
   | { error: string; status: 400 | 403 }
 > {
+  const target = await resolveTargetUserId(strapi, userId, studentUserId);
+
+  if ('error' in target) {
+    return { error: target.error, status: 403 };
+  }
+
   const profile = await strapi.db.query('api::user-profile.user-profile').findOne({
-    where: { user: userId },
+    where: { user: target.userId },
   });
 
   if (!profile) {
@@ -1999,16 +2007,28 @@ export default factories.createCoreController(
         return ctx.unauthorized('로그인이 필요합니다.');
       }
 
-      const result = await findStudentProfileForSubjects(strapi, user.id);
+      const owner = await resolveOwnerFromContext(strapi, ctx);
 
-      if ('error' in result) {
-        return result.status === 403
-          ? ctx.forbidden(result.error)
-          : ctx.badRequest(result.error);
+      if ('error' in owner) {
+        return owner.status === 401
+          ? ctx.unauthorized(owner.error)
+          : ctx.forbidden(owner.error);
+      }
+
+      const profile = await strapi.db.query('api::user-profile.user-profile').findOne({
+        where: { user: owner.userId },
+      });
+
+      if (!profile) {
+        return ctx.badRequest('프로필이 없습니다.');
+      }
+
+      if (!isAnyStudentSchoolLevel(profile.schoolLevel)) {
+        return ctx.forbidden('학생 계정만 과목 설정을 사용할 수 있습니다.');
       }
 
       return ctx.send({
-        subjects: resolveProfileSubjects(result.profile.subjects ?? null),
+        subjects: resolveProfileSubjects(profile.subjects ?? null),
       });
     },
 
