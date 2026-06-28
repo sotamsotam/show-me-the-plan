@@ -4,6 +4,7 @@ import { getToken } from 'next-auth/jwt';
 import { cookies } from 'next/headers';
 import type { NextRequest } from 'next/server';
 import { buildSubscriptionSession } from '@/lib/subscription-access';
+import { verifyTurnstileToken } from '@/lib/turnstile';
 import type { AccountInfo } from '@/types/school';
 
 const STRAPI_URL = process.env.STRAPI_URL ?? 'http://localhost:1337';
@@ -34,10 +35,18 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         identifier: { label: 'Email or Username', type: 'text' },
         password: { label: 'Password', type: 'password' },
+        turnstileToken: { label: 'Turnstile Token', type: 'text' },
       },
       async authorize(credentials) {
         if (!credentials?.identifier || !credentials?.password) {
           return null;
+        }
+
+        const turnstileResult = await verifyTurnstileToken(
+          credentials.turnstileToken
+        );
+        if (!turnstileResult.ok) {
+          throw new Error(turnstileResult.message);
         }
 
         const res = await fetch(`${STRAPI_URL}/api/auth/local`, {

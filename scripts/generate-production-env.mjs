@@ -107,10 +107,14 @@ VAPID_PUBLIC_KEY=${vapid.publicKey}
 VAPID_PRIVATE_KEY=${vapid.privateKey}
 VAPID_SUBJECT=mailto:support@showmepl.com
 
+# ── Cloudflare Turnstile (Next.js BFF runtime) ───────────────────
+TURNSTILE_SECRET_KEY=REPLACE_TURNSTILE_SECRET_KEY
+
 # ── Upload storage ───────────────────────────────────────────────
 UPLOAD_PROVIDER=local
 
 # ── Frontend build-time (NEXT_PUBLIC_*) ──────────────────────────
+NEXT_PUBLIC_TURNSTILE_SITE_KEY=REPLACE_TURNSTILE_SITE_KEY
 NEXT_PUBLIC_STRAPI_URL=${baseUrl}
 NEXT_PUBLIC_CONTACT_EMAIL=support@showmepl.com
 NEXT_PUBLIC_REPRESENTATIVE_NAME=REPLACE_REPRESENTATIVE_NAME

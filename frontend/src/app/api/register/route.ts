@@ -1,11 +1,27 @@
 import { NextResponse } from 'next/server';
+import {
+  getRequestClientIp,
+  verifyTurnstileToken,
+} from '@/lib/turnstile';
 
 const STRAPI_URL = process.env.STRAPI_URL ?? 'http://localhost:1337';
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { username, email, password, profile, consents } = body;
+    const { username, email, password, profile, consents, turnstileToken } =
+      body;
+
+    const turnstileResult = await verifyTurnstileToken(
+      turnstileToken,
+      getRequestClientIp(request)
+    );
+    if (!turnstileResult.ok) {
+      return NextResponse.json(
+        { error: turnstileResult.message },
+        { status: 400 }
+      );
+    }
 
     if (!username || !email || !password) {
       return NextResponse.json(

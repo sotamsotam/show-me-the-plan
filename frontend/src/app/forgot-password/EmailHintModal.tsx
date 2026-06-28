@@ -1,6 +1,12 @@
 'use client';
 
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useEffect, useRef, useState } from 'react';
+import type { TurnstileInstance } from '@marsidev/react-turnstile';
+import TurnstileWidget from '@/components/TurnstileWidget';
+import {
+  isTurnstileWidgetEnabled,
+  TURNSTILE_VERIFICATION_FAILED_MESSAGE,
+} from '@/lib/turnstile-client';
 
 interface EmailHintModalProps {
   open: boolean;
@@ -12,6 +18,9 @@ export default function EmailHintModal({ open, onClose }: EmailHintModalProps) {
   const [error, setError] = useState('');
   const [maskedEmail, setMaskedEmail] = useState('');
   const [loading, setLoading] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileInstance>(null);
+  const turnstileRequired = isTurnstileWidgetEnabled();
 
   useEffect(() => {
     if (open) {
@@ -19,6 +28,8 @@ export default function EmailHintModal({ open, onClose }: EmailHintModalProps) {
       setError('');
       setMaskedEmail('');
       setLoading(false);
+      setTurnstileToken(null);
+      turnstileRef.current?.reset();
     }
   }, [open]);
 
@@ -30,12 +41,18 @@ export default function EmailHintModal({ open, onClose }: EmailHintModalProps) {
     event.preventDefault();
     setError('');
     setMaskedEmail('');
+
+    if (turnstileRequired && !turnstileToken) {
+      setError(TURNSTILE_VERIFICATION_FAILED_MESSAGE);
+      return;
+    }
+
     setLoading(true);
 
     const res = await fetch('/api/auth/email-hint', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username }),
+      body: JSON.stringify({ username, turnstileToken }),
     });
 
     const data = await res.json();
@@ -43,6 +60,8 @@ export default function EmailHintModal({ open, onClose }: EmailHintModalProps) {
 
     if (!res.ok) {
       setError(data.error ?? '입력하신 닉네임과 일치하는 계정을 찾을 수 없습니다.');
+      setTurnstileToken(null);
+      turnstileRef.current?.reset();
       return;
     }
 
@@ -109,6 +128,13 @@ export default function EmailHintModal({ open, onClose }: EmailHintModalProps) {
 
             {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
+            <TurnstileWidget
+              ref={turnstileRef}
+              onTokenChange={setTurnstileToken}
+              onError={() => setError(TURNSTILE_VERIFICATION_FAILED_MESSAGE)}
+              className="flex justify-center"
+            />
+
             <div className="flex gap-2">
               <button
                 type="button"
@@ -119,7 +145,7 @@ export default function EmailHintModal({ open, onClose }: EmailHintModalProps) {
               </button>
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || (turnstileRequired && !turnstileToken)}
                 className="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
               >
                 {loading ? '확인 중...' : '이메일 확인'}

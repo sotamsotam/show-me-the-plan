@@ -3,10 +3,12 @@
 import { signIn } from 'next-auth/react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { FormEvent, useCallback, useEffect, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
+import type { TurnstileInstance } from '@marsidev/react-turnstile';
 import PasswordInput from '@/components/PasswordInput';
 import SignupConsentSection from '@/components/SignupConsentSection';
 import SiteFooter from '@/components/SiteFooter';
+import TurnstileWidget from '@/components/TurnstileWidget';
 import {
   createSignupConsentsPayload,
   validateSignupConsentsClient,
@@ -21,6 +23,7 @@ import {
   isOtherStudent,
 } from '@/types/school';
 import { getDefaultDashboardPathFromAccount } from '@/lib/account-helpers';
+import { isTurnstileWidgetEnabled, TURNSTILE_VERIFICATION_FAILED_MESSAGE } from '@/lib/turnstile-client';
 import { SERVICE_NAME } from '@/content/marketing/common';
 
 const inputClassName =
@@ -50,6 +53,12 @@ export default function SignupForm() {
   const [termsAgreed, setTermsAgreed] = useState(false);
   const [privacyAgreed, setPrivacyAgreed] = useState(false);
   const [guardianConsentConfirmed, setGuardianConsentConfirmed] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileInstance>(null);
+  const pendingAutoLoginRef = useRef<{ email: string; password: string } | null>(
+    null
+  );
+  const turnstileRequired = isTurnstileWidgetEnabled();
 
   const isManagerSignup = schoolLevel === 'manager';
   const isOtherStudentSignup = isOtherStudent(schoolLevel);
@@ -145,6 +154,58 @@ export default function SignupForm() {
     }
   }
 
+  function handleTurnstileTokenChange(token: string | null) {
+    setTurnstileToken(token);
+
+    const pendingAutoLogin = pendingAutoLoginRef.current;
+    if (pendingAutoLogin && token) {
+      pendingAutoLoginRef.current = null;
+      void completeAutoLogin(pendingAutoLogin.email, pendingAutoLogin.password, token);
+    }
+  }
+
+  async function completeAutoLogin(
+    loginEmail: string,
+    loginPassword: string,
+    token: string
+  ) {
+    const loginResult = await signIn('credentials', {
+      identifier: loginEmail,
+      password: loginPassword,
+      turnstileToken: token,
+      redirect: false,
+    });
+
+    setLoading(false);
+
+    if (loginResult?.error) {
+      router.push('/login?registered=true');
+      return;
+    }
+
+    try {
+      const profileRes = await fetch('/api/profile/me', { credentials: 'include' });
+      const profileData = await profileRes.json();
+
+      if (profileRes.ok) {
+        const account: AccountInfo = {
+          user: profileData.user ?? null,
+          role: profileData.role ?? null,
+          profile: profileData.profile ?? null,
+        };
+
+        router.push(getDefaultDashboardPathFromAccount(account));
+        router.refresh();
+        return;
+      }
+    } catch {
+      // fallback below
+    }
+
+    router.push(isManagerSignup ? '/dashboard/pending' : '/dashboard/todo');
+    router.refresh();
+  }
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError('');
@@ -187,12 +248,24 @@ export default function SignupForm() {
       };
     }
 
+    if (turnstileRequired && !turnstileToken) {
+      setError(TURNSTILE_VERIFICATION_FAILED_MESSAGE);
+      return;
+    }
+
     setLoading(true);
 
     const res = await fetch('/api/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, email, password, profile, consents }),
+      body: JSON.stringify({
+        username,
+        email,
+        password,
+        profile,
+        consents,
+        turnstileToken,
+      }),
     });
 
     const data = await res.json();
@@ -200,12 +273,22 @@ export default function SignupForm() {
     if (!res.ok) {
       setLoading(false);
       setError(data.error ?? '회원가입에 실패했습니다.');
+      setTurnstileToken(null);
+      turnstileRef.current?.reset();
+      return;
+    }
+
+    if (turnstileRequired) {
+      pendingAutoLoginRef.current = { email, password };
+      setTurnstileToken(null);
+      turnstileRef.current?.reset();
       return;
     }
 
     const loginResult = await signIn('credentials', {
       identifier: email,
       password,
+      turnstileToken,
       redirect: false,
     });
 
@@ -463,9 +546,20 @@ export default function SignupForm() {
             onGuardianConsentConfirmedChange={setGuardianConsentConfirmed}
           />
 
+          <TurnstileWidget
+            ref={turnstileRef}
+            onTokenChange={handleTurnstileTokenChange}
+            onError={() => setError(TURNSTILE_VERIFICATION_FAILED_MESSAGE)}
+            className="flex justify-center"
+          />
+
           <button
             type="submit"
-            disabled={loading || !isSchoolSupported}
+            disabled={
+              loading ||
+              !isSchoolSupported ||
+              (turnstileRequired && !turnstileToken)
+            }
             className={submitButtonClassName}
           >
             {loading ? '가입 중...' : '회원가입'}

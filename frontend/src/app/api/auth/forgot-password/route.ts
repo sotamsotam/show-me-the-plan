@@ -1,4 +1,8 @@
 import { NextResponse } from 'next/server';
+import {
+  getRequestClientIp,
+  verifyTurnstileToken,
+} from '@/lib/turnstile';
 
 const STRAPI_URL = process.env.STRAPI_URL ?? 'http://localhost:1337';
 
@@ -8,7 +12,18 @@ const SUCCESS_MESSAGE =
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { email } = body;
+    const { email, turnstileToken } = body;
+
+    const turnstileResult = await verifyTurnstileToken(
+      turnstileToken,
+      getRequestClientIp(request)
+    );
+    if (!turnstileResult.ok) {
+      return NextResponse.json(
+        { error: turnstileResult.message },
+        { status: 400 }
+      );
+    }
 
     if (!email || typeof email !== 'string' || !email.trim()) {
       return NextResponse.json({ error: '이메일은 필수입니다.' }, { status: 400 });

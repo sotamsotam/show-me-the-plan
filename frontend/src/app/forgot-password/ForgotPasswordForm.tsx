@@ -2,7 +2,13 @@
 
 import EmailHintModal from '@/app/forgot-password/EmailHintModal';
 import Link from 'next/link';
-import { FormEvent, useState } from 'react';
+import { FormEvent, useRef, useState } from 'react';
+import type { TurnstileInstance } from '@marsidev/react-turnstile';
+import TurnstileWidget from '@/components/TurnstileWidget';
+import {
+  isTurnstileWidgetEnabled,
+  TURNSTILE_VERIFICATION_FAILED_MESSAGE,
+} from '@/lib/turnstile-client';
 
 export default function ForgotPasswordForm() {
   const [email, setEmail] = useState('');
@@ -10,17 +16,26 @@ export default function ForgotPasswordForm() {
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const [emailHintOpen, setEmailHintOpen] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileInstance>(null);
+  const turnstileRequired = isTurnstileWidgetEnabled();
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError('');
     setSuccess('');
+
+    if (turnstileRequired && !turnstileToken) {
+      setError(TURNSTILE_VERIFICATION_FAILED_MESSAGE);
+      return;
+    }
+
     setLoading(true);
 
     const res = await fetch('/api/auth/forgot-password', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({ email, turnstileToken }),
     });
 
     const data = await res.json();
@@ -28,11 +43,15 @@ export default function ForgotPasswordForm() {
 
     if (!res.ok) {
       setError(data.error ?? '요청 처리에 실패했습니다.');
+      setTurnstileToken(null);
+      turnstileRef.current?.reset();
       return;
     }
 
     setSuccess(data.message ?? '등록된 이메일이면 비밀번호 재설정 안내 메일을 보냈습니다.');
     setEmail('');
+    setTurnstileToken(null);
+    turnstileRef.current?.reset();
   }
 
   return (
@@ -66,9 +85,16 @@ export default function ForgotPasswordForm() {
             </p>
           )}
 
+          <TurnstileWidget
+            ref={turnstileRef}
+            onTokenChange={setTurnstileToken}
+            onError={() => setError(TURNSTILE_VERIFICATION_FAILED_MESSAGE)}
+            className="flex justify-center"
+          />
+
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || (turnstileRequired && !turnstileToken)}
             className="w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
           >
             {loading ? '전송 중...' : '재설정 링크 보내기'}

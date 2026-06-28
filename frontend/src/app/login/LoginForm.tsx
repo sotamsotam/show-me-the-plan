@@ -3,12 +3,15 @@
 import { signIn } from 'next-auth/react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
+import type { TurnstileInstance } from '@marsidev/react-turnstile';
 import type { AccountInfo } from '@/types/school';
 import { getDefaultDashboardPathFromAccount, isSafeInternalCallbackPath } from '@/lib/account-helpers';
 import PasswordInput from '@/components/PasswordInput';
 import SiteFooter from '@/components/SiteFooter';
+import TurnstileWidget from '@/components/TurnstileWidget';
+import { isTurnstileWidgetEnabled, TURNSTILE_VERIFICATION_FAILED_MESSAGE } from '@/lib/turnstile-client';
 import { SERVICE_NAME } from '@/content/marketing/common';
-import { FormEvent, useState } from 'react';
+import { FormEvent, useRef, useState } from 'react';
 
 const inputClassName =
   'w-full rounded-xl border border-gray-200 bg-gray-50/80 px-3.5 py-2.5 text-sm text-gray-900 outline-none transition-[border-color,box-shadow,background-color] placeholder:text-gray-400 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10';
@@ -24,22 +27,38 @@ export default function LoginForm() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileInstance>(null);
+  const turnstileRequired = isTurnstileWidgetEnabled();
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError('');
+
+    if (turnstileRequired && !turnstileToken) {
+      setError(TURNSTILE_VERIFICATION_FAILED_MESSAGE);
+      return;
+    }
+
     setLoading(true);
 
     const result = await signIn('credentials', {
       identifier,
       password,
+      turnstileToken,
       redirect: false,
     });
 
     setLoading(false);
 
     if (result?.error) {
-      setError('이메일/사용자명 또는 비밀번호가 올바르지 않습니다.');
+      if (result.error === TURNSTILE_VERIFICATION_FAILED_MESSAGE) {
+        setError(result.error);
+      } else {
+        setError('이메일/사용자명 또는 비밀번호가 올바르지 않습니다.');
+      }
+      setTurnstileToken(null);
+      turnstileRef.current?.reset();
       return;
     }
 
@@ -158,9 +177,18 @@ export default function LoginForm() {
                 </p>
               )}
 
+              <TurnstileWidget
+                ref={turnstileRef}
+                onTokenChange={setTurnstileToken}
+                onError={() => setError(TURNSTILE_VERIFICATION_FAILED_MESSAGE)}
+                className="flex justify-center"
+              />
+
               <button
                 type="submit"
-                disabled={loading}
+                disabled={
+                  loading || (turnstileRequired && !turnstileToken)
+                }
                 className="w-full rounded-xl bg-gradient-to-r from-[#1d4ed8] to-[#2d5080] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_8px_24px_rgba(29,78,216,0.28)] transition-[transform,opacity,box-shadow] hover:shadow-[0_10px_28px_rgba(29,78,216,0.36)] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {loading ? '로그인 중...' : '로그인'}
