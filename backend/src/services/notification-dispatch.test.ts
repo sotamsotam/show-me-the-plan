@@ -99,24 +99,25 @@ describe('processDueNotifications', () => {
   it('sends push for due rows and finalizes the queue row', async () => {
     const notificationUpdate = vi.fn(async () => ({}));
     const notificationCreate = vi.fn(async () => ({}));
+    const notificationFindMany = vi.fn(async () => [
+      {
+        id: 1,
+        user: 10,
+        todo: 5,
+        occurrenceDate: '2026-06-24',
+        titleSnapshot: '문제집',
+        subjectSnapshot: '수학',
+        sendAt: '2026-06-24T10:00:00.000Z',
+        sent: false,
+      },
+    ]);
 
     const strapi = {
       db: {
         query: vi.fn((uid: string) => {
           if (uid === NOTIFICATION_UID) {
             return {
-              findMany: vi.fn(async () => [
-                {
-                  id: 1,
-                  user: 10,
-                  todo: 5,
-                  occurrenceDate: '2026-06-24',
-                  titleSnapshot: '문제집',
-                  subjectSnapshot: '수학',
-                  sendAt: '2026-06-24T10:00:00.000Z',
-                  sent: false,
-                },
-              ]),
+              findMany: notificationFindMany,
               findOne: vi.fn(async ({ where }: { where: { sent?: boolean } }) =>
                 where.sent === false ? [] : null
               ),
@@ -174,6 +175,11 @@ describe('processDueNotifications', () => {
       skipped: 0,
       pushDeliveries: 1,
     });
+    expect(notificationFindMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        populate: ['user', 'todo'],
+      })
+    );
     expect(notificationUpdate).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { id: 1 },

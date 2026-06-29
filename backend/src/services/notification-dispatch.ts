@@ -161,6 +161,7 @@ export async function processDueNotifications(
       sent: false,
       sendAt: { $lte: now },
     },
+    populate: ['user', 'todo'],
     orderBy: { sendAt: 'asc' },
     limit,
   });
