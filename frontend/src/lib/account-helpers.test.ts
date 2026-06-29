@@ -47,13 +47,13 @@ describe('getDefaultDashboardPathFromSession', () => {
     ).toBe('/dashboard/pending');
   });
 
-  it('routes approved managers to students dashboard', () => {
+  it('routes approved managers to overview dashboard', () => {
     expect(
       getDefaultDashboardPathFromSession({
         schoolLevel: 'manager',
         managerStatus: 'approved',
       })
-    ).toBe('/dashboard/students');
+    ).toBe('/dashboard');
   });
 
   it('routes students to todo dashboard', () => {

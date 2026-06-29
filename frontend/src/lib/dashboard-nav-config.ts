@@ -23,8 +23,8 @@ export const STUDENT_MORE_ITEMS = [
 ] as const;
 
 export const MANAGER_NAV_ITEMS = [
-  { href: '/dashboard/students', label: '학생별 관리', shortLabel: '학생관리', exact: true },
   { href: '/dashboard', label: '학생별 공부현황', shortLabel: '공부현황', exact: true },
+  { href: '/dashboard/students', label: '학생별 관리', shortLabel: '학생관리', exact: true },
   {
     href: '/dashboard/manager-guide',
     label: '메니저 사용법',

@@ -113,12 +113,12 @@ export default function ManagerDashboard() {
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="font-medium">{student.username}</p>
                       <StudentSubscriptionBadge isAccessAllowed={student.isAccessAllowed} />
+                      <p className="text-sm text-gray-600 dark:text-gray-300">
+                        {formatSchoolInfo(student)}
+                      </p>
                     </div>
                     <p className="text-sm text-gray-600 dark:text-gray-300">
                       {student.email}
-                    </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-300">
-                      {formatSchoolInfo(student)}
                     </p>
                   </div>
                   <div className="mt-3 border-t border-gray-100 pt-3 dark:border-neutral-800">

@@ -31,7 +31,7 @@ const STUDENT_TAB_ICONS = [
   ExecutionNavIcon,
 ] as const;
 
-const MANAGER_TAB_ICONS = [StudentsNavIcon, OverviewNavIcon, ManagerGuideNavIcon] as const;
+const MANAGER_TAB_ICONS = [OverviewNavIcon, StudentsNavIcon, ManagerGuideNavIcon] as const;
 
 interface DashboardBottomNavProps {
   variant: 'student' | 'manager';

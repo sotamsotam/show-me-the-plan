@@ -144,7 +144,7 @@ export default function DashboardNav({
   const homeHref = pendingManager
     ? '/dashboard/pending'
     : approvedManager
-      ? '/dashboard/students'
+      ? '/dashboard'
       : '/dashboard/todo';
 
   const userLabel = formatUserLabel(account, session?.user.username);

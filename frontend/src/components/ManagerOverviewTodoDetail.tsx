@@ -21,6 +21,7 @@ interface ManagerOverviewTodoDetailProps {
   stamp?: TodoDayStamp | null;
   inline?: boolean;
   onStampSaved?: (stamp: TodoDayStamp) => void;
+  onCloseDetail?: () => void;
 }
 
 export default function ManagerOverviewTodoDetail({
@@ -30,6 +31,7 @@ export default function ManagerOverviewTodoDetail({
   stamp = null,
   inline = false,
   onStampSaved,
+  onCloseDetail,
 }: ManagerOverviewTodoDetailProps) {
   const [modalOpen, setModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -69,26 +71,13 @@ export default function ManagerOverviewTodoDetail({
             : 'border-t border-gray-200 bg-gray-50 px-4 py-5 dark:border-neutral-800 dark:bg-zinc-900/50 md:px-6'
         }
       >
-        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
-              {student.username} · {formatOccurrenceDateLabel(date)} TODO 상세
-            </h3>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              과목별 계획·실행 시간과 실행률을 확인할 수 있습니다.
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => {
-              setError('');
-              setModalOpen(true);
-            }}
-            className="shrink-0 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-          >
-            확인도장
-          </button>
+        <div className="mb-4">
+          <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+            {student.username} · {formatOccurrenceDateLabel(date)} TODO 상세
+          </h3>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            과목별 계획·실행 시간과 실행률을 확인할 수 있습니다.
+          </p>
         </div>
 
         {stamp ? (
@@ -103,12 +92,6 @@ export default function ManagerOverviewTodoDetail({
               </p>
             </div>
           </div>
-        ) : null}
-
-        {error ? (
-          <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300">
-            {error}
-          </p>
         ) : null}
 
         {totalItems === 0 ? (
@@ -128,12 +111,12 @@ export default function ManagerOverviewTodoDetail({
                       key={item.id}
                       className="rounded-lg border border-gray-200 bg-white p-3 dark:border-neutral-700 dark:bg-zinc-900"
                     >
-                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0 flex-1">
                           <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                             {item.title}
                           </p>
-                          <dl className="mt-2 grid gap-1 text-xs text-gray-600 dark:text-gray-300 sm:grid-cols-3">
+                          <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-gray-600 dark:text-gray-300">
                             <div>
                               <dt className="text-gray-500 dark:text-gray-400">계획</dt>
                               <dd className="font-medium tabular-nums">
@@ -149,27 +132,23 @@ export default function ManagerOverviewTodoDetail({
                                   : '-'}
                               </dd>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <dt className="shrink-0 text-gray-500 dark:text-gray-400">
-                                실행률
-                              </dt>
-                              <dd className="mb-0 min-w-0 flex-1">
-                                <ExecutionRateBar
-                                  rate={item.timeRate}
-                                  className="mx-0 max-w-[300px]"
-                                />
-                              </dd>
-                            </div>
                           </dl>
                         </div>
-                        <div className="flex shrink-0 flex-col items-center justify-center gap-1.5 self-stretch">
+                        <div className="flex shrink-0 flex-col items-center gap-1.5">
                           <span
                             className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap ${TODO_DETAIL_BADGE_STYLES[item.badgeStatus]}`}
                           >
                             {item.badgeLabel}
                           </span>
-                          <ExecutionStatusCheckbox status={item.badgeStatus} />
+                          <ExecutionStatusCheckbox status={item.badgeStatus} size="sm" />
                         </div>
+                      </div>
+                      <div className="mt-2">
+                        <p className="mb-1 text-xs text-gray-500 dark:text-gray-400">실행률</p>
+                        <ExecutionRateBar
+                          rate={item.timeRate}
+                          className="mx-0 max-w-none"
+                        />
                       </div>
                     </li>
                   ))}
@@ -178,6 +157,34 @@ export default function ManagerOverviewTodoDetail({
             ))}
           </div>
         )}
+
+        {error ? (
+          <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300">
+            {error}
+          </p>
+        ) : null}
+
+        <div className="mt-4 border-t border-gray-200 pt-4 dark:border-neutral-700">
+          <button
+            type="button"
+            onClick={() => {
+              setError('');
+              setModalOpen(true);
+            }}
+            className="w-full rounded-lg bg-[#1b76e0] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#1668c7] sm:w-auto sm:py-2"
+          >
+            확인도장
+          </button>
+          {onCloseDetail ? (
+            <button
+              type="button"
+              onClick={onCloseDetail}
+              className="mt-2 w-full rounded-lg border border-gray-300 bg-gray-100 px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200 dark:border-neutral-600 dark:bg-zinc-800 dark:text-gray-200 dark:hover:bg-zinc-700"
+            >
+              닫기
+            </button>
+          ) : null}
+        </div>
       </div>
 
       <TodoDayStampModal

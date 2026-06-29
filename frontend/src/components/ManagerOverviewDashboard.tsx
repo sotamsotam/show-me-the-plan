@@ -6,7 +6,9 @@ import ManagerOverviewTodoDetail from '@/components/ManagerOverviewTodoDetail';
 import {
   buildStudentDailyTodoData,
   buildTodosById,
+  formatRatePercent,
   type StudentDailyTodoData,
+  type StudentDailyTodoStats,
 } from '@/lib/manager-daily-stats';
 import StudentSubscriptionBadge from '@/components/StudentSubscriptionBadge';
 import {
@@ -52,7 +54,8 @@ async function fetchStudentDailyData(
   const daily = buildStudentDailyTodoData(
     todoData.expandedEvents ?? [],
     buildTodosById(todoData.todos),
-    date
+    date,
+    todoData.subjects
   );
   const stamp = stampResult.ok
     ? findTodoDayStampForDate(stampResult.stamps, date) ?? null
@@ -72,10 +75,12 @@ function formatSchoolInfo(student: ManagedStudent): string {
 function DetailToggleButton({
   isDetailOpen,
   disabled = false,
+  fullWidth = false,
   onClick,
 }: {
   isDetailOpen: boolean;
   disabled?: boolean;
+  fullWidth?: boolean;
   onClick?: () => void;
 }) {
   return (
@@ -84,15 +89,17 @@ function DetailToggleButton({
       onClick={onClick}
       disabled={disabled}
       aria-expanded={isDetailOpen}
-      className={`rounded-lg px-3 py-1.5 text-xs font-medium ${
+      className={`rounded-lg font-medium transition-colors ${
+        fullWidth ? 'w-full py-2.5 text-sm' : 'px-3 py-1.5 text-xs'
+      } ${
         disabled
           ? 'border border-gray-200 text-gray-400 dark:border-neutral-700'
           : isDetailOpen
-            ? 'bg-blue-600 text-white'
-            : 'border border-gray-300 hover:bg-gray-50 dark:border-neutral-700 dark:hover:bg-zinc-800'
+            ? 'border border-gray-300 bg-gray-100 text-gray-700 hover:bg-gray-200 dark:border-neutral-600 dark:bg-zinc-800 dark:text-gray-200 dark:hover:bg-zinc-700'
+            : 'bg-[#1b76e0] text-white hover:bg-[#1668c7]'
       }`}
     >
-      {isDetailOpen ? '닫기' : '선택'}
+      {isDetailOpen ? '닫기' : '자세히 보기'}
     </button>
   );
 }
@@ -104,6 +111,52 @@ interface ManagerOverviewStudentRowProps {
   selectedDate: string;
   onToggleDetail: (userId: number) => void;
   onStampSaved: (userId: number, stamp: TodoDayStamp) => void;
+}
+
+function ManagerOverviewMobileStats({ stats }: { stats?: StudentDailyTodoStats }) {
+  return (
+    <div className="mt-3 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-neutral-700 dark:bg-zinc-900/80">
+      <div className="grid grid-cols-2 divide-x divide-gray-100 dark:divide-neutral-800">
+        <div className="px-3 py-3.5 text-center">
+          <p className="text-[11px] font-medium tracking-wide text-gray-500 uppercase dark:text-gray-400">
+            계획 TODO
+          </p>
+          <p className="mt-1 text-2xl font-semibold tabular-nums leading-none text-gray-900 dark:text-gray-100">
+            {stats?.totalTodos ?? '-'}
+          </p>
+        </div>
+        <div className="px-3 py-3.5 text-center">
+          <p className="text-[11px] font-medium tracking-wide text-gray-500 uppercase dark:text-gray-400">
+            실행 완료
+          </p>
+          <p className="mt-1 text-2xl font-semibold tabular-nums leading-none text-gray-900 dark:text-gray-100">
+            {stats?.executedTodos ?? '-'}
+          </p>
+        </div>
+      </div>
+
+      <div className="space-y-3 border-t border-gray-100 px-3 py-3 dark:border-neutral-800">
+        <div>
+          <div className="mb-1.5 flex items-center justify-between gap-2">
+            <span className="text-xs font-medium text-gray-600 dark:text-gray-300">건수 실행률</span>
+            <span className="text-xs font-semibold tabular-nums text-gray-900 dark:text-gray-100">
+              {formatRatePercent(stats?.countRate ?? null)}
+            </span>
+          </div>
+          <ExecutionRateBar rate={stats?.countRate ?? null} className="mx-0 max-w-none" />
+        </div>
+        <div>
+          <div className="mb-1.5 flex items-center justify-between gap-2">
+            <span className="text-xs font-medium text-gray-600 dark:text-gray-300">시간 실행률</span>
+            <span className="text-xs font-semibold tabular-nums text-gray-900 dark:text-gray-100">
+              {formatRatePercent(stats?.timeRate ?? null)}
+            </span>
+          </div>
+          <ExecutionRateBar rate={stats?.timeRate ?? null} className="mx-0 max-w-none" />
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function ManagerOverviewStudentMobileCard({
@@ -124,55 +177,28 @@ function ManagerOverviewStudentMobileCard({
           : 'px-4 py-4 max-[360px]:px-3'
       }
     >
-      <div className="space-y-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <p className="font-medium text-gray-900 dark:text-gray-100">{student.username}</p>
-          <StudentSubscriptionBadge isAccessAllowed={student.isAccessAllowed} compact />
-        </div>
-        <p className="text-xs text-gray-500 dark:text-gray-400">
-          {formatManagedStudentLabel(student)}
-        </p>
+      <div className="flex flex-wrap items-center gap-2">
+        <p className="font-medium text-gray-900 dark:text-gray-100">{student.username}</p>
+        <StudentSubscriptionBadge isAccessAllowed={student.isAccessAllowed} compact />
         <p className="text-sm text-gray-600 dark:text-gray-300">{formatSchoolInfo(student)}</p>
       </div>
 
       {rowData?.error ? (
         <p className="mt-3 text-sm text-red-600 dark:text-red-400">{rowData.error}</p>
       ) : (
-        <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3">
-          <div>
-            <dt className="text-xs text-gray-500 dark:text-gray-400">TODO</dt>
-            <dd className="mt-0.5 text-sm font-medium tabular-nums text-gray-900 dark:text-gray-100">
-              {stats?.totalTodos ?? '-'}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-xs text-gray-500 dark:text-gray-400">실행</dt>
-            <dd className="mt-0.5 text-sm font-medium tabular-nums text-gray-900 dark:text-gray-100">
-              {stats?.executedTodos ?? '-'}
-            </dd>
-          </div>
-          <div className="col-span-2">
-            <dt className="mb-1 text-xs text-gray-500 dark:text-gray-400">건수 실행률</dt>
-            <dd>
-              <ExecutionRateBar rate={stats?.countRate ?? null} className="mx-0 max-w-none" />
-            </dd>
-          </div>
-          <div className="col-span-2">
-            <dt className="mb-1 text-xs text-gray-500 dark:text-gray-400">시간 실행률</dt>
-            <dd>
-              <ExecutionRateBar rate={stats?.timeRate ?? null} className="mx-0 max-w-none" />
-            </dd>
-          </div>
-        </dl>
+        <ManagerOverviewMobileStats stats={stats} />
       )}
 
-      <div className="mt-3 border-t border-gray-100 pt-3 dark:border-neutral-800">
-        <DetailToggleButton
-          isDetailOpen={isDetailOpen}
-          disabled={Boolean(rowData?.error)}
-          onClick={() => onToggleDetail(student.userId)}
-        />
-      </div>
+      {!isDetailOpen ? (
+        <div className="mt-3 border-t border-gray-100 pt-3 dark:border-neutral-800">
+          <DetailToggleButton
+            isDetailOpen={false}
+            disabled={Boolean(rowData?.error)}
+            fullWidth
+            onClick={() => onToggleDetail(student.userId)}
+          />
+        </div>
+      ) : null}
 
       {isDetailOpen && rowData && !rowData.error ? (
         <div className="mt-4">
@@ -183,6 +209,7 @@ function ManagerOverviewStudentMobileCard({
             stamp={rowData.stamp ?? null}
             inline
             onStampSaved={(stamp) => onStampSaved(student.userId, stamp)}
+            onCloseDetail={() => onToggleDetail(student.userId)}
           />
         </div>
       ) : null}

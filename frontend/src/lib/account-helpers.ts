@@ -111,7 +111,7 @@ export function getDefaultDashboardPath(
     return '/dashboard/pending';
   }
   if (isApprovedManager(account)) {
-    return '/dashboard/students';
+    return '/dashboard';
   }
   if (isAnyStudent(account?.profile?.schoolLevel)) {
     return '/dashboard/todo';
@@ -147,7 +147,7 @@ export function getMarketingAppEntryFromSession(
   }
 
   if (isApprovedManager(account)) {
-    return { label: '학생 관리', href: '/dashboard/students' };
+    return { label: '학생별 공부현황', href: '/dashboard' };
   }
 
   if (isAnyStudent(user.schoolLevel)) {
