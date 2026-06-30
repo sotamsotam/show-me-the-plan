@@ -198,11 +198,11 @@ function StudyPlanTodoListRow({
 
   return (
     <SwipeableListRow
-      actionLabel="기록"
-      onAction={() => onTodoClick?.(todo)}
-      leadingLabel="수정"
-      onLeadingAction={() => onTodoEdit?.(todo)}
+      actionLabel="수정"
+      onAction={() => onTodoEdit?.(todo)}
+      actionButtonClassName="touch-press flex h-full w-full items-center justify-center bg-amber-500 text-sm font-medium text-white"
       onTap={() => onTodoClick?.(todo)}
+      disabled={!onTodoEdit}
     >
       <div
         role="button"

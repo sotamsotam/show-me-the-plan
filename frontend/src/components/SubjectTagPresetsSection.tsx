@@ -3,7 +3,9 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import TagInput from '@/components/TagInput';
+import { useManagerStudent } from '@/contexts/ManagerStudentContext';
 import { useProfileSubjectsContext } from '@/contexts/ProfileSubjectsContext';
+import { publishProfileSubjects } from '@/lib/profile-subjects-store';
 import type { UserSubject } from '@/lib/user-subject';
 
 function cloneSubjects(subjects: UserSubject[]): UserSubject[] {
@@ -38,6 +40,8 @@ function applySubjectTagsUpdate(
 }
 
 export default function SubjectTagPresetsSection() {
+  const { isManagerMode, selectedStudentId } = useManagerStudent();
+  const studentUserId = isManagerMode ? selectedStudentId : null;
   const { subjects, loading, error: loadError, reload } = useProfileSubjectsContext();
   const [draftSubjects, setDraftSubjects] = useState<UserSubject[]>([]);
   const [saveError, setSaveError] = useState('');
@@ -68,9 +72,10 @@ export default function SubjectTagPresetsSection() {
         return;
       }
 
-      setDraftSubjects(cloneSubjects(data.subjects ?? nextSubjects));
+      const savedSubjects = data.subjects ?? nextSubjects;
+      setDraftSubjects(cloneSubjects(savedSubjects));
       setSaveSuccess('저장되었습니다.');
-      await reload();
+      publishProfileSubjects(studentUserId, savedSubjects);
     } catch {
       setSaveError('태그 설정 저장에 실패했습니다.');
       await reload();
@@ -107,7 +112,7 @@ export default function SubjectTagPresetsSection() {
         </p>
       </div>
 
-      {loading ? (
+      {loading && draftSubjects.length === 0 ? (
         <p className="text-sm text-gray-500">과목 목록 불러오는 중...</p>
       ) : draftSubjects.length === 0 ? (
         <div className="rounded-xl border border-gray-200 bg-white p-6 text-sm text-gray-500 shadow-sm dark:border-neutral-800 dark:bg-zinc-900 dark:text-gray-400">
@@ -138,7 +143,7 @@ export default function SubjectTagPresetsSection() {
                     label="교재명"
                     tags={subject.textbooks ?? []}
                     onChange={(tags) => handleSubjectTagsChange(index, 'textbooks', tags)}
-                    placeholder="예: 쎈 수학"
+                    placeholder="예: 교과서, 프린트, 참고서 등"
                     disabled={saving}
                   />
                   <TagInput

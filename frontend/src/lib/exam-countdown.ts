@@ -12,10 +12,10 @@ export const EXAM_ROUND_SLOTS = [
 export type ExamRoundSlot = (typeof EXAM_ROUND_SLOTS)[number];
 
 export const EXAM_ROUND_LABELS: Record<ExamRoundSlot, string> = {
-  'sem1-r1': '1학기 1회차',
-  'sem1-r2': '1학기 2회차',
-  'sem2-r1': '2학기 1회차',
-  'sem2-r2': '2학기 2회차',
+  'sem1-r1': '1학기 1회차 (중간고사)',
+  'sem1-r2': '1학기 2회차 (기말고사)',
+  'sem2-r1': '2학기 1회차 (중간고사)',
+  'sem2-r2': '2학기 2회차 (기말고사)',
 };
 
 export interface SchoolExamEventInput {

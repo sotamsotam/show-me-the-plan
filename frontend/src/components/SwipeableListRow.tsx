@@ -12,6 +12,7 @@ interface SwipeableListRowProps {
   /** Left swipe reveals trailing action (right side). */
   actionLabel: string;
   onAction: () => void;
+  actionButtonClassName?: string;
   /** Right swipe reveals leading action (left side). */
   leadingLabel?: string;
   onLeadingAction?: () => void;
@@ -20,10 +21,14 @@ interface SwipeableListRowProps {
   contentClassName?: string;
 }
 
+const DEFAULT_TRAILING_ACTION_BUTTON_CLASS =
+  'touch-press flex h-full w-full items-center justify-center bg-blue-600 text-sm font-medium text-white';
+
 export default function SwipeableListRow({
   children,
   actionLabel,
   onAction,
+  actionButtonClassName = DEFAULT_TRAILING_ACTION_BUTTON_CLASS,
   leadingLabel,
   onLeadingAction,
   onTap,
@@ -60,8 +65,8 @@ export default function SwipeableListRow({
       movedRef.current = true;
     }
 
-    const minOffset = -ACTION_WIDTH;
-    const maxOffset = hasLeading ? ACTION_WIDTH : 0;
+    const minOffset = disabled ? 0 : -ACTION_WIDTH;
+    const maxOffset = disabled ? 0 : hasLeading ? ACTION_WIDTH : 0;
     const nextOffset = Math.min(maxOffset, Math.max(minOffset, baseOffsetRef.current + delta));
     setOffsetX(nextOffset);
   }
@@ -119,6 +124,7 @@ export default function SwipeableListRow({
         </div>
       ) : null}
 
+      {!disabled ? (
       <div
         className="absolute inset-y-0 right-0 flex w-20 items-stretch md:hidden"
         aria-hidden={offsetX === 0}
@@ -126,11 +132,12 @@ export default function SwipeableListRow({
         <button
           type="button"
           onClick={handleTrailingClick}
-          className="touch-press flex h-full w-full items-center justify-center bg-blue-600 text-sm font-medium text-white"
+          className={actionButtonClassName}
         >
           {actionLabel}
         </button>
       </div>
+      ) : null}
 
       <div
         className={`relative bg-white dark:bg-zinc-900 md:bg-transparent md:dark:bg-transparent ${

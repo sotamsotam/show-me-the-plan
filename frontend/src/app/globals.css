@@ -1806,16 +1806,19 @@ body:has([data-dashboard-app]) {
 }
 
 .study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card .cal-event-subject {
-  display: inline-block;
+  display: block;
+  flex: 0 1 auto;
   align-self: flex-start;
+  min-width: 0;
   max-width: 100%;
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.01em;
   line-height: 1.25;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow: visible;
+  text-overflow: unset;
+  white-space: normal;
+  word-break: break-word;
   padding: 3px 8px;
   margin-bottom: 0;
   border: none;
@@ -1826,9 +1829,10 @@ body:has([data-dashboard-app]) {
 
 .study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card .cal-event-subject-row {
   display: inline-flex;
-  align-items: center;
-  gap: 4px;
+  flex-wrap: nowrap;
+  align-items: flex-start;
   align-self: flex-start;
+  gap: 4px;
   max-width: 100%;
   min-width: 0;
   margin-bottom: 4px;
@@ -1873,6 +1877,7 @@ body:has([data-dashboard-app]) {
 
 .study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card .cal-event-subject-row .cal-event-time--inline {
   flex-shrink: 0;
+  align-self: center;
   margin-bottom: 0;
   color: var(--cal-event-muted);
   font-variant-numeric: tabular-nums;
@@ -1912,15 +1917,17 @@ body:has([data-dashboard-app]) {
 
 .study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card .cal-event-inline {
   display: flex;
-  align-items: center;
+  flex-wrap: nowrap;
+  align-items: flex-start;
   gap: 0;
   min-width: 0;
   overflow: hidden;
-  white-space: nowrap;
 }
 
 .study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card .cal-event-subject--inline {
-  flex-shrink: 0;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
   font-size: 11px;
   font-weight: 700;
   padding: 2px 5px;
@@ -1929,6 +1936,10 @@ body:has([data-dashboard-app]) {
   border-radius: 4px;
   background: var(--cal-event-badge-bg);
   color: var(--cal-event-badge-text);
+  overflow: visible;
+  text-overflow: unset;
+  white-space: normal;
+  word-break: break-word;
 }
 
 .study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card .cal-event-inline-sep {

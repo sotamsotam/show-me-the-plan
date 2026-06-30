@@ -242,8 +242,17 @@ export default function VacationPeriodSettingsForm() {
 
       <form
         onSubmit={handleSubmit}
-        className="space-y-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-zinc-900"
+        className="weekly-plan-form flex min-h-0 flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-zinc-900"
       >
+        <div className="shrink-0 p-6 pb-0">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            학교방학 일정이 아직 공지되지 않았거나 누락된 경우 표시되지 않습니다.
+            이 경우 방학시작일, 개학일을 직접 입력해 주세요.
+          </p>
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-6">
+          <div className="space-y-6">
         {VACATION_PERIOD_SLOTS.map((slot) => {
           const hint = usesNeisTimetable
             ? formatSuggestionHint(slot, neisSuggestions[slot])
@@ -294,7 +303,10 @@ export default function VacationPeriodSettingsForm() {
             </fieldset>
           );
         })}
+          </div>
+        </div>
 
+        <div className="shrink-0 space-y-4 border-t border-gray-200 p-6 dark:border-neutral-800">
         {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
         {success && (
           <p className="text-sm text-green-600 dark:text-green-400">{success}</p>
@@ -307,6 +319,7 @@ export default function VacationPeriodSettingsForm() {
         >
           {saving ? '저장 중...' : '방학기간 저장'}
         </button>
+        </div>
       </form>
     </section>
   );

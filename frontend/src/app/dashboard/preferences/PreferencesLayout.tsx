@@ -12,6 +12,11 @@ const SUBJECT_TAGS_HREF = '/dashboard/preferences/subject-tags';
 
 const PREFERENCES_NAV_ITEMS = [
   {
+    href: '/dashboard/preferences/subject-tags',
+    label: '과목별 태그 설정',
+    icon: 'subject-tags',
+  },
+  {
     href: '/dashboard/preferences/exam-prep',
     label: '시험기간 설정',
     icon: 'exam-prep',
@@ -35,11 +40,6 @@ const PREFERENCES_NAV_ITEMS = [
     href: '/dashboard/preferences/regular-weekly-plan',
     label: '평소기간 주차별 공부계획',
     icon: 'regular-weekly',
-  },
-  {
-    href: '/dashboard/preferences/subject-tags',
-    label: '과목별 태그 설정',
-    icon: 'subject-tags',
   },
 ] as const;
 

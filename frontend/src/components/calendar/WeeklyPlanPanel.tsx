@@ -28,6 +28,25 @@ import {
 import { formatOccurrenceDateLabel } from '@/lib/user-schedule';
 
 const EXAM_PREP_WEEKLY_PLAN_SETTINGS_HREF = '/dashboard/preferences/exam-prep-weekly-plan';
+
+function WeeklyPlanPanelDragHandle() {
+  return (
+    <span
+      aria-hidden
+      className="shrink-0 select-none text-gray-400 dark:text-gray-500"
+      title="드래그해 캘린더에 배치"
+    >
+      <svg width="12" height="14" viewBox="0 0 12 14" fill="currentColor">
+        <circle cx="3.5" cy="2.5" r="1.25" />
+        <circle cx="8.5" cy="2.5" r="1.25" />
+        <circle cx="3.5" cy="7" r="1.25" />
+        <circle cx="8.5" cy="7" r="1.25" />
+        <circle cx="3.5" cy="11.5" r="1.25" />
+        <circle cx="8.5" cy="11.5" r="1.25" />
+      </svg>
+    </span>
+  );
+}
 const VACATION_PERIOD_SETTINGS_HREF = '/dashboard/preferences/vacation-period';
 const VACATION_WEEKLY_PLAN_SETTINGS_HREF = '/dashboard/preferences/vacation-weekly-plan';
 const REGULAR_WEEKLY_PLAN_SETTINGS_HREF = '/dashboard/preferences/regular-weekly-plan';
@@ -235,7 +254,7 @@ function PanelContent({
                         {subject.items.map((item) => (
                           <li
                             key={item.id}
-                            className={`exam-prep-panel-item rounded-md border border-gray-200/80 bg-white/60 px-2 py-1.5 text-sm dark:border-neutral-700 dark:bg-zinc-900/40 ${
+                            className={`exam-prep-panel-item flex items-center gap-1.5 rounded-md border border-gray-200/80 bg-white/60 px-2 py-1.5 text-sm dark:border-neutral-700 dark:bg-zinc-900/40 ${
                               onItemClick
                                 ? 'cursor-pointer hover:bg-white/90 dark:hover:bg-zinc-900/70'
                                 : 'cursor-grab active:cursor-grabbing'
@@ -272,7 +291,8 @@ function PanelContent({
                               }
                             }}
                           >
-                            {item.title}
+                            {!onItemClick ? <WeeklyPlanPanelDragHandle /> : null}
+                            <span className="min-w-0 flex-1 truncate">{item.title}</span>
                           </li>
                         ))}
                       </ul>
@@ -374,7 +394,7 @@ export default function WeeklyPlanPanel({
     </>
   );
 
-  const headerLabel = '주간 공부계획';
+  const headerLabel = '주간 공부계획 리스트';
 
   return (
     <aside className={`exam-prep-panel ${className}`.trim()}>
@@ -391,7 +411,7 @@ export default function WeeklyPlanPanel({
       ) : (
         <div className="exam-prep-panel-header">
           <h2 className="exam-prep-panel-title">{headerLabel}</h2>
-          <p className="exam-prep-panel-subtitle">현재 보이는 주간에 해당하는 공부 계획</p>
+          <p className="exam-prep-panel-subtitle">드래그해서 캘린더에 배치하세요</p>
         </div>
       )}
 

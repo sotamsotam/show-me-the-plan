@@ -3,6 +3,7 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { useNeisTimetableEnabled } from '@/hooks/useNeisTimetableEnabled';
 import { useStudentApi } from '@/hooks/useStudentApi';
+import { useUnsavedChangesWarning } from '@/hooks/useUnsavedChangesWarning';
 import {
   DEFAULT_EXAM_PREP_WEEKS,
   EXAM_ROUND_LABELS,
@@ -21,11 +22,58 @@ import {
   type NeisExamSuggestions,
 } from '@/lib/exam-period-settings';
 
+const UNSAVED_EXAM_PREP_SETTINGS_MESSAGE =
+  '작성내용이 저장되지 않았습니다. 저장하시려면 시험기간 저장 버튼을 눌러주세요. 저장 없이 이동하시겠습니까?';
+
 const PRESET_WEEKS = [2, 3, 4, 5, 6, 7, 8] as const;
 
 type SelectMode = (typeof PRESET_WEEKS)[number] | 'custom';
 
 type SlotDateInputs = Record<ExamRoundSlot, { start: string; end: string }>;
+
+type ExamPrepSettingsFormSnapshot = {
+  slotInputs: SlotDateInputs;
+  selectModes: Record<ExamRoundSlot, SelectMode>;
+  customWeeks: Record<ExamRoundSlot, string>;
+};
+
+function cloneSlotDateInputs(inputs: SlotDateInputs): SlotDateInputs {
+  return EXAM_ROUND_SLOTS.reduce(
+    (next, slot) => {
+      next[slot] = { ...inputs[slot] };
+      return next;
+    },
+    {} as SlotDateInputs
+  );
+}
+
+function createFormSnapshot(
+  inputs: SlotDateInputs,
+  weekSettings: ExamPrepWeeksByRound
+): ExamPrepSettingsFormSnapshot {
+  return {
+    slotInputs: cloneSlotDateInputs(inputs),
+    selectModes: createEmptySelectModes(weekSettings),
+    customWeeks: createEmptyCustomWeeks(weekSettings),
+  };
+}
+
+function areExamPrepSettingsSnapshotsEqual(
+  current: ExamPrepSettingsFormSnapshot,
+  saved: ExamPrepSettingsFormSnapshot
+): boolean {
+  return EXAM_ROUND_SLOTS.every((slot) => {
+    const currentInputs = current.slotInputs[slot];
+    const savedInputs = saved.slotInputs[slot];
+
+    return (
+      currentInputs.start === savedInputs.start &&
+      currentInputs.end === savedInputs.end &&
+      current.selectModes[slot] === saved.selectModes[slot] &&
+      current.customWeeks[slot] === saved.customWeeks[slot]
+    );
+  });
+}
 
 function createEmptySlotDateInputs(): SlotDateInputs {
   return EXAM_ROUND_SLOTS.reduce(
@@ -147,6 +195,7 @@ export default function ExamPrepSettingsForm() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loaded, setLoaded] = useState(false);
+  const [savedSnapshot, setSavedSnapshot] = useState<ExamPrepSettingsFormSnapshot | null>(null);
 
   const loadSettings = useCallback(async () => {
     setLoading(true);
@@ -197,8 +246,10 @@ export default function ExamPrepSettingsForm() {
         }
       }
 
-      setSelectModes(createEmptySelectModes(settings));
-      setCustomWeeks(createEmptyCustomWeeks(settings));
+      const snapshot = createFormSnapshot(inputs, settings);
+
+      setSelectModes(snapshot.selectModes);
+      setCustomWeeks(snapshot.customWeeks);
       setNeisSuggestions(
         EXAM_ROUND_SLOTS.reduce(
           (next, slot) => {
@@ -208,7 +259,8 @@ export default function ExamPrepSettingsForm() {
           {} as NeisExamSuggestions
         )
       );
-      setSlotInputs(inputs);
+      setSlotInputs(snapshot.slotInputs);
+      setSavedSnapshot(snapshot);
       setLoaded(true);
     } catch {
       setError('설정을 불러오지 못했습니다.');
@@ -283,6 +335,19 @@ export default function ExamPrepSettingsForm() {
     return '';
   }, [slotInputs]);
 
+  const hasUnsavedChanges = useMemo(() => {
+    if (!loaded || savedSnapshot === null) {
+      return false;
+    }
+
+    return !areExamPrepSettingsSnapshotsEqual(
+      { slotInputs, selectModes, customWeeks },
+      savedSnapshot
+    );
+  }, [loaded, savedSnapshot, slotInputs, selectModes, customWeeks]);
+
+  useUnsavedChangesWarning(hasUnsavedChanges, UNSAVED_EXAM_PREP_SETTINGS_MESSAGE);
+
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setError('');
@@ -337,9 +402,15 @@ export default function ExamPrepSettingsForm() {
       );
       const savedPeriodSettings = resolveExamPeriodSettings(data.examPeriodSettings);
 
-      setSelectModes(createEmptySelectModes(savedWeekSettings));
-      setCustomWeeks(createEmptyCustomWeeks(savedWeekSettings));
-      setSlotInputs(settingsToSlotDateInputs(savedPeriodSettings));
+      const snapshot = createFormSnapshot(
+        settingsToSlotDateInputs(savedPeriodSettings),
+        savedWeekSettings
+      );
+
+      setSelectModes(snapshot.selectModes);
+      setCustomWeeks(snapshot.customWeeks);
+      setSlotInputs(snapshot.slotInputs);
+      setSavedSnapshot(snapshot);
       setSuccess('시험기간 설정이 저장되었습니다.');
     } catch {
       setError('설정 저장에 실패했습니다.');
@@ -402,8 +473,8 @@ export default function ExamPrepSettingsForm() {
       >
         <div className="shrink-0 p-6 pb-0">
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            학교시험공지 일정이 부정확하면
-            시험 시작일·종료일을 직접 수정해 저장할 수 있습니다.
+            학교시험 일정이 아직 공지되지 않았거나 누락된 경우 표시되지 않습니다.
+            이경우 시험 시작일·종료일을 직접 입력해 주세요.
           </p>
         </div>
 
