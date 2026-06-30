@@ -64,7 +64,7 @@ describe('validateExamPeriodSettingsInput', () => {
         'sem1-r1': { start: '20260424', end: '20260420' },
       })
     ).toEqual({
-      error: '1학기 1회차 시험 시작일과 종료일을 올바르게 입력해 주세요.',
+      error: '1학기 1회차 (중간고사) 시험 시작일과 종료일을 올바르게 입력해 주세요.',
     });
   });
 
@@ -74,7 +74,7 @@ describe('validateExamPeriodSettingsInput', () => {
         'sem1-r1': { start: '20260401', end: '20260420' },
       })
     ).toEqual({
-      error: '1학기 1회차 시험 시작일과 종료일을 올바르게 입력해 주세요.',
+      error: '1학기 1회차 (중간고사) 시험 시작일과 종료일을 올바르게 입력해 주세요.',
     });
   });
 
