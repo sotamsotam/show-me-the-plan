@@ -53,6 +53,7 @@ interface StudyPlanTodoFormProps {
   weeklyPlanSource?: WeeklyPlanSource | null;
   onClose: () => void;
   onSaved: (todoId?: number) => void;
+  onDeleted?: (todo: StudyPlanTodo) => void;
 }
 
 function todayIsoDate(): string {
@@ -141,6 +142,7 @@ export default function StudyPlanTodoForm({
   weeklyPlanSource,
   onClose,
   onSaved,
+  onDeleted,
 }: StudyPlanTodoFormProps) {
   const { withStudent } = useStudentApi();
   const { subjectOptions, subjects: profileSubjects, loading: subjectsLoading } =
@@ -431,6 +433,10 @@ export default function StudyPlanTodoForm({
         return;
       }
 
+      const isFullDelete = !(isOccurrence && occurrenceDate);
+      if (isFullDelete) {
+        onDeleted?.(todo);
+      }
       onSaved();
       onClose();
     } catch {

@@ -3,7 +3,7 @@ import WeeklySchedulePrintView from '@/components/calendar/WeeklySchedulePrintVi
 import {
   layoutWeeklyPrintPage,
   preparePrintFrameForLayout,
-  resolvePrintTableRowCount,
+  resolveWeeklyPrintBodyRowCount,
 } from '@/lib/fit-weekly-print-page';
 import {
   buildWeeklyPrintGrid,
@@ -98,7 +98,7 @@ export async function printWeeklySchedule(input: WeeklyPrintInput): Promise<bool
     const pageRoot = mountNode.querySelector('.weekly-print-page') as HTMLElement | null;
     if (pageRoot) {
       layoutWeeklyPrintPage(pageRoot, {
-        tableRowCount: resolvePrintTableRowCount(
+        bodyRowCount: resolveWeeklyPrintBodyRowCount(
           grid.timeRows.length,
           grid.hasAllDayRow
         ),

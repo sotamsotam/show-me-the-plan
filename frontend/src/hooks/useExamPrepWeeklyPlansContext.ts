@@ -7,6 +7,7 @@ import {
   fetchExamPrepWeeklyPlansContext,
   type ExamPrepWeeklyPlansContext,
 } from '@/lib/exam-prep-weekly-plans-context';
+import type { ExamPrepWeeklyPlans } from '@/lib/exam-prep-weekly-plan';
 
 export function useExamPrepWeeklyPlansContext() {
   const { withStudent, studentUserId } = useStudentApi();
@@ -15,6 +16,16 @@ export function useExamPrepWeeklyPlansContext() {
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const patchPlans = useCallback(
+    (updater: (plans: ExamPrepWeeklyPlans) => ExamPrepWeeklyPlans) => {
+      setContext((previous) => ({
+        ...previous,
+        plans: updater(previous.plans),
+      }));
+    },
+    []
+  );
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -36,5 +47,5 @@ export function useExamPrepWeeklyPlansContext() {
     refresh();
   }, [refresh, studentUserId]);
 
-  return { context, loading, error, refresh };
+  return { context, loading, error, refresh, patchPlans };
 }

@@ -61,6 +61,7 @@ export async function fetchExamPrepWeeklyPlansContext(
   try {
     const res = await fetch(withStudent('/api/profile/exam-prep-weekly-plans'), {
       credentials: 'include',
+      cache: 'no-store',
     });
     const data = (await res.json()) as ExamPrepWeeklyPlansContextResponse & {
       error?: string;

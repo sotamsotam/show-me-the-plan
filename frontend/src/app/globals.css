@@ -1828,8 +1828,8 @@ body:has([data-dashboard-app]) {
 }
 
 .study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card .cal-event-subject-row {
-  display: inline-flex;
-  flex-wrap: nowrap;
+  display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
   align-self: flex-start;
   gap: 4px;
@@ -1875,9 +1875,13 @@ body:has([data-dashboard-app]) {
   white-space: nowrap;
 }
 
+.study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card .cal-event-subject-row .cal-event-subject {
+  flex-shrink: 0;
+}
+
 .study-plan-calendar .fc .fc-event.study-plan-event.cal-event-card .cal-event-subject-row .cal-event-time--inline {
   flex-shrink: 0;
-  align-self: center;
+  align-self: flex-start;
   margin-bottom: 0;
   color: var(--cal-event-muted);
   font-variant-numeric: tabular-nums;

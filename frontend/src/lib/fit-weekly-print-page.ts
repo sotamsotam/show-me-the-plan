@@ -26,11 +26,15 @@ export function resolveWeeklyPrintDensity(bodyRowCount: number): WeeklyPrintDens
   return 'dense';
 }
 
+/** 테이블 날짜 헤더(thead) 고정 높이 — 측정 실패 시 fallback */
+export const PRINT_TABLE_HEADER_ROW_HEIGHT_PX = 28;
+
 export function resolveWeeklyPrintBodyRowCount(
   timeRowCount: number,
   hasAllDayRow: boolean
 ): number {
-  return timeRowCount + (hasAllDayRow ? 1 : 0);
+  const bodyRows = timeRowCount > 0 ? timeRowCount : 1;
+  return bodyRows + (hasAllDayRow ? 1 : 0);
 }
 
 export function resolvePrintTableRowCount(
@@ -43,6 +47,8 @@ export function resolvePrintTableRowCount(
 
 export interface DistributeWeeklyPrintRowsOptions {
   printableHeightPx?: number;
+  bodyRowCount?: number;
+  /** @deprecated bodyRowCount 사용 */
   tableRowCount?: number;
   safetyMargin?: number;
 }
@@ -55,20 +61,24 @@ export interface FitWeeklyPrintPageOptions {
 
 export function calculateDistributedRowHeight(
   printableHeightPx: number,
-  headerHeightPx: number,
-  tableRowCount: number,
-  safetyMargin = PRINT_LAYOUT_SAFETY_MARGIN
+  documentHeaderHeightPx: number,
+  bodyRowCount: number,
+  safetyMargin = PRINT_LAYOUT_SAFETY_MARGIN,
+  tableHeaderRowHeightPx = 0
 ): number {
-  if (tableRowCount <= 0) {
+  if (bodyRowCount <= 0) {
     return 0;
   }
 
-  const borderAllowance = tableRowCount + 2;
+  const borderAllowance = bodyRowCount + 2;
   const availableHeight = Math.max(
     0,
-    printableHeightPx * safetyMargin - headerHeightPx - borderAllowance
+    printableHeightPx * safetyMargin -
+      documentHeaderHeightPx -
+      tableHeaderRowHeightPx -
+      borderAllowance
   );
-  return availableHeight / tableRowCount;
+  return availableHeight / bodyRowCount;
 }
 
 export function calculatePrintOverflowScale(
@@ -137,8 +147,23 @@ function resetPrintLayoutStyles(pageRoot: HTMLElement): void {
   contentBlock.style.height = '';
   contentBlock.style.zoom = '';
 
+  pageRoot.style.removeProperty('--print-header-row-height');
+  pageRoot.style.removeProperty('--print-body-row-height');
   pageRoot.style.removeProperty('--print-row-height');
   pageRoot.style.removeProperty('--print-table-height');
+}
+
+function measureTableHeaderRowHeight(pageRoot: HTMLElement): number {
+  const headerRow = pageRoot.querySelector(
+    '.weekly-print-table thead tr'
+  ) as HTMLElement | null;
+
+  if (!headerRow) {
+    return PRINT_TABLE_HEADER_ROW_HEIGHT_PX;
+  }
+
+  const measuredHeight = headerRow.getBoundingClientRect().height;
+  return measuredHeight > 0 ? measuredHeight : PRINT_TABLE_HEADER_ROW_HEIGHT_PX;
 }
 
 function measureDocumentHeaderHeight(pageRoot: HTMLElement): number {
@@ -164,21 +189,24 @@ export function distributeWeeklyPrintRowHeights(
   resetPrintLayoutStyles(pageRoot);
 
   const headerHeightPx = measureDocumentHeaderHeight(pageRoot);
-  const tableRowCount =
+  const tableHeaderRowHeightPx = measureTableHeaderRowHeight(pageRoot);
+  const bodyRowCount =
+    options.bodyRowCount ??
     options.tableRowCount ??
-    pageRoot.querySelectorAll(
-      '.weekly-print-table thead tr, .weekly-print-table tbody tr'
-    ).length;
+    pageRoot.querySelectorAll('.weekly-print-table tbody tr').length;
 
   const rowHeight = calculateDistributedRowHeight(
     printableHeightPx,
     headerHeightPx,
-    tableRowCount,
-    safetyMargin
+    bodyRowCount,
+    safetyMargin,
+    tableHeaderRowHeightPx
   );
 
-  const tableHeight = rowHeight * tableRowCount;
+  const tableHeight = tableHeaderRowHeightPx + rowHeight * bodyRowCount;
 
+  pageRoot.style.setProperty('--print-header-row-height', `${tableHeaderRowHeightPx}px`);
+  pageRoot.style.setProperty('--print-body-row-height', `${rowHeight}px`);
   pageRoot.style.setProperty('--print-row-height', `${rowHeight}px`);
   pageRoot.style.setProperty('--print-table-height', `${tableHeight}px`);
 

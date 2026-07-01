@@ -86,6 +86,7 @@ import {
   readWeeklyPlanPlacementFromElement,
   type WeeklyPlanPlacementContext,
 } from '@/lib/weekly-plan-placement';
+import { unlinkWeeklyPlanFromDeletedTodo } from '@/lib/weekly-plan-unlink';
 
 const CALENDAR_PLUGINS = [dayGridPlugin, timeGridPlugin, listPlugin, interactionPlugin];
 
@@ -347,11 +348,11 @@ export default function StudyPlanCalendar() {
   const [carryOverError, setCarryOverError] = useState('');
   const [visibleRange, setVisibleRange] = useState<VisibleDateRange | null>(null);
   const { countdown, examPrepPeriods } = useExamCountdown({ visibleRange });
-  const { context: examPrepPlansContext, loading: examPrepPlansLoading, refresh: refreshExamPrepPlans } =
+  const { context: examPrepPlansContext, loading: examPrepPlansLoading, refresh: refreshExamPrepPlans, patchPlans: patchExamPrepPlans } =
     useExamPrepWeeklyPlansContext();
-  const { context: vacationPlansContext, loading: vacationPlansLoading, refresh: refreshVacationPlans } =
+  const { context: vacationPlansContext, loading: vacationPlansLoading, refresh: refreshVacationPlans, patchPlans: patchVacationPlans } =
     useVacationWeeklyPlansContext();
-  const { context: regularPlansContext, loading: regularPlansLoading, refresh: refreshRegularPlans } =
+  const { context: regularPlansContext, loading: regularPlansLoading, refresh: refreshRegularPlans, patchPlans: patchRegularPlans } =
     useRegularWeeklyPlansContext();
   const { vacationPeriods } = useVacationPeriodSettings();
   const { dayHeaderClassNames: examPrepDayHeaderClassNames, dayHeaderContent: examPrepDayHeaderContent } =
@@ -1257,6 +1258,37 @@ export default function StudyPlanCalendar() {
     ]
   );
 
+  const refreshWeeklyPlanContexts = useCallback(async () => {
+    await Promise.all([
+      refreshExamPrepPlans(),
+      refreshVacationPlans(),
+      refreshRegularPlans(),
+    ]);
+  }, [refreshExamPrepPlans, refreshRegularPlans, refreshVacationPlans]);
+
+  const handleTodoDeleted = useCallback(
+    (todo: StudyPlanTodo) => {
+      const unlinked = unlinkWeeklyPlanFromDeletedTodo({
+        todo,
+        examPrepWeeklyPlans: examPrepPlansContext.plans,
+        vacationWeeklyPlans: vacationPlansContext.plans,
+        regularWeeklyPlans: regularPlansContext.plans,
+      });
+
+      patchExamPrepPlans(() => unlinked.examPrepWeeklyPlans);
+      patchVacationPlans(() => unlinked.vacationWeeklyPlans);
+      patchRegularPlans(() => unlinked.regularWeeklyPlans);
+    },
+    [
+      examPrepPlansContext.plans,
+      patchExamPrepPlans,
+      patchRegularPlans,
+      patchVacationPlans,
+      regularPlansContext.plans,
+      vacationPlansContext.plans,
+    ]
+  );
+
   const handleDeleteOccurrence = useCallback(async () => {
     if (!selectedTodo || !selectedOccurrenceDate) {
       return;
@@ -1290,8 +1322,7 @@ export default function StudyPlanCalendar() {
       clearEditSession();
       closeAllModals();
       refreshCalendar();
-      void refreshExamPrepPlans();
-      void refreshVacationPlans();
+      await refreshWeeklyPlanContexts();
     } catch {
       setError('이 날짜 스터디 플랜 삭제에 실패했습니다.');
     }
@@ -1299,21 +1330,24 @@ export default function StudyPlanCalendar() {
     clearEditSession,
     closeAllModals,
     refreshCalendar,
-    refreshExamPrepPlans,
-    refreshVacationPlans,
+    refreshWeeklyPlanContexts,
     selectedOccurrenceDate,
     selectedTodo,
     withStudent,
   ]);
 
-  const handleSaved = useCallback(() => {
+  const handleSaved = useCallback(async () => {
     setDraftEvent(null);
     clearEditSession();
     clearWeeklyPlanPlacement();
     refreshCalendar();
-    void refreshExamPrepPlans();
-    void refreshVacationPlans();
-  }, [clearEditSession, clearWeeklyPlanPlacement, refreshCalendar, refreshExamPrepPlans, refreshVacationPlans]);
+    await refreshWeeklyPlanContexts();
+  }, [
+    clearEditSession,
+    clearWeeklyPlanPlacement,
+    refreshCalendar,
+    refreshWeeklyPlanContexts,
+  ]);
 
   const editHint = useMemo(
     () =>
@@ -1433,9 +1467,8 @@ export default function StudyPlanCalendar() {
 
   const refreshWeeklyPlanData = useCallback(() => {
     refreshCalendar();
-    void refreshExamPrepPlans();
-    void refreshVacationPlans();
-  }, [refreshCalendar, refreshExamPrepPlans, refreshVacationPlans]);
+    void refreshWeeklyPlanContexts();
+  }, [refreshCalendar, refreshWeeklyPlanContexts]);
 
   const handleCarryOverItem = useCallback(
     (item: UnachievedWeeklyPlanItem) => {
@@ -1715,7 +1748,10 @@ export default function StudyPlanCalendar() {
         occurrenceDate={formMode === 'occurrence' ? selectedOccurrenceDate : undefined}
         initial={formInitial}
         onClose={handleFormClose}
-        onSaved={handleSaved}
+        onDeleted={handleTodoDeleted}
+        onSaved={() => {
+          void handleSaved();
+        }}
       />
 
       {isMobile && (

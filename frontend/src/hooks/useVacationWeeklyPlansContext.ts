@@ -8,6 +8,8 @@ import {
   type VacationWeeklyPlansContext,
 } from '@/lib/vacation-weekly-plans-context';
 
+import type { VacationWeeklyPlans } from '@/lib/vacation-weekly-plan';
+
 export function useVacationWeeklyPlansContext() {
   const { withStudent, studentUserId } = useStudentApi();
   const [context, setContext] = useState<VacationWeeklyPlansContext>(
@@ -15,6 +17,16 @@ export function useVacationWeeklyPlansContext() {
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const patchPlans = useCallback(
+    (updater: (plans: VacationWeeklyPlans) => VacationWeeklyPlans) => {
+      setContext((previous) => ({
+        ...previous,
+        plans: updater(previous.plans),
+      }));
+    },
+    []
+  );
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -36,5 +48,5 @@ export function useVacationWeeklyPlansContext() {
     refresh();
   }, [refresh, studentUserId]);
 
-  return { context, loading, error, refresh };
+  return { context, loading, error, refresh, patchPlans };
 }

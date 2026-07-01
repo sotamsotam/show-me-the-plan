@@ -17,6 +17,7 @@ describe('fit-weekly-print-page', () => {
   it('counts all-day row in body row count', () => {
     expect(resolveWeeklyPrintBodyRowCount(5, true)).toBe(6);
     expect(resolveWeeklyPrintBodyRowCount(5, false)).toBe(5);
+    expect(resolveWeeklyPrintBodyRowCount(0, false)).toBe(1);
   });
 
   it('counts printable table rows including header and empty body row', () => {
@@ -24,10 +25,11 @@ describe('fit-weekly-print-page', () => {
     expect(resolvePrintTableRowCount(0, false)).toBe(2);
   });
 
-  it('distributes remaining height evenly across table rows', () => {
-    const rowHeight = calculateDistributedRowHeight(700, 120, 7, 1);
+  it('distributes remaining height evenly across body rows only', () => {
+    const tableHeaderRowHeightPx = 28;
+    const rowHeight = calculateDistributedRowHeight(700, 120, 6, 1, tableHeaderRowHeightPx);
 
-    expect(rowHeight).toBeCloseTo((700 - 120 - 9) / 7, 2);
+    expect(rowHeight).toBeCloseTo((700 - 120 - 28 - 8) / 6, 2);
   });
 
   it('scales content down when rendered height exceeds printable area', () => {

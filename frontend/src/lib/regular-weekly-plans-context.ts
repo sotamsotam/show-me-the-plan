@@ -40,6 +40,7 @@ export async function fetchRegularWeeklyPlansContext(
   try {
     const res = await fetch(withStudent('/api/profile/regular-weekly-plans'), {
       credentials: 'include',
+      cache: 'no-store',
     });
     const data = (await res.json()) as RegularWeeklyPlansContextResponse & {
       error?: string;

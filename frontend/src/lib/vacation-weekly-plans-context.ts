@@ -40,6 +40,7 @@ export async function fetchVacationWeeklyPlansContext(
   try {
     const res = await fetch(withStudent('/api/profile/vacation-weekly-plans'), {
       credentials: 'include',
+      cache: 'no-store',
     });
     const data = (await res.json()) as VacationWeeklyPlansContextResponse & {
       error?: string;

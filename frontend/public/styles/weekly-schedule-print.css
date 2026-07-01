@@ -32,6 +32,8 @@ body {
   --print-cell-gap: 0.18rem;
   --print-checkbox-size: 11px;
   --print-time-col-width: 9.5rem;
+  --print-header-row-height: auto;
+  --print-body-row-height: auto;
   --print-row-height: auto;
   --print-table-height: auto;
   --print-page-height: auto;
@@ -137,24 +139,26 @@ body {
   min-height: 0;
 }
 
-.weekly-print-table thead tr,
-.weekly-print-allday-row,
-.weekly-print-time-row {
-  height: var(--print-row-height, auto);
-}
-
-.weekly-print-table thead th,
-.weekly-print-allday-row th,
-.weekly-print-allday-row td,
-.weekly-print-time-row .weekly-print-time-label,
-.weekly-print-time-row .weekly-print-cell {
-  height: var(--print-row-height, auto);
-  min-height: 0;
-  overflow: hidden;
+.weekly-print-table thead tr {
+  height: var(--print-header-row-height, auto);
 }
 
 .weekly-print-table thead th {
+  height: var(--print-header-row-height, auto);
+  min-height: 0;
+  overflow: hidden;
   vertical-align: middle;
+}
+
+.weekly-print-table tbody tr {
+  height: var(--print-body-row-height, auto);
+}
+
+.weekly-print-table tbody th,
+.weekly-print-table tbody td {
+  height: var(--print-body-row-height, auto);
+  min-height: 0;
+  overflow: hidden;
 }
 
 .weekly-print-allday-row .weekly-print-time-label {
@@ -202,7 +206,6 @@ body {
 }
 
 .weekly-print-empty {
-  height: var(--print-table-height, auto);
   padding: 0.75rem;
   text-align: center;
   color: #555;
