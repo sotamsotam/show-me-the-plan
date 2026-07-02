@@ -57,6 +57,14 @@ export default {
       },
     },
     {
+      method: 'POST',
+      path: '/study-plan-todos/:id/occurrences/:date/detach',
+      handler: 'study-plan-todo.detachOccurrence',
+      config: {
+        auth: {},
+      },
+    },
+    {
       method: 'PUT',
       path: '/study-plan-todos/:id/executions/:date',
       handler: 'study-plan-todo.updateExecution',

@@ -316,6 +316,70 @@ export function buildOccurrenceExclusionUpdate(schedule: UserScheduleRecord, dat
   };
 }
 
+export interface OccurrenceDetachInput {
+  toDate: string;
+  title: string;
+  startTime: string;
+  endTime: string;
+}
+
+export function validateOccurrenceDetachInput(
+  schedule: UserScheduleRecord,
+  fromDate: string,
+  input: OccurrenceDetachInput
+): string | null {
+  if (schedule.recurrenceType !== 'weekly') {
+    return '반복 일정만 분리할 수 있습니다.';
+  }
+
+  const toDate = input.toDate.slice(0, 10);
+
+  if (!isValidIsoDate(toDate)) {
+    return 'toDate는 YYYY-MM-DD 형식이어야 합니다.';
+  }
+
+  if (fromDate === toDate) {
+    return '같은 날짜로는 분리할 수 없습니다. 시간 변경은 occurrence 수정 API를 사용하세요.';
+  }
+
+  if (!isOccurrenceEditableSource(schedule, fromDate)) {
+    return '해당 날짜는 이 반복 일정에 포함되지 않습니다.';
+  }
+
+  return validateOccurrenceOverride(
+    {
+      title: input.title,
+      startTime: input.startTime,
+      endTime: input.endTime,
+    },
+    { allDay: schedule.allDay }
+  );
+}
+
+export function buildParentOccurrenceDetachUpdate(
+  schedule: UserScheduleRecord,
+  fromDate: string
+): Record<string, unknown> {
+  return buildOccurrenceExclusionUpdate(schedule, fromDate);
+}
+
+export function buildDetachedOnceScheduleCreateData(
+  schedule: UserScheduleRecord,
+  input: OccurrenceDetachInput
+): Record<string, unknown> {
+  const toDate = input.toDate.slice(0, 10);
+
+  return buildScheduleData({
+    title: input.title,
+    scheduleCategory: schedule.scheduleCategory,
+    allDay: schedule.allDay,
+    startTime: input.startTime,
+    endTime: input.endTime,
+    recurrenceType: 'once',
+    date: toDate,
+  });
+}
+
 export function buildOccurrenceOverrideUpdate(
   schedule: UserScheduleRecord,
   date: string,

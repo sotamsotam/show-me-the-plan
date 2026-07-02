@@ -9,17 +9,20 @@ import {
   uploadScheduleAttachmentFile,
 } from '../../../services/schedule-attachment';
 import {
+  buildDetachedOnceScheduleCreateData,
   buildOccurrenceExclusionUpdate,
-  buildOccurrenceMoveUpdate,
   buildOccurrenceOverrideUpdate,
+  buildParentOccurrenceDetachUpdate,
   buildScheduleData,
   expandSchedulesToEvents,
   isOccurrenceEditableSource,
+  resolveOccurrenceFields,
   toScheduleRecord,
+  validateOccurrenceDetachInput,
   validateOccurrenceMove,
-  validateOccurrenceMoveTarget,
   validateOccurrenceOverride,
   validateScheduleInput,
+  type OccurrenceDetachInput,
   type OccurrenceMoveInput,
   type OccurrenceOverrideInput,
   type UserScheduleInput,
@@ -330,6 +333,63 @@ export default factories.createCoreController(UID, ({ strapi }) => ({
     return ctx.send({ schedule: serializeSchedule(updated as Record<string, unknown>) });
   },
 
+  async detachOccurrence(ctx) {
+    const owner = await resolveOwnerFromContext(strapi, ctx);
+
+    if ('error' in owner) {
+      return owner.status === 401
+        ? ctx.unauthorized(owner.error)
+        : ctx.forbidden(owner.error);
+    }
+
+    const id = Number(ctx.params.id);
+    const fromDate = parseOccurrenceDate(String(ctx.params.date ?? ''));
+
+    if (!Number.isInteger(id) || id <= 0 || !fromDate) {
+      return ctx.badRequest('유효한 id와 date가 필요합니다.');
+    }
+
+    const existing = await findOwnedSchedule(strapi, owner.userId, id);
+
+    if (!existing) {
+      return ctx.notFound('일정을 찾을 수 없습니다.');
+    }
+
+    const schedule = toScheduleRecord(existing);
+    const body = ctx.request.body as OccurrenceDetachInput;
+    const fields = resolveOccurrenceFields(schedule, fromDate);
+    const detachInput: OccurrenceDetachInput = {
+      toDate: String(body.toDate ?? ''),
+      title: body.title?.trim() || fields.title,
+      startTime: body.startTime || fields.startTime,
+      endTime: body.endTime || fields.endTime,
+    };
+    const error = validateOccurrenceDetachInput(schedule, fromDate, detachInput);
+
+    if (error) {
+      return ctx.badRequest(error);
+    }
+
+    const updatedParent = await strapi.db.query(UID).update({
+      where: { id },
+      data: buildParentOccurrenceDetachUpdate(schedule, fromDate),
+      populate: SCHEDULE_POPULATE,
+    });
+
+    const created = await strapi.db.query(UID).create({
+      data: {
+        ...buildDetachedOnceScheduleCreateData(schedule, detachInput),
+        user: owner.userId,
+      },
+      populate: SCHEDULE_POPULATE,
+    });
+
+    return ctx.send({
+      parentSchedule: serializeSchedule(updatedParent as Record<string, unknown>),
+      onceSchedule: serializeSchedule(created as Record<string, unknown>),
+    });
+  },
+
   async updateOccurrence(ctx) {
     const owner = await resolveOwnerFromContext(strapi, ctx);
 
@@ -409,19 +469,36 @@ export default factories.createCoreController(UID, ({ strapi }) => ({
       return ctx.badRequest(validationError);
     }
 
-    const toDate = body.toDate.slice(0, 10);
-    const moveError = validateOccurrenceMoveTarget(schedule, fromDate, toDate);
+    const fields = resolveOccurrenceFields(schedule, fromDate);
+    const detachInput: OccurrenceDetachInput = {
+      toDate: body.toDate.slice(0, 10),
+      title: body.title?.trim() || fields.title,
+      startTime: body.startTime || fields.startTime,
+      endTime: body.endTime || fields.endTime,
+    };
+    const detachError = validateOccurrenceDetachInput(schedule, fromDate, detachInput);
 
-    if (moveError) {
-      return ctx.badRequest(moveError);
+    if (detachError) {
+      return ctx.badRequest(detachError);
     }
 
-    const updated = await strapi.db.query(UID).update({
+    const updatedParent = await strapi.db.query(UID).update({
       where: { id },
-      data: buildOccurrenceMoveUpdate(schedule, fromDate, toDate, body),
+      data: buildParentOccurrenceDetachUpdate(schedule, fromDate),
       populate: SCHEDULE_POPULATE,
     });
 
-    return ctx.send({ schedule: serializeSchedule(updated as Record<string, unknown>) });
+    const created = await strapi.db.query(UID).create({
+      data: {
+        ...buildDetachedOnceScheduleCreateData(schedule, detachInput),
+        user: owner.userId,
+      },
+      populate: SCHEDULE_POPULATE,
+    });
+
+    return ctx.send({
+      parentSchedule: serializeSchedule(updatedParent as Record<string, unknown>),
+      onceSchedule: serializeSchedule(created as Record<string, unknown>),
+    });
   },
 }));

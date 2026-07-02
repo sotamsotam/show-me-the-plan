@@ -58,6 +58,14 @@ export default {
     },
     {
       method: 'POST',
+      path: '/user-schedules/:id/occurrences/:date/detach',
+      handler: 'user-schedule.detachOccurrence',
+      config: {
+        auth: {},
+      },
+    },
+    {
+      method: 'POST',
       path: '/user-schedules/:id/occurrences/:date/move',
       handler: 'user-schedule.moveOccurrence',
       config: {

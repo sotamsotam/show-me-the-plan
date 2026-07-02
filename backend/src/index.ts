@@ -340,6 +340,11 @@ async function setupPermissions(strapi: Core.Strapi) {
   await ensureRolePermission(
     strapi,
     'authenticated',
+    'api::user-schedule.user-schedule.detachOccurrence'
+  );
+  await ensureRolePermission(
+    strapi,
+    'authenticated',
     'api::user-schedule.user-schedule.moveOccurrence'
   );
   await ensureRolePermission(
@@ -381,6 +386,11 @@ async function setupPermissions(strapi: Core.Strapi) {
     strapi,
     'authenticated',
     'api::study-plan-todo.study-plan-todo.excludeOccurrence'
+  );
+  await ensureRolePermission(
+    strapi,
+    'authenticated',
+    'api::study-plan-todo.study-plan-todo.detachOccurrence'
   );
   await ensureRolePermission(
     strapi,
@@ -494,6 +504,7 @@ async function setupPermissions(strapi: Core.Strapi) {
     'api::user-schedule.user-schedule.remove',
     'api::user-schedule.user-schedule.updateOccurrence',
     'api::user-schedule.user-schedule.excludeOccurrence',
+    'api::user-schedule.user-schedule.detachOccurrence',
     'api::user-schedule.user-schedule.moveOccurrence',
     'api::user-schedule.user-schedule.uploadAttachment',
     'api::study-plan-todo.study-plan-todo.findInRange',
@@ -503,6 +514,7 @@ async function setupPermissions(strapi: Core.Strapi) {
     'api::study-plan-todo.study-plan-todo.remove',
     'api::study-plan-todo.study-plan-todo.updateOccurrence',
     'api::study-plan-todo.study-plan-todo.excludeOccurrence',
+    'api::study-plan-todo.study-plan-todo.detachOccurrence',
     'api::study-plan-todo.study-plan-todo.updateExecution',
     'api::push-subscription.push-subscription.subscribe',
     'api::push-subscription.push-subscription.unsubscribe',

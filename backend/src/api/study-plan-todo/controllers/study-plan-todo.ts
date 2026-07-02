@@ -1,10 +1,12 @@
 import { factories, type Core } from '@strapi/strapi';
 import { resolveOwnerFromContext } from '../../../services/manager-access';
 import {
+  buildDetachedOnceTodoCreateData,
   buildExecutionUpdate,
   buildFindInRangeResponse,
   buildOccurrenceExclusionUpdate,
   buildOccurrenceOverrideUpdate,
+  buildParentOccurrenceDetachUpdate,
   buildStudyPlanTodoData,
   buildTodoOverlapWhereClause,
   collectStudyPlanTodoTitles,
@@ -13,16 +15,20 @@ import {
   isOccurrenceEditableSource,
   isValidExecutionDate,
   parseStudyPlanFindInclude,
+  resolveOccurrenceFields,
   serializeStudyPlanTodo,
   toStudyPlanTodoRecord,
   buildAllowedPlanSubjectIds,
   parseUserSubjects,
   validateExecutionInput,
+  validateOccurrenceDetachInput,
   validateOccurrenceOverride,
   validateStudyPlanTodoInput,
   type ExecutionRecordInput,
+  type OccurrenceDetachInput,
   type OccurrenceOverrideInput,
   type StudyPlanTodoInput,
+  type StudyPlanTodoRecord,
 } from '../../../services/study-plan-todo';
 import {
   cancelAllPendingForTodo,
@@ -33,16 +39,19 @@ import {
   clearExamPrepWeeklyPlanItemScheduledTodoId,
   clearExamPrepWeeklyPlanScheduledTodoIdByTodoId,
   resolveExamPrepWeeklyPlans,
+  setExamPrepWeeklyPlanItemScheduledTodoId,
 } from '../../../services/exam-prep-weekly-plan';
 import {
   clearRegularWeeklyPlanItemScheduledTodoId,
   clearRegularWeeklyPlanScheduledTodoIdByTodoId,
   resolveRegularWeeklyPlans,
+  setRegularWeeklyPlanItemScheduledTodoId,
 } from '../../../services/regular-weekly-plan';
 import {
   clearVacationWeeklyPlanItemScheduledTodoId,
   clearVacationWeeklyPlanScheduledTodoIdByTodoId,
   resolveVacationWeeklyPlans,
+  setVacationWeeklyPlanItemScheduledTodoId,
 } from '../../../services/vacation-weekly-plan';
 import { resolveProfileSubjects } from '../../../services/user-subject-validation';
 
@@ -143,6 +152,102 @@ async function revertWeeklyPlansOnTodoDelete(
   if (vacationChanged) {
     data.vacationWeeklyPlans = nextVacationPlans;
   }
+  if (regularChanged) {
+    data.regularWeeklyPlans = nextRegularPlans;
+  }
+
+  await strapi.db.query('api::user-profile.user-profile').update({
+    where: { id: profile.id },
+    data,
+  });
+}
+
+async function transferWeeklyPlanLinkOnDetach(
+  strapi: Core.Strapi,
+  userId: number,
+  parentTodo: StudyPlanTodoRecord,
+  onceTodoId: number
+): Promise<void> {
+  const source = parentTodo.weeklyPlanSource;
+
+  if (!source) {
+    return;
+  }
+
+  const profile = await strapi.db.query('api::user-profile.user-profile').findOne({
+    where: { user: userId },
+  });
+
+  if (!profile) {
+    return;
+  }
+
+  let nextExamPlans = resolveExamPrepWeeklyPlans(profile.examPrepWeeklyPlans);
+  let nextVacationPlans = resolveVacationWeeklyPlans(profile.vacationWeeklyPlans);
+  let nextRegularPlans = resolveRegularWeeklyPlans(profile.regularWeeklyPlans);
+
+  if (source.kind === 'exam-prep') {
+    nextExamPlans = setExamPrepWeeklyPlanItemScheduledTodoId(
+      nextExamPlans,
+      source.roundSlot,
+      source.weekNumber,
+      source.subjectId,
+      source.itemId,
+      onceTodoId
+    );
+  }
+
+  if (source.kind === 'vacation') {
+    nextVacationPlans = setVacationWeeklyPlanItemScheduledTodoId(
+      nextVacationPlans,
+      source.periodSlot,
+      source.weekNumber,
+      source.subjectId,
+      source.itemId,
+      onceTodoId
+    );
+  }
+
+  if (source.kind === 'regular') {
+    nextRegularPlans = setRegularWeeklyPlanItemScheduledTodoId(
+      nextRegularPlans,
+      source.periodKey,
+      source.weekNumber,
+      source.subjectId,
+      source.itemId,
+      onceTodoId
+    );
+  }
+
+  nextExamPlans = clearExamPrepWeeklyPlanScheduledTodoIdByTodoId(nextExamPlans, parentTodo.id);
+  nextVacationPlans = clearVacationWeeklyPlanScheduledTodoIdByTodoId(
+    nextVacationPlans,
+    parentTodo.id
+  );
+  nextRegularPlans = clearRegularWeeklyPlanScheduledTodoIdByTodoId(
+    nextRegularPlans,
+    parentTodo.id
+  );
+
+  const examChanged = nextExamPlans !== resolveExamPrepWeeklyPlans(profile.examPrepWeeklyPlans);
+  const vacationChanged =
+    nextVacationPlans !== resolveVacationWeeklyPlans(profile.vacationWeeklyPlans);
+  const regularChanged = nextRegularPlans !== resolveRegularWeeklyPlans(profile.regularWeeklyPlans);
+
+  if (!examChanged && !vacationChanged && !regularChanged) {
+    return;
+  }
+
+  const data: Record<string, unknown> = {};
+
+  if (examChanged) {
+    data.examPrepWeeklyPlans = nextExamPlans;
+  }
+
+  if (vacationChanged) {
+    data.vacationWeeklyPlans = nextVacationPlans;
+  }
+
   if (regularChanged) {
     data.regularWeeklyPlans = nextRegularPlans;
   }
@@ -472,6 +577,79 @@ export default factories.createCoreController(UID, ({ strapi }) => ({
 
     return ctx.send({
       todo: serializeStudyPlanTodo(updated as Record<string, unknown>),
+    });
+  },
+
+  async detachOccurrence(ctx) {
+    const owner = await resolveOwnerFromContext(strapi, ctx);
+
+    if ('error' in owner) {
+      return owner.status === 401
+        ? ctx.unauthorized(owner.error)
+        : ctx.forbidden(owner.error);
+    }
+
+    const id = Number(ctx.params.id);
+    const fromDate = parseOccurrenceDate(String(ctx.params.date ?? ''));
+
+    if (!Number.isInteger(id) || id <= 0 || !fromDate) {
+      return ctx.badRequest('유효한 id와 date가 필요합니다.');
+    }
+
+    const existing = await findOwnedTodo(strapi, owner.userId, id);
+
+    if (!existing) {
+      return ctx.notFound('스터디 플랜을 찾을 수 없습니다.');
+    }
+
+    const todo = toStudyPlanTodoRecord(existing);
+    const body = ctx.request.body as OccurrenceDetachInput;
+    const fields = resolveOccurrenceFields(todo, fromDate);
+    const detachInput: OccurrenceDetachInput = {
+      toDate: String(body.toDate ?? ''),
+      title: body.title?.trim() || fields.title,
+      startTime: body.startTime || fields.startTime,
+      endTime: body.endTime || fields.endTime,
+    };
+    const error = validateOccurrenceDetachInput(todo, fromDate, detachInput);
+
+    if (error) {
+      return ctx.badRequest(error);
+    }
+
+    const updatedParent = await strapi.db.query(UID).update({
+      where: { id },
+      data: buildParentOccurrenceDetachUpdate(todo, fromDate),
+    });
+
+    const created = await strapi.db.query(UID).create({
+      data: {
+        ...buildDetachedOnceTodoCreateData(todo, fromDate, detachInput),
+        user: owner.userId,
+      },
+    });
+
+    await transferWeeklyPlanLinkOnDetach(
+      strapi,
+      owner.userId,
+      todo,
+      Number((created as Record<string, unknown>).id)
+    );
+
+    await syncTodoNotificationQueueFromRaw(
+      strapi,
+      updatedParent as Record<string, unknown>,
+      owner.userId
+    );
+    await syncTodoNotificationQueueFromRaw(
+      strapi,
+      created as Record<string, unknown>,
+      owner.userId
+    );
+
+    return ctx.send({
+      parentTodo: serializeStudyPlanTodo(updatedParent as Record<string, unknown>),
+      onceTodo: serializeStudyPlanTodo(created as Record<string, unknown>),
     });
   },
 

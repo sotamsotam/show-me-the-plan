@@ -1,5 +1,9 @@
 import { normalizeTime } from '@/lib/schedule-time';
-import type { ScheduleOccurrenceOverride, UserSchedule } from '@/lib/user-schedule';
+import {
+  resolveOccurrenceFields,
+  type ScheduleOccurrenceOverride,
+  type UserSchedule,
+} from '@/lib/user-schedule';
 
 function parseIsoDate(ymd: string): Date {
   const [y, m, d] = ymd.split('-').map(Number);
@@ -113,5 +117,30 @@ export function buildWeeklyScheduleMovePayload(
     validUntil: schedule.validUntil ?? undefined,
     excludedDates,
     overrides,
+  };
+}
+
+export interface OccurrenceDetachRequest {
+  toDate: string;
+  title: string;
+  startTime: string;
+  endTime: string;
+}
+
+export function buildOccurrenceDetachRequest(
+  schedule: UserSchedule,
+  fromDate: string,
+  toDate: string,
+  startTime: string,
+  endTime: string,
+  title?: string
+): OccurrenceDetachRequest {
+  const fields = resolveOccurrenceFields(schedule, fromDate);
+
+  return {
+    toDate,
+    title: title?.trim() || fields.title,
+    startTime,
+    endTime,
   };
 }

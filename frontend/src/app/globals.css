@@ -2593,6 +2593,20 @@ body:has([data-dashboard-app]) {
     filter: none !important;
   }
 
+  .study-plan-calendar .fc .fc-list-event.cal-event-card:not(.study-plan-event),
+  .study-plan-calendar .fc .fc-list-event.cal-event-card:not(.study-plan-event) td {
+    background: transparent !important;
+    border: none !important;
+    border-left: none !important;
+    box-shadow: none !important;
+    filter: none !important;
+  }
+
+  .study-plan-calendar .fc .fc-list-event.cal-event-card:not(.study-plan-event):hover {
+    box-shadow: none !important;
+    filter: none !important;
+  }
+
   .study-plan-calendar .fc .fc-list-event.study-plan-event.cal-event-card .cal-event-title,
   .study-plan-calendar .fc .fc-list-event.study-plan-event.cal-event-card .cal-event-inner--list,
   .study-plan-calendar .fc .fc-list-event.study-plan-event.cal-event-card .fc-list-event-title,
@@ -2603,11 +2617,6 @@ body:has([data-dashboard-app]) {
 
   .study-plan-calendar .fc .fc-list-event.study-plan-event.cal-event-card .fc-list-event-time {
     color: #6b7280 !important;
-  }
-
-  .study-plan-calendar .fc .fc-list-event.cal-event-card.school-exam-event td,
-  .study-plan-calendar .fc .fc-list-event.cal-event-card.school-holiday-event td {
-    background: transparent !important;
   }
 
   .study-plan-calendar .fc .fc-list-event.cal-event-card.school-exam-event .fc-list-event-title,
@@ -2860,15 +2869,16 @@ body:has([data-dashboard-app]) {
     cursor: pointer;
   }
 
-  .schedule-calendar .fc .fc-list-event.cal-event-card,
-  .schedule-calendar .fc .fc-list-event.cal-event-card td {
+  .schedule-calendar .fc .fc-list-event.fc-event.cal-event-card,
+  .schedule-calendar .fc .fc-list-event.fc-event.cal-event-card td {
     background: transparent !important;
     border: none !important;
+    border-left: none !important;
     box-shadow: none !important;
     filter: none !important;
   }
 
-  .schedule-calendar .fc .fc-list-event.cal-event-card:hover {
+  .schedule-calendar .fc .fc-list-event.fc-event.cal-event-card:hover {
     box-shadow: none !important;
     filter: none !important;
   }

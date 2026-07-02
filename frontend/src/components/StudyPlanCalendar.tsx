@@ -57,8 +57,7 @@ import {
 import { parseEventDateTimeRange } from '@/lib/calendar-event-range';
 import { validateScheduleTimeRange } from '@/lib/schedule-time';
 import {
-  buildWeeklyTodoMovePayload,
-  validateOccurrenceMoveTarget,
+  buildOccurrenceDetachRequest,
 } from '@/lib/study-plan-todo-occurrence';
 import type { ExpandedStudyPlanTodoEvent, StudyPlanTodo } from '@/lib/study-plan-todo';
 import { expandedEventsToCalendarEvents, resolveOccurrenceFields } from '@/lib/study-plan-todo';
@@ -593,6 +592,14 @@ export default function StudyPlanCalendar() {
     void refetchStudyPlanTodos(true);
   }, [refetchStudyPlanTodos, studentUserId]);
 
+  const refreshWeeklyPlanContexts = useCallback(async () => {
+    await Promise.all([
+      refreshExamPrepPlans(),
+      refreshVacationPlans(),
+      refreshRegularPlans(),
+    ]);
+  }, [refreshExamPrepPlans, refreshRegularPlans, refreshVacationPlans]);
+
   const handleDatesSet = useCallback(
     (arg: DatesSetArg) => {
       setActiveViewType(arg.view.type);
@@ -1121,41 +1128,29 @@ export default function StudyPlanCalendar() {
         };
       }
 
-      const moveError = validateOccurrenceMoveTarget(todo, fromDate, date);
-      if (moveError) {
-        return { ok: false as const, error: moveError };
-      }
-
-      const res = await fetch(withStudent(`/api/study-plan-todos/${todo.id}`), {
-        method: 'PUT',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(
-          buildWeeklyTodoMovePayload(todo, fromDate, date, {
-            title: fields.title,
-            startTime,
-            endTime,
-          })
+      const res = await fetch(
+        withStudent(
+          `/api/study-plan-todos/${todo.id}/occurrences/${fromDate}/detach`
         ),
-      });
+        {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(
+            buildOccurrenceDetachRequest(todo, fromDate, date, startTime, endTime)
+          ),
+        }
+      );
       const data = await res.json();
 
       if (!res.ok) {
         return {
           ok: false as const,
-          error: (data.error as string) ?? '이 날짜 스터디 플랜 이동에 실패했습니다.',
+          error: (data.error as string) ?? '이 날짜 스터디 플랜 분리에 실패했습니다.',
         };
       }
 
-      return {
-        ok: true as const,
-        session: {
-          eventId: buildStudyPlanEventId(todo.id, date),
-          todoId: todo.id,
-          editScope: 'occurrence' as const,
-          occurrenceDate: date,
-        },
-      };
+      return { ok: true as const };
     },
     [withStudent]
   );
@@ -1230,13 +1225,22 @@ export default function StudyPlanCalendar() {
           return;
         }
 
-        if (result.session.editScope === 'occurrence') {
+        if ('session' in result && result.session) {
+          if (result.session.editScope === 'occurrence') {
+            occurrenceOnlyKeysRef.current.delete(
+              buildStudyPlanOccurrenceKey(todo.id, session.occurrenceDate)
+            );
+            occurrenceOnlyKeysRef.current.add(
+              buildStudyPlanOccurrenceKey(todo.id, result.session.occurrenceDate)
+            );
+          }
+        } else {
           occurrenceOnlyKeysRef.current.delete(
             buildStudyPlanOccurrenceKey(todo.id, session.occurrenceDate)
           );
-          occurrenceOnlyKeysRef.current.add(
-            buildStudyPlanOccurrenceKey(todo.id, result.session.occurrenceDate)
-          );
+          if (todo.weeklyPlanSource) {
+            void refreshWeeklyPlanContexts();
+          }
         }
 
         clearEditSession();
@@ -1254,17 +1258,10 @@ export default function StudyPlanCalendar() {
       persistOccurrenceDrag,
       persistOnceDrag,
       refreshCalendar,
+      refreshWeeklyPlanContexts,
       studyPlanTodos,
     ]
   );
-
-  const refreshWeeklyPlanContexts = useCallback(async () => {
-    await Promise.all([
-      refreshExamPrepPlans(),
-      refreshVacationPlans(),
-      refreshRegularPlans(),
-    ]);
-  }, [refreshExamPrepPlans, refreshRegularPlans, refreshVacationPlans]);
 
   const handleTodoDeleted = useCallback(
     (todo: StudyPlanTodo) => {

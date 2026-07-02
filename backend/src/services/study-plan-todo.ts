@@ -729,6 +729,87 @@ export function buildOccurrenceExclusionUpdate(todo: StudyPlanTodoRecord, date: 
   };
 }
 
+export interface OccurrenceDetachInput {
+  toDate: string;
+  title: string;
+  startTime: string;
+  endTime: string;
+}
+
+export function validateOccurrenceDetachInput(
+  todo: StudyPlanTodoRecord,
+  fromDate: string,
+  input: OccurrenceDetachInput
+): string | null {
+  if (todo.recurrenceType !== 'weekly') {
+    return '반복 스터디 플랜만 분리할 수 있습니다.';
+  }
+
+  const toDate = input.toDate.slice(0, 10);
+
+  if (!isValidIsoDate(toDate)) {
+    return 'toDate는 YYYY-MM-DD 형식이어야 합니다.';
+  }
+
+  if (fromDate === toDate) {
+    return '같은 날짜로는 분리할 수 없습니다. 시간 변경은 occurrence 수정 API를 사용하세요.';
+  }
+
+  if (!isOccurrenceEditableSource(todo, fromDate)) {
+    return '해당 날짜는 이 반복 일정에 포함되지 않습니다.';
+  }
+
+  return validateOccurrenceOverride({
+    title: input.title,
+    startTime: input.startTime,
+    endTime: input.endTime,
+  });
+}
+
+export function buildParentOccurrenceDetachUpdate(
+  todo: StudyPlanTodoRecord,
+  fromDate: string
+): Record<string, unknown> {
+  const executionRecords = { ...todo.executionRecords };
+  delete executionRecords[fromDate];
+
+  const data: Record<string, unknown> = {
+    ...buildOccurrenceExclusionUpdate(todo, fromDate),
+    executionRecords,
+  };
+
+  if (todo.weeklyPlanSource) {
+    data.weeklyPlanSource = null;
+  }
+
+  return data;
+}
+
+export function buildDetachedOnceTodoCreateData(
+  todo: StudyPlanTodoRecord,
+  fromDate: string,
+  input: OccurrenceDetachInput
+): Record<string, unknown> {
+  const toDate = input.toDate.slice(0, 10);
+  const data = buildStudyPlanTodoData({
+    subject: todo.subject,
+    title: input.title,
+    startTime: input.startTime,
+    endTime: input.endTime,
+    recurrenceType: 'once',
+    date: toDate,
+    weeklyPlanSource: todo.weeklyPlanSource ?? undefined,
+  });
+
+  const execution = todo.executionRecords[fromDate];
+
+  if (execution) {
+    data.executionRecords = { [toDate]: execution };
+  }
+
+  return data;
+}
+
 export function validateExecutionInput(input: ExecutionRecordInput): string | null {
   if (
     !input.status ||

@@ -36,10 +36,12 @@ export async function POST(
   const data = await res.json();
 
   if (!res.ok) {
-    return NextResponse.json(
-      { error: parseError(data, '이 날짜 일정 분리에 실패했습니다.') },
-      { status: res.status }
-    );
+    const message =
+      res.status === 403
+        ? '이 날짜 일정 분리 권한이 없습니다. 백엔드 서버를 재시작한 뒤 다시 시도해 주세요.'
+        : parseError(data, '이 날짜 일정 분리에 실패했습니다.');
+
+    return NextResponse.json({ error: message }, { status: res.status });
   }
 
   return NextResponse.json(data);

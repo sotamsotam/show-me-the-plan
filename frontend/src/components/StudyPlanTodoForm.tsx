@@ -27,6 +27,7 @@ import {
   createEmptyStudyPlanTitleParts,
   type StudyPlanTitleParts,
 } from '@/lib/study-plan-title-builder';
+import { buildOccurrenceDetachRequest } from '@/lib/study-plan-todo-occurrence';
 import { findUserSubject } from '@/lib/user-subject';
 import type { WeeklyPlanSource } from '@/lib/weekly-plan-source';
 
@@ -327,20 +328,51 @@ export default function StudyPlanTodoForm({
           return;
         }
 
-        const res = await fetch(
-          withStudent(`/api/study-plan-todos/${todo.id}/occurrences/${occurrenceDate}`),
-          {
-            method: 'PUT',
-            credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ title, startTime, endTime }),
-          }
-        );
-        const data = await res.json();
+        const resolvedDate = resolveStudyDayDate(date, startTime);
 
-        if (!res.ok) {
-          setError(data.error ?? '스터디 플랜 저장에 실패했습니다.');
-          return;
+        if (resolvedDate === occurrenceDate) {
+          const res = await fetch(
+            withStudent(`/api/study-plan-todos/${todo.id}/occurrences/${occurrenceDate}`),
+            {
+              method: 'PUT',
+              credentials: 'include',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ title, startTime, endTime }),
+            }
+          );
+          const data = await res.json();
+
+          if (!res.ok) {
+            setError(data.error ?? '스터디 플랜 저장에 실패했습니다.');
+            return;
+          }
+        } else {
+          const res = await fetch(
+            withStudent(
+              `/api/study-plan-todos/${todo.id}/occurrences/${occurrenceDate}/detach`
+            ),
+            {
+              method: 'POST',
+              credentials: 'include',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(
+                buildOccurrenceDetachRequest(
+                  todo,
+                  occurrenceDate,
+                  resolvedDate,
+                  startTime,
+                  endTime,
+                  title
+                )
+              ),
+            }
+          );
+          const data = await res.json();
+
+          if (!res.ok) {
+            setError(data.error ?? '이 날짜 스터디 플랜 분리에 실패했습니다.');
+            return;
+          }
         }
 
         onSaved();
@@ -534,11 +566,15 @@ export default function StudyPlanTodoForm({
               <input
                 type="date"
                 required
-                readOnly={isOccurrence}
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-zinc-800 read-only:cursor-default read-only:bg-gray-50 dark:read-only:bg-zinc-800/80"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-zinc-800"
               />
+              {isOccurrence && (
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  날짜를 바꾸면 반복 일정에서 빠지고 단일 일정으로 저장됩니다.
+                </p>
+              )}
             </label>
           )}
 

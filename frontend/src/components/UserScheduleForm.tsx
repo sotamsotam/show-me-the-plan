@@ -23,6 +23,7 @@ import {
   type UserSchedule,
   type UserScheduleInput,
 } from '@/lib/user-schedule';
+import { buildOccurrenceDetachRequest } from '@/lib/user-schedule-occurrence';
 import { uploadScheduleAttachmentFile } from '@/lib/schedule-attachment';
 import ScheduleAttachmentField, {
   createPendingScheduleAttachment,
@@ -377,24 +378,60 @@ export default function UserScheduleForm({
           return;
         }
 
-        const occurrenceBody = schedule.allDay
-          ? { title }
-          : { title, startTime: resolvedStartTime, endTime: resolvedEndTime };
+        const fields = resolveOccurrenceFields(schedule, occurrenceDate);
+        const resolvedDate = schedule.allDay
+          ? date
+          : resolveStudyDayDate(date, resolvedStartTime);
+        const detachStartTime = schedule.allDay ? fields.startTime : resolvedStartTime;
+        const detachEndTime = schedule.allDay ? fields.endTime : resolvedEndTime;
 
-        const res = await fetch(
-          withStudent(`/api/user-schedules/${schedule.id}/occurrences/${occurrenceDate}`),
-          {
-            method: 'PUT',
-            credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(occurrenceBody),
+        if (resolvedDate === occurrenceDate) {
+          const occurrenceBody = schedule.allDay
+            ? { title }
+            : { title, startTime: resolvedStartTime, endTime: resolvedEndTime };
+
+          const res = await fetch(
+            withStudent(`/api/user-schedules/${schedule.id}/occurrences/${occurrenceDate}`),
+            {
+              method: 'PUT',
+              credentials: 'include',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(occurrenceBody),
+            }
+          );
+          const data = await res.json();
+
+          if (!res.ok) {
+            setError(data.error ?? '일정 저장에 실패했습니다.');
+            return;
           }
-        );
-        const data = await res.json();
+        } else {
+          const res = await fetch(
+            withStudent(
+              `/api/user-schedules/${schedule.id}/occurrences/${occurrenceDate}/detach`
+            ),
+            {
+              method: 'POST',
+              credentials: 'include',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(
+                buildOccurrenceDetachRequest(
+                  schedule,
+                  occurrenceDate,
+                  resolvedDate,
+                  detachStartTime,
+                  detachEndTime,
+                  title
+                )
+              ),
+            }
+          );
+          const data = await res.json();
 
-        if (!res.ok) {
-          setError(data.error ?? '일정 저장에 실패했습니다.');
-          return;
+          if (!res.ok) {
+            setError(data.error ?? '이 날짜 일정 분리에 실패했습니다.');
+            return;
+          }
         }
       } else {
         const payload: UserScheduleInput = {
@@ -602,11 +639,15 @@ export default function UserScheduleForm({
               <input
                 type="date"
                 required
-                readOnly={isOccurrence}
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-zinc-800 read-only:cursor-default read-only:bg-gray-50 dark:read-only:bg-zinc-800/80"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-zinc-800"
               />
+              {isOccurrence && (
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  날짜를 바꾸면 반복 일정에서 빠지고 단일 일정으로 저장됩니다.
+                </p>
+              )}
             </label>
           )}
 

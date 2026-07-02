@@ -38,8 +38,7 @@ import {
   validateScheduleTimeRange,
 } from '@/lib/schedule-time';
 import {
-  buildWeeklyScheduleMovePayload,
-  validateOccurrenceMoveTarget,
+  buildOccurrenceDetachRequest,
 } from '@/lib/user-schedule-occurrence';
 import {
   formatOccurrenceDateLabel,
@@ -999,41 +998,27 @@ export default function ScheduleCalendar() {
         };
       }
 
-      const moveError = validateOccurrenceMoveTarget(schedule, fromDate, date);
-      if (moveError) {
-        return { ok: false as const, error: moveError };
-      }
-
-      const res = await fetch(withStudent(`/api/user-schedules/${schedule.id}`), {
-        method: 'PUT',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(
-          buildWeeklyScheduleMovePayload(schedule, fromDate, date, {
-            title: fields.title,
-            startTime,
-            endTime,
-          })
-        ),
-      });
+      const res = await fetch(
+        withStudent(`/api/user-schedules/${schedule.id}/occurrences/${fromDate}/detach`),
+        {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(
+            buildOccurrenceDetachRequest(schedule, fromDate, date, startTime, endTime)
+          ),
+        }
+      );
       const data = await res.json();
 
       if (!res.ok) {
         return {
           ok: false as const,
-          error: (data.error as string) ?? '이 날짜 일정 이동에 실패했습니다.',
+          error: (data.error as string) ?? '이 날짜 일정 분리에 실패했습니다.',
         };
       }
 
-      return {
-        ok: true as const,
-        session: {
-          eventId: buildUserEventId(schedule.id, date),
-          scheduleId: schedule.id,
-          editScope: 'occurrence' as const,
-          occurrenceDate: date,
-        },
-      };
+      return { ok: true as const };
     },
     [withStudent]
   );
@@ -1118,12 +1103,18 @@ export default function ScheduleCalendar() {
           return;
         }
 
-        if (result.session.editScope === 'occurrence') {
+        if ('session' in result && result.session) {
+          if (result.session.editScope === 'occurrence') {
+            occurrenceOnlyKeysRef.current.delete(
+              buildOccurrenceKey(schedule.id, session.occurrenceDate)
+            );
+            occurrenceOnlyKeysRef.current.add(
+              buildOccurrenceKey(schedule.id, result.session.occurrenceDate)
+            );
+          }
+        } else {
           occurrenceOnlyKeysRef.current.delete(
             buildOccurrenceKey(schedule.id, session.occurrenceDate)
-          );
-          occurrenceOnlyKeysRef.current.add(
-            buildOccurrenceKey(schedule.id, result.session.occurrenceDate)
           );
         }
 

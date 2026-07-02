@@ -1,5 +1,9 @@
 import { normalizeTime } from '@/lib/schedule-time';
-import type { StudyPlanOccurrenceOverride, StudyPlanTodo } from '@/lib/study-plan-todo';
+import {
+  resolveOccurrenceFields,
+  type StudyPlanOccurrenceOverride,
+  type StudyPlanTodo,
+} from '@/lib/study-plan-todo';
 
 function parseIsoDate(ymd: string): Date {
   const [y, m, d] = ymd.split('-').map(Number);
@@ -113,5 +117,30 @@ export function buildWeeklyTodoMovePayload(
     validUntil: todo.validUntil ?? undefined,
     excludedDates,
     overrides,
+  };
+}
+
+export interface OccurrenceDetachRequest {
+  toDate: string;
+  title: string;
+  startTime: string;
+  endTime: string;
+}
+
+export function buildOccurrenceDetachRequest(
+  todo: StudyPlanTodo,
+  fromDate: string,
+  toDate: string,
+  startTime: string,
+  endTime: string,
+  title?: string
+): OccurrenceDetachRequest {
+  const fields = resolveOccurrenceFields(todo, fromDate);
+
+  return {
+    toDate,
+    title: title?.trim() || fields.title,
+    startTime,
+    endTime,
   };
 }
