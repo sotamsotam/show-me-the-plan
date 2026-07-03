@@ -22,8 +22,9 @@ export const HOME_PC_MOBILE_SHOWCASE: PcMobileShowcaseContent = {
       alt: '쇼미플 PC 대화면 캘린더·스터디 플랜 화면',
     },
     mobile: {
-      src: '/images/mobile_todo.jpg',
+      src: '/videos/mobile.mp4',
       alt: '쇼미플 모바일 TODO 실행 화면',
+      type: 'video',
     },
   },
 };

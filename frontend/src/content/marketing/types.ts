@@ -23,6 +23,7 @@ export type KeyFeatureShowcaseScreen = {
   src: string;
   alt: string;
   device: 'mobile' | 'desktop';
+  type?: 'image' | 'video';
 };
 
 export type KeyFeatureShowcaseContent = {
@@ -170,6 +171,7 @@ export type VideoInsightContent = {
 };
 
 export type KioskModeContent = {
+  eyebrow?: string;
   title: string;
   paragraphs: readonly string[];
   youtube: {
@@ -224,7 +226,7 @@ export type PcMobileShowcaseFeature = {
 
 export type PcMobileShowcaseScreen = {
   pc: { src: string; alt: string };
-  mobile: { src: string; alt: string };
+  mobile: { src: string; alt: string; type?: 'image' | 'video' };
 };
 
 export type PcMobileShowcaseContent = {

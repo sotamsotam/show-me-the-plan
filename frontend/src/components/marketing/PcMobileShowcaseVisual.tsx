@@ -20,15 +20,27 @@ export default function PcMobileShowcaseVisual({ screen }: { screen: PcMobileSho
           </div>
         </div>
 
-        <div className="absolute bottom-0 left-0 z-10 w-[34%] max-w-[7.5rem] sm:w-[38%] sm:max-w-[9.5rem] lg:max-w-[10.5rem]">
-          <div className="relative aspect-[9/19.5] overflow-hidden rounded-[1.25rem] bg-mkt-surface shadow-mkt-hover ring-[3px] ring-white sm:rounded-[1.5rem] sm:ring-4">
-            <Image
-              src={screen.mobile.src}
-              alt={screen.mobile.alt}
-              fill
-              sizes="(max-width: 640px) 34vw, 168px"
-              className="object-cover object-top"
-            />
+        <div className="absolute bottom-0 left-0 z-10 w-[40%] max-w-[9rem] sm:w-[44%] sm:max-w-[11rem] lg:max-w-[12.5rem]">
+          <div className="relative aspect-[9/19.5] overflow-hidden rounded-[1.25rem] bg-mkt-surface shadow-[0_6px_20px_rgba(15,23,42,0.16),0_18px_48px_rgba(15,23,42,0.24)] ring-[3px] ring-white sm:rounded-[1.5rem] sm:ring-4">
+            {screen.mobile.type === 'video' ? (
+              <video
+                src={screen.mobile.src}
+                aria-label={screen.mobile.alt}
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="absolute inset-0 h-full w-full object-cover object-top"
+              />
+            ) : (
+              <Image
+                src={screen.mobile.src}
+                alt={screen.mobile.alt}
+                fill
+                sizes="(max-width: 640px) 40vw, 200px"
+                className="object-cover object-top"
+              />
+            )}
           </div>
         </div>
       </div>

@@ -5,14 +5,11 @@ import HeroSection from '@/components/marketing/sections/HeroSection';
 import HomeFeaturedReviewsSection from '@/components/marketing/sections/HomeFeaturedReviewsSection';
 import KioskModeSection from '@/components/marketing/sections/KioskModeSection';
 import KeyFeaturesShowcaseSection from '@/components/marketing/sections/KeyFeaturesShowcaseSection';
-import MarketingCtaSection from '@/components/marketing/sections/MarketingCtaSection';
 import PlannerComparisonSection from '@/components/marketing/sections/PlannerComparisonSection';
 import PcMobileShowcaseSection from '@/components/marketing/sections/PcMobileShowcaseSection';
 import ProcessSection from '@/components/marketing/sections/ProcessSection';
 import StudyPlannerStorySection from '@/components/marketing/sections/StudyPlannerStorySection';
-import TargetSplitSection from '@/components/marketing/sections/TargetSplitSection';
-import ValueCardsSection from '@/components/marketing/sections/ValueCardsSection';
-import { CORE_VALUES, homeContent, homeSeo } from '@/content/marketing';
+import { homeContent, homeSeo } from '@/content/marketing';
 import { authOptions } from '@/lib/auth';
 import {
   getDefaultDashboardPathFromSession,
@@ -71,17 +68,6 @@ export default async function HomePage({
       />
       <PlannerComparisonSection {...homeContent.plannerComparison} />
       <PcMobileShowcaseSection {...homeContent.pcMobileShowcase} />
-      <TargetSplitSection items={homeContent.targetCards} />
-      <ValueCardsSection
-        eyebrow="핵심 가치"
-        title={homeContent.valuesTitle}
-        items={CORE_VALUES}
-      />
-      <FeatureGridSection
-        eyebrow="올인원 학습 관리"
-        title={homeContent.featuresTitle}
-        items={homeContent.features}
-      />
       <ProcessSection
         eyebrow={homeContent.process.eyebrow}
         title={homeContent.process.title}
@@ -113,11 +99,6 @@ export default async function HomePage({
             을 확인해 주세요.
           </>
         }
-      />
-      <MarketingCtaSection
-        eyebrow="시작하기"
-        headline={homeContent.bottomCta.headline}
-        links={homeContent.bottomCta.links}
       />
     </>
   );

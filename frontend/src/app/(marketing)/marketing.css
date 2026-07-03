@@ -414,6 +414,12 @@
     transform: none;
   }
 
+  .marketing-site .mkt-process-step {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+
   .marketing-site .mkt-planner-phone-screen {
     transition: none;
   }
@@ -516,6 +522,27 @@
 .marketing-site .mkt-comparison-cards-inview .mkt-comparison-card {
   animation: mkt-comparison-card-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
   animation-delay: calc(var(--mkt-stagger-index, 0) * 0.08s);
+}
+
+@keyframes mkt-process-step-in {
+  from {
+    opacity: 0;
+    transform: translateY(1.5rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.marketing-site .mkt-process-step {
+  opacity: 0;
+}
+
+.marketing-site .mkt-process-steps-inview .mkt-process-step {
+  animation: mkt-process-step-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(var(--mkt-stagger-index, 0) * 0.12s);
 }
 
 @keyframes mkt-story-hook-lead-in {

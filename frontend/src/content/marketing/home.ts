@@ -1,4 +1,4 @@
-import { GRADE_CARDS, HOME_FEATURES, HOME_KEY_FEATURES_SHOWCASE, HOME_TARGET_CARDS } from './common';
+import { GRADE_CARDS, HOME_FEATURES, HOME_KEY_FEATURES_SHOWCASE } from './common';
 import { HOME_FAQ, HOME_PROCESS } from './home-faq';
 import { HOME_KIOSK_MODE } from './home-kiosk-mode';
 import { HOME_PC_MOBILE_SHOWCASE } from './home-pc-mobile-showcase';
@@ -33,8 +33,6 @@ export const homeContent = {
   },
   plannerComparison: HOME_PLANNER_COMPARISON,
   pcMobileShowcase: HOME_PC_MOBILE_SHOWCASE,
-  targetCards: HOME_TARGET_CARDS,
-  valuesTitle: "Show Me The Plan이 지향하는 공부",
   featuresTitle: "필요한 것, 하나의 앱 안에",
   features: HOME_FEATURES.map((f) => ({
     title: f.title,
@@ -45,11 +43,4 @@ export const homeContent = {
   kioskMode: HOME_KIOSK_MODE,
   process: HOME_PROCESS,
   faq: HOME_FAQ,
-  bottomCta: {
-    headline: "누구를 위한 Show Me The Plan인가요?",
-    links: [
-      { label: "학부모·선생님", href: "/for-parents" },
-      { label: "중·고등학생", href: "/for-students" },
-    ],
-  },
 };

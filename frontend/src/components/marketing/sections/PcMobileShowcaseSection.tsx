@@ -14,8 +14,7 @@ export default function PcMobileShowcaseSection({
     <MarketingSection variant="default">
       <SectionHeading title={title} description={lead} />
 
-      <article className="mkt-card-elevated overflow-hidden">
-        <div className="grid items-center gap-8 p-6 sm:p-8 lg:grid-cols-[1fr_1.1fr] lg:gap-10 lg:p-10">
+      <div className="grid items-center gap-8 lg:grid-cols-[1fr_1.1fr] lg:gap-10">
           <div className="max-w-xl">
             <p className="text-lg font-bold leading-snug text-mkt-text sm:text-xl">
               {cardHeadline}
@@ -51,8 +50,7 @@ export default function PcMobileShowcaseSection({
           <div className="lg:pl-2">
             <PcMobileShowcaseVisual screen={screen} />
           </div>
-        </div>
-      </article>
+      </div>
     </MarketingSection>
   );
 }
