@@ -60,6 +60,7 @@ import CalendarEditHint from '@/components/calendar/CalendarEditHint';
 import CalendarExamCountdownBadge from '@/components/calendar/CalendarExamCountdownBadge';
 import { buildCalendarEditHint } from '@/lib/calendar-edit-hint';
 import { useExamCountdown } from '@/hooks/useExamCountdown';
+import { useResponsiveCalendarHeight } from '@/hooks/useResponsiveCalendarHeight';
 import { useExamPrepDayHeader } from '@/hooks/useExamPrepDayHeader';
 import type { VisibleDateRange } from '@/lib/exam-prep-visible-week-plans';
 import {
@@ -90,7 +91,6 @@ const MOBILE_DAY_VIEW = 'timeGridDay';
 const MOBILE_MONTH_VIEW = 'dayGridMonth';
 const DESKTOP_WEEK_VIEW = 'timeGridWeek';
 
-const CALENDAR_HEIGHT = 660;
 const DRAFT_EVENT_ID = 'draft-schedule';
 const DRAFT_DURATION_MS = 60 * 60 * 1000;
 
@@ -350,6 +350,10 @@ export default function ScheduleCalendar() {
   const isMonthView = currentViewType === MOBILE_MONTH_VIEW;
   const isMobileDayView = isMobileDayCalendarView(isMobile, currentViewType);
   const isMobileMonthEditDisabled = isMonthView && isMobile;
+  const isTimeGridView = !isListView && !isMonthView;
+  const calendarHeight = useResponsiveCalendarHeight(calendarContainerRef, {
+    enabled: isTimeGridView,
+  });
 
   const calendarLocale = useMemo(
     () => ({
@@ -1171,8 +1175,16 @@ export default function ScheduleCalendar() {
     return '일정 입력 시 원하는 시간 영역을 길게 탭하세요.';
   }, [editSession, isListView, isMobile, isMonthView]);
 
+  useEffect(() => {
+    if (!isTimeGridView || calendarHeight === 'auto') {
+      return;
+    }
+
+    calendarRef.current?.getApi().updateSize();
+  }, [calendarHeight, isTimeGridView]);
+
   return (
-    <div className="space-y-4">
+    <div className="flex min-h-0 flex-1 flex-col gap-4">
       {(error || loadError) && (
         <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">
           {error || loadError}
@@ -1181,7 +1193,9 @@ export default function ScheduleCalendar() {
 
       <div
         ref={calendarContainerRef}
-        className={`relative schedule-calendar w-full overflow-hidden rounded-xl border border-gray-200 bg-white p-4 shadow-sm max-[580px]:p-3 max-[480px]:p-2.5 max-[360px]:p-2 dark:border-neutral-800 dark:bg-zinc-900${isMonthView ? ' schedule-calendar--month' : ''}`}
+        className={`relative schedule-calendar w-full overflow-hidden rounded-xl border border-gray-200 bg-white p-4 shadow-sm max-[580px]:p-3 max-[480px]:p-2.5 max-[360px]:p-2 dark:border-neutral-800 dark:bg-zinc-900${
+          isTimeGridView ? ' flex min-h-0 flex-1 flex-col' : ''
+        }${isMonthView ? ' schedule-calendar--month' : ''}`}
       >
         {(loading || savingDrag) && (
           <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-white/70 text-sm text-gray-500 dark:bg-zinc-900/70 dark:text-gray-400">
@@ -1195,7 +1209,10 @@ export default function ScheduleCalendar() {
           toolbarVersion={toolbarVersion}
         />
         {mobileHelpText ? (
-          <p className="mb-3 text-sm text-gray-500 dark:text-gray-400">
+          <p
+            data-calendar-help
+            className="mb-3 text-sm text-gray-500 dark:text-gray-400"
+          >
             {mobileHelpText}
           </p>
         ) : null}
@@ -1240,7 +1257,7 @@ export default function ScheduleCalendar() {
           slotLabelInterval="00:30:00"
           snapDuration="00:10:00"
           allDaySlot
-          height={isListView || isMonthView ? 'auto' : CALENDAR_HEIGHT}
+          height={calendarHeight}
           dayMaxEvents={false}
           dayMaxEventRows={isMonthView ? false : undefined}
           nowIndicator={!isListView && !isMonthView}

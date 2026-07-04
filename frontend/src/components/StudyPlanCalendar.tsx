@@ -39,6 +39,7 @@ import WeeklyPlanCarryOverModal from '@/components/calendar/WeeklyPlanCarryOverM
 import MobileFab from '@/components/MobileFab';
 import { buildCalendarEditHint } from '@/lib/calendar-edit-hint';
 import { useExamCountdown } from '@/hooks/useExamCountdown';
+import { useResponsiveCalendarHeight } from '@/hooks/useResponsiveCalendarHeight';
 import { useExamPrepWeeklyPlansContext } from '@/hooks/useExamPrepWeeklyPlansContext';
 import { useVacationPeriodSettings } from '@/hooks/useVacationPeriodSettings';
 import { useRegularWeeklyPlansContext } from '@/hooks/useRegularWeeklyPlansContext';
@@ -109,7 +110,6 @@ const DESKTOP_WEEK_VIEW = 'timeGridWeek';
 const DESKTOP_MONTH_VIEW = 'dayGridMonth';
 const DESKTOP_DAY_VIEW = 'timeGridDay';
 
-const CALENDAR_HEIGHT = 660;
 const DRAFT_EVENT_ID = 'draft-study-plan';
 const DRAFT_DURATION_MS = 60 * 60 * 1000;
 const SLOT_MIN_TIME = '05:00:00';
@@ -438,6 +438,10 @@ export default function StudyPlanCalendar() {
   const isListView = isListCalendarView(activeViewType);
   const isMonthView = activeViewType === 'dayGridMonth';
   const isMobileDayView = isMobileDayCalendarView(isMobile, activeViewType);
+  const isTimeGridView = !isListView && !isMonthView;
+  const calendarHeight = useResponsiveCalendarHeight(calendarContainerRef, {
+    enabled: isTimeGridView,
+  });
 
   const calendarLocale = useMemo(
     () => ({
@@ -1377,6 +1381,14 @@ export default function StudyPlanCalendar() {
     return '스터디 플랜 입력 시 원하는 시간 영역을 길게 탭하세요.';
   }, [editSession, isListView, isMobile]);
 
+  useEffect(() => {
+    if (!isTimeGridView || calendarHeight === 'auto') {
+      return;
+    }
+
+    calendarRef.current?.getApi().updateSize();
+  }, [calendarHeight, isTimeGridView]);
+
   const showWeeklyPlanPanel = useMemo(() => {
     if (!visibleRange) {
       return false;
@@ -1586,14 +1598,14 @@ export default function StudyPlanCalendar() {
   ]);
 
   return (
-    <div className="space-y-4">
+    <div className="flex min-h-0 flex-1 flex-col gap-4">
       {(error || loadError) && (
         <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">
           {error || loadError}
         </div>
       )}
 
-      <div className="study-plan-calendar-shell w-full">
+      <div className="study-plan-calendar-shell flex min-h-0 w-full flex-1">
         {showWeeklyPlanPanelInView && weeklyPlanPanelOpen && !isMobile ? (
           <WeeklyPlanPanel
             range={visibleRange}
@@ -1613,7 +1625,9 @@ export default function StudyPlanCalendar() {
 
         <div
           ref={calendarContainerRef}
-          className="study-plan-calendar-main relative study-plan-calendar schedule-calendar overflow-hidden rounded-xl border border-gray-200 bg-white p-4 shadow-sm max-[580px]:p-3 max-[480px]:p-2.5 max-[360px]:p-2 dark:border-neutral-800 dark:bg-zinc-900"
+          className={`study-plan-calendar-main relative study-plan-calendar schedule-calendar overflow-hidden rounded-xl border border-gray-200 bg-white p-4 shadow-sm max-[580px]:p-3 max-[480px]:p-2.5 max-[360px]:p-2 dark:border-neutral-800 dark:bg-zinc-900${
+            isTimeGridView ? ' flex min-h-0 flex-1 flex-col' : ''
+          }`}
         >
           {(loading || savingDrag) && (
             <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-white/70 text-sm text-gray-500 dark:bg-zinc-900/70 dark:text-gray-400">
@@ -1644,7 +1658,10 @@ export default function StudyPlanCalendar() {
             }}
           />
           {weeklyPlanPlacement && deviceTier === 'tablet' ? (
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-100">
+            <div
+              data-calendar-help
+              className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-100"
+            >
               <span>
                 「{weeklyPlanPlacement.title}」 배치 중 — 해당 주차 날짜를 탭하세요.
               </span>
@@ -1658,7 +1675,10 @@ export default function StudyPlanCalendar() {
             </div>
           ) : null}
           {mobileHelpText ? (
-            <p className="mb-3 text-sm text-gray-500 dark:text-gray-400">
+            <p
+              data-calendar-help
+              className="mb-3 text-sm text-gray-500 dark:text-gray-400"
+            >
               {mobileHelpText}
             </p>
           ) : null}
@@ -1695,7 +1715,7 @@ export default function StudyPlanCalendar() {
             slotLabelInterval="00:30:00"
             snapDuration="00:10:00"
             allDaySlot
-            height={isListView ? 'auto' : CALENDAR_HEIGHT}
+            height={calendarHeight}
             nowIndicator={!isListView}
             selectable={!isListView && !isMonthView && (!isMobile || isMobileDayView)}
             editable={!isListView && !isMonthView}
