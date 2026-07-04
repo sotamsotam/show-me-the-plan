@@ -1,6 +1,8 @@
 import {
   getUnscheduledWeeklyPlanItems,
   isScheduledWeeklyPlanItem,
+  MAX_WEEKLY_PLAN_ITEM_TITLE_LENGTH,
+  normalizeWeeklyPlanItemTitle,
   type WeeklyPlanItem,
 } from '@/lib/weekly-plan-item';
 import {
@@ -68,6 +70,40 @@ export function removeUnscheduledWeeklyPlanItem(
   itemId: string
 ): WeeklyPlanItem[] {
   return allItems.filter((item) => item.id !== itemId || isScheduledWeeklyPlanItem(item));
+}
+
+export function updateUnscheduledWeeklyPlanItemTitle(
+  allItems: WeeklyPlanItem[],
+  itemId: string,
+  title: string
+): { items: WeeklyPlanItem[] } | { error: string } {
+  const target = allItems.find((item) => item.id === itemId);
+
+  if (!target || isScheduledWeeklyPlanItem(target)) {
+    return { error: '수정할 수 없는 항목입니다.' };
+  }
+
+  const normalized = normalizeWeeklyPlanItemTitle(title);
+
+  if (normalized === null) {
+    return {
+      error: `항목은 ${MAX_WEEKLY_PLAN_ITEM_TITLE_LENGTH}자 이하여야 합니다.`,
+    };
+  }
+
+  if (!normalized) {
+    return { error: '제목을 입력해 주세요.' };
+  }
+
+  if (target.title === normalized) {
+    return { items: allItems };
+  }
+
+  return {
+    items: allItems.map((item) =>
+      item.id === itemId ? { ...item, title: normalized } : item
+    ),
+  };
 }
 
 export function reorderUnscheduledWeeklyPlanItems(

@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
+  getWeeklyPlanItemRowSurfaceClasses,
   removeUnscheduledWeeklyPlanItem,
   reorderUnscheduledWeeklyPlanItems,
   resolveWeeklyPlanItemRowKind,
-  getWeeklyPlanItemRowSurfaceClasses,
+  updateUnscheduledWeeklyPlanItemTitle,
 } from '@/lib/exam-prep-weekly-plan-item-display';
 import type { ExamPrepWeeklyPlanItem } from '@/lib/exam-prep-weekly-plan';
 import type { StudyPlanTodo } from '@/lib/study-plan-todo';
@@ -102,5 +103,47 @@ describe('reorderUnscheduledWeeklyPlanItems', () => {
       { id: 'b', title: 'B' },
       { id: 'a', title: 'A' },
     ]);
+  });
+});
+
+describe('updateUnscheduledWeeklyPlanItemTitle', () => {
+  it('updates the title of an unscheduled item', () => {
+    const items: ExamPrepWeeklyPlanItem[] = [
+      { id: 'scheduled', title: '배치됨', scheduledTodoId: 1 },
+      { id: 'draft', title: '미배치' },
+    ];
+
+    expect(updateUnscheduledWeeklyPlanItemTitle(items, 'draft', '  수정됨  ')).toEqual({
+      items: [
+        { id: 'scheduled', title: '배치됨', scheduledTodoId: 1 },
+        { id: 'draft', title: '수정됨' },
+      ],
+    });
+  });
+
+  it('rejects empty titles', () => {
+    const items: ExamPrepWeeklyPlanItem[] = [{ id: 'draft', title: '미배치' }];
+
+    expect(updateUnscheduledWeeklyPlanItemTitle(items, 'draft', '   ')).toEqual({
+      error: '제목을 입력해 주세요.',
+    });
+  });
+
+  it('rejects scheduled items', () => {
+    const items: ExamPrepWeeklyPlanItem[] = [
+      { id: 'scheduled', title: '배치됨', scheduledTodoId: 1 },
+    ];
+
+    expect(updateUnscheduledWeeklyPlanItemTitle(items, 'scheduled', '변경')).toEqual({
+      error: '수정할 수 없는 항목입니다.',
+    });
+  });
+
+  it('returns unchanged items when title is the same', () => {
+    const items: ExamPrepWeeklyPlanItem[] = [{ id: 'draft', title: '미배치' }];
+
+    expect(updateUnscheduledWeeklyPlanItemTitle(items, 'draft', '미배치')).toEqual({
+      items,
+    });
   });
 });
