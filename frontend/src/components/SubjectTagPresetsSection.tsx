@@ -103,10 +103,10 @@ export default function SubjectTagPresetsSection() {
           작성할 수 있습니다. 태그는 추가·삭제 시 자동으로 저장됩니다. 과목
           추가·삭제는{' '}
           <Link
-            href="/dashboard/settings"
+            href="/dashboard/preferences/subjects"
             className="text-yellow-400 underline-offset-2 hover:underline hover:text-yellow-300"
           >
-            내정보 수정
+            과목설정
           </Link>
           에서 할 수 있습니다.
         </p>
@@ -118,12 +118,19 @@ export default function SubjectTagPresetsSection() {
         <div className="rounded-xl border border-gray-200 bg-white p-6 text-sm text-gray-500 shadow-sm dark:border-neutral-800 dark:bg-zinc-900 dark:text-gray-400">
           등록된 과목이 없습니다.{' '}
           <Link
+            href="/dashboard/preferences/subjects"
+            className="text-yellow-400 underline-offset-2 hover:underline hover:text-yellow-300"
+          >
+            과목설정
+          </Link>
+          에서 학교 정보를 등록하거나 과목을 추가해 주세요. 학교 정보는{' '}
+          <Link
             href="/dashboard/settings"
             className="text-yellow-400 underline-offset-2 hover:underline hover:text-yellow-300"
           >
             내정보 수정
           </Link>
-          에서 학교 정보를 등록하거나 과목을 추가해 주세요.
+          에서 등록할 수 있습니다.
         </div>
       ) : (
         <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">

@@ -7,7 +7,7 @@ import NotificationSettingsSection from '@/components/NotificationSettingsSectio
 import SubscriptionPointsSection from '@/components/billing/SubscriptionPointsSection';
 import { getMarketingHomeUrl } from '@/lib/account-helpers';
 import PasswordInput from '@/components/PasswordInput';
-import ProfileSubjectsSection from '@/components/ProfileSubjectsSection';
+import { useProfileSubjectsContext } from '@/contexts/ProfileSubjectsContext';
 import {
   SCHOOL_LEVEL_OPTIONS,
   SCHOOL_LEVEL_LABEL,
@@ -54,7 +54,7 @@ export default function SettingsForm() {
   const [managerSuccess, setManagerSuccess] = useState('');
   const [managerSaving, setManagerSaving] = useState(false);
   const [managerSearchAttempted, setManagerSearchAttempted] = useState(false);
-  const [subjectsRefreshKey, setSubjectsRefreshKey] = useState(0);
+  const { reload: reloadSubjects } = useProfileSubjectsContext();
 
   const profile = account?.profile;
   const isNeisStudentProfile = isNeisStudent(profile?.schoolLevel);
@@ -280,7 +280,7 @@ export default function SettingsForm() {
     }
 
     setAccountSuccess('내정보가 저장되었습니다.');
-    setSubjectsRefreshKey((key) => key + 1);
+    void reloadSubjects();
   }
 
   async function handlePasswordSubmit(e: FormEvent) {
@@ -648,8 +648,6 @@ export default function SettingsForm() {
           {accountSaving ? '저장 중...' : '내정보 저장'}
         </button>
       </form>
-
-      {isAnyStudentProfile && <ProfileSubjectsSection refreshKey={subjectsRefreshKey} />}
 
       <form
         onSubmit={handlePasswordSubmit}

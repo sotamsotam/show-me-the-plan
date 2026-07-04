@@ -6,10 +6,6 @@ import SubjectColorPicker from '@/components/SubjectColorPicker';
 import { useProfileSubjectsContext } from '@/contexts/ProfileSubjectsContext';
 import type { UserSubject } from '@/lib/user-subject';
 
-interface ProfileSubjectsSectionProps {
-  refreshKey?: number;
-}
-
 function cloneSubjects(subjects: UserSubject[]): UserSubject[] {
   return subjects.map((subject) => ({
     ...subject,
@@ -18,19 +14,13 @@ function cloneSubjects(subjects: UserSubject[]): UserSubject[] {
   }));
 }
 
-export default function ProfileSubjectsSection({
-  refreshKey = 0,
-}: ProfileSubjectsSectionProps) {
+export default function ProfileSubjectsSection() {
   const { subjects, loading, error: loadError, reload } = useProfileSubjectsContext();
   const [draftSubjects, setDraftSubjects] = useState<UserSubject[]>([]);
   const [newSubjectLabel, setNewSubjectLabel] = useState('');
   const [saveError, setSaveError] = useState('');
   const [saveSuccess, setSaveSuccess] = useState('');
   const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    reload();
-  }, [refreshKey, reload]);
 
   useEffect(() => {
     setDraftSubjects(cloneSubjects(subjects));
@@ -141,28 +131,30 @@ export default function ProfileSubjectsSection({
   }
 
   return (
-    <section className="mt-6 space-y-4 rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-zinc-900">
-      <div>
-        <h2 className="text-lg font-medium">내 과목</h2>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          학교 정보 등록 시 시간표에서 자동으로 채워집니다. 과목명을 바꾸면 학교
-          시간표에도 수정한 이름이 표시됩니다. 스터디 플랜 추가 시 여기에 설정된
-          과목만 선택할 수 있습니다. 색상 아이콘으로 과목별 표시 색을 바꿀 수
-          있습니다. 교재명·공부방법 태그는{' '}
-          <Link
-            href="/dashboard/preferences/subject-tags"
-            className="text-blue-600 underline-offset-2 hover:underline dark:text-blue-400"
-          >
-            설정 → 과목별 태그 설정
-          </Link>
-          에서 관리할 수 있습니다.
+    <section className="weekly-plan-settings-page w-full space-y-4">
+      <div className="shrink-0">
+        <h2 className="text-lg font-medium text-white">과목설정</h2>
+        <p className="mt-1 text-sm text-[#e2feff]">
+          학교정보에서 자동으로 과목이 반영됩니다.
+          <br />
+          과목명을 바꾸면 학교 시간표와 스터디 플랜에도 수정된 과목명으로
+          표시됩니다.
+          <br />
+          과목의 순서, 과목표시 칼라를 원하시는 대로 수정할 수 있습니다.
+          <br />
+          학습관리가 불필요한 과목을 삭제하거나 새로운 과목을 추가할 수
+          있습니다.
+          (삭제·추가 시 에도 학교시간표는 학교공지대로 유지됩니다.)
         </p>
       </div>
 
       {loading ? (
         <p className="text-sm text-gray-500">과목 목록 불러오는 중...</p>
       ) : (
-        <form onSubmit={handleSave} className="space-y-4">
+        <form
+          onSubmit={handleSave}
+          className="space-y-4 rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-zinc-900"
+        >
           <ul className="space-y-2">
             {draftSubjects.map((subject, index) => (
               <li
@@ -202,9 +194,11 @@ export default function ProfileSubjectsSection({
                 <input
                   type="text"
                   value={subject.label}
-                  onChange={(event) => updateSubjectLabel(index, event.target.value)}
+                  onChange={(event) =>
+                    updateSubjectLabel(index, event.target.value)
+                  }
                   disabled={saving}
-                  aria-label={`${subject.label || '과목'} 이름`}
+                  aria-label={`${subject.label || "과목"} 이름`}
                   className="min-w-0 flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 dark:border-neutral-600 dark:bg-zinc-800"
                 />
 
@@ -226,7 +220,7 @@ export default function ProfileSubjectsSection({
               value={newSubjectLabel}
               onChange={(event) => setNewSubjectLabel(event.target.value)}
               onKeyDown={(event) => {
-                if (event.key === 'Enter') {
+                if (event.key === "Enter") {
                   event.preventDefault();
                   handleAddSubject();
                 }
@@ -251,7 +245,9 @@ export default function ProfileSubjectsSection({
             </p>
           )}
           {saveSuccess && (
-            <p className="text-sm text-green-600 dark:text-green-400">{saveSuccess}</p>
+            <p className="text-sm text-green-600 dark:text-green-400">
+              {saveSuccess}
+            </p>
           )}
 
           <button
@@ -259,7 +255,7 @@ export default function ProfileSubjectsSection({
             disabled={saving || loading}
             className="w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
           >
-            {saving ? '저장 중...' : '과목 설정 저장'}
+            {saving ? "저장 중..." : "과목 설정 저장"}
           </button>
         </form>
       )}

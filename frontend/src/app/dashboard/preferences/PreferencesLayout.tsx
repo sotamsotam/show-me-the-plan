@@ -8,11 +8,19 @@ import PreferencesNavIcon from './PreferencesNavIcon';
 import { useDeviceTier } from '@/hooks/useDeviceTier';
 
 const PREFERENCES_SIDEBAR_COLLAPSED_KEY = 'preferences-sidebar-collapsed';
+const SUBJECTS_HREF = '/dashboard/preferences/subjects';
 const SUBJECT_TAGS_HREF = '/dashboard/preferences/subject-tags';
+
+const PHONE_PREFERENCES_HREFS = new Set([SUBJECTS_HREF, SUBJECT_TAGS_HREF]);
 
 const PREFERENCES_NAV_ITEMS = [
   {
-    href: '/dashboard/preferences/subject-tags',
+    href: SUBJECTS_HREF,
+    label: '과목설정',
+    icon: 'subjects',
+  },
+  {
+    href: SUBJECT_TAGS_HREF,
     label: '과목별 태그 설정',
     icon: 'subject-tags',
   },
@@ -90,7 +98,7 @@ export default function PreferencesLayout({ children }: PreferencesLayoutProps) 
 
   const navItems = useMemo(() => {
     if (deviceTier === 'phone') {
-      return PREFERENCES_NAV_ITEMS.filter((item) => item.href === SUBJECT_TAGS_HREF);
+      return PREFERENCES_NAV_ITEMS.filter((item) => PHONE_PREFERENCES_HREFS.has(item.href));
     }
 
     return [...PREFERENCES_NAV_ITEMS];
@@ -105,8 +113,11 @@ export default function PreferencesLayout({ children }: PreferencesLayoutProps) 
       return;
     }
 
-    if (pathname.startsWith('/dashboard/preferences') && pathname !== SUBJECT_TAGS_HREF) {
-      router.replace(SUBJECT_TAGS_HREF);
+    if (
+      pathname.startsWith('/dashboard/preferences') &&
+      !PHONE_PREFERENCES_HREFS.has(pathname)
+    ) {
+      router.replace(SUBJECTS_HREF);
     }
   }, [deviceTier, pathname, router]);
 
