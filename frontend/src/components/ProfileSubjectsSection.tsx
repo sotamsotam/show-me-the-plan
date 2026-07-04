@@ -1,10 +1,14 @@
 'use client';
 
 import Link from 'next/link';
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 import SubjectColorPicker from '@/components/SubjectColorPicker';
 import { useProfileSubjectsContext } from '@/contexts/ProfileSubjectsContext';
+import { useUnsavedChangesWarning } from '@/hooks/useUnsavedChangesWarning';
 import type { UserSubject } from '@/lib/user-subject';
+
+const UNSAVED_SUBJECTS_MESSAGE =
+  '변경 내용이 저장되지 않았습니다. 저장하시려면 과목 설정 저장 버튼을 눌러주세요. 저장 없이 이동하시겠습니까?';
 
 function cloneSubjects(subjects: UserSubject[]): UserSubject[] {
   return subjects.map((subject) => ({
@@ -12,6 +16,18 @@ function cloneSubjects(subjects: UserSubject[]): UserSubject[] {
     textbooks: subject.textbooks ? [...subject.textbooks] : undefined,
     studyMethods: subject.studyMethods ? [...subject.studyMethods] : undefined,
   }));
+}
+
+function serializeSubjectsForCompare(subjects: UserSubject[]): string {
+  return JSON.stringify(
+    subjects.map((subject) => ({
+      id: subject.id,
+      label: subject.label.trim(),
+      color: subject.color ?? null,
+      source: subject.source,
+      category: subject.category ?? null,
+    }))
+  );
 }
 
 export default function ProfileSubjectsSection() {
@@ -25,6 +41,22 @@ export default function ProfileSubjectsSection() {
   useEffect(() => {
     setDraftSubjects(cloneSubjects(subjects));
   }, [subjects]);
+
+  const hasUnsavedChanges = useMemo(() => {
+    if (loading || saving) {
+      return false;
+    }
+
+    if (newSubjectLabel.trim()) {
+      return true;
+    }
+
+    return (
+      serializeSubjectsForCompare(draftSubjects) !== serializeSubjectsForCompare(subjects)
+    );
+  }, [draftSubjects, loading, newSubjectLabel, saving, subjects]);
+
+  useUnsavedChangesWarning(hasUnsavedChanges, UNSAVED_SUBJECTS_MESSAGE);
 
   function updateSubjectLabel(index: number, label: string) {
     setDraftSubjects((prev) =>
