@@ -18,6 +18,10 @@ export const EXAM_PERIOD_PLANNING_GUIDE: GuideContent = {
         '이렇게 설정된 주차를 기준으로 일정표에 D-DAY가 자동 계산되어 표시됩니다.',
         '또한 주차별 시험 계획표가 생성되는 기준이 됩니다.',
       ],
+      youtube: {
+        videoId: 'JoHQtYxHFdI',
+        title: '시험기간 설정 안내',
+      },
     },
     {
       step: 2,
@@ -28,12 +32,10 @@ export const EXAM_PERIOD_PLANNING_GUIDE: GuideContent = {
         '과목별 태그(교재명·공부방법) 칩을 누른 뒤 추가 버튼으로 항목을 넣을 수 있습니다.',
         '캘린더에 배치한 항목도 표에 그대로 남습니다. 캘린더 아이콘·실행 상태 아이콘으로 구분되며, 배치된 항목은 표에서 삭제할 수 없습니다.',
       ],
-      links: [
-        {
-          label: '주차별 공부계획 작성법',
-          pending: true,
-        },
-      ],
+      youtube: {
+        videoId: 'KsvB3DENASs',
+        title: '시험기간 주차별 공부계획 안내',
+      },
     },
     {
       step: 3,
@@ -44,6 +46,10 @@ export const EXAM_PERIOD_PLANNING_GUIDE: GuideContent = {
         '태블릿: 항목을 탭한 뒤 캘린더에서 배치할 날짜·시간을 탭합니다.',
         '캘린더 일정만 삭제하면 같은 주 미배치 목록으로 돌아갑니다. 미완료·미실행 항목은 패널 「미달성」에서 다른 주로 이월하거나 계획에서 삭제할 수 있습니다.',
       ],
+      youtube: {
+        videoId: '1dEBcC8Q3XI',
+        title: '공부 스케줄에서 주차별 계획 배치 안내',
+      },
     },
     {
       step: 4,
@@ -52,22 +58,23 @@ export const EXAM_PERIOD_PLANNING_GUIDE: GuideContent = {
         '입력한 공부 계획이 TODO에 표시됩니다.',
         '스마트폰으로 공부 계획을 확인하고, 공부할 TODO를 선택한 뒤 타이머 또는 직접 입력으로 실행 결과를 기록합니다.',
       ],
+      youtube: {
+        videoId: 'KganBRpNsg8',
+        title: 'TODO — 오늘 할 일 체크 안내',
+      },
     },
   ],
   tips: [
-    {
-      title: '루틴 일정 수정 또는 삭제',
-      paragraphs: [
-        '시험기간에 등록되어 있는 루틴 일정의 수정 또는 삭제가 가능합니다.',
-        '루틴 일정을 선택한 뒤 해당 일정만 수정을 클릭하고, 일정을 삭제하거나 날짜·시간을 수정할 수 있습니다.',
-      ],
-    },
     {
       title: '스마트폰 사용이 어려울 때',
       paragraphs: [
         '공부 스케줄 주간 일정에서 인쇄 버튼을 눌러 주간 일정표를 인쇄합니다.',
         '인쇄된 일정표로 공부 스케줄을 확인하고 체크할 수 있습니다.',
       ],
+      youtube: {
+        videoId: 'JqfpA7_0eVU',
+        title: '스마트폰 사용이 어려울 때 안내',
+      },
     },
   ],
 };

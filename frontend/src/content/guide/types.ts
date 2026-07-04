@@ -7,6 +7,7 @@ export type GuideSubSection = {
   stepLabel: string;
   title: string;
   items: GuideSubItem[];
+  youtube?: GuideYoutubeEmbed;
 };
 
 export type GuideLink = {
@@ -19,6 +20,12 @@ export type GuideStepBlock =
   | { type: 'text'; content: string }
   | { type: 'screenshot'; label?: string };
 
+export type GuideYoutubeEmbed = {
+  videoId: string;
+  title?: string;
+  startSeconds?: number;
+};
+
 export type GuideStep = {
   step: number;
   title: string;
@@ -26,6 +33,7 @@ export type GuideStep = {
   blocks?: GuideStepBlock[];
   subSections?: GuideSubSection[];
   links?: GuideLink[];
+  youtube?: GuideYoutubeEmbed;
 };
 
 export type GuideSectionIconName =
@@ -61,6 +69,7 @@ export type GuideSection = {
 export type GuideTip = {
   title: string;
   paragraphs: string[];
+  youtube?: GuideYoutubeEmbed;
 };
 
 export type GuideIntro = {

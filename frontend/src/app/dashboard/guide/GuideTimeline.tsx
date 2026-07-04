@@ -7,6 +7,7 @@ import type {
 } from '@/content/guide/types';
 import GuideScreenshotPlaceholder from './GuideScreenshotPlaceholder';
 import GuideSectionIcon from './GuideSectionIcon';
+import GuideYoutubeEmbed from './GuideYoutubeEmbed';
 
 function StepBadge({ label }: { label: string }) {
   return (
@@ -52,7 +53,11 @@ function GuideTipSection({ tip, tipIndex }: { tip: GuideTip; tipIndex: number })
               </p>
             ))}
           </div>
-          <GuideScreenshotPlaceholder label={`화면 이미지 준비 중 (TIP ${tipIndex + 1})`} />
+          {tip.youtube ? (
+            <GuideYoutubeEmbed {...tip.youtube} fallbackTitle={tip.title} />
+          ) : (
+            <GuideScreenshotPlaceholder label={`화면 이미지 준비 중 (TIP ${tipIndex + 1})`} />
+          )}
         </div>
       </div>
     </section>
@@ -97,6 +102,7 @@ function GuideContentBody({
   blocks,
   links,
   subSections,
+  youtube,
   screenshotLabel,
   blockScreenshotFallback,
   screenshotPlaceholderLabel,
@@ -107,6 +113,7 @@ function GuideContentBody({
   blocks?: GuideStep['blocks'];
   links?: GuideStep['links'];
   subSections?: GuideSubSection[];
+  youtube?: GuideStep['youtube'];
   screenshotLabel: string;
   blockScreenshotFallback?: string;
   screenshotPlaceholderLabel: string;
@@ -169,13 +176,19 @@ function GuideContentBody({
           {subSections.map((section) => (
             <div key={section.stepLabel} className="space-y-3">
               <SubSectionCard section={section} />
-              <GuideScreenshotPlaceholder
-                label={`화면 이미지 준비 중 (STEP ${section.stepLabel})`}
-              />
+              {section.youtube ? (
+                <GuideYoutubeEmbed {...section.youtube} fallbackTitle={section.title} />
+              ) : (
+                <GuideScreenshotPlaceholder
+                  label={`화면 이미지 준비 중 (STEP ${section.stepLabel})`}
+                />
+              )}
             </div>
           ))}
         </div>
-      ) : blocks ? null : (
+      ) : blocks ? null : youtube ? (
+        <GuideYoutubeEmbed {...youtube} fallbackTitle={title} />
+      ) : (
         <GuideStepScreenshots label={screenshotPlaceholderLabel} />
       )}
     </>
@@ -325,6 +338,7 @@ function GuideStepCard({
             blocks={step.blocks}
             links={step.links}
             subSections={step.subSections}
+            youtube={step.youtube}
             screenshotLabel={stepLabel}
             blockScreenshotFallback={stepLabel}
             screenshotPlaceholderLabel={`화면 이미지 준비 중 (STEP ${stepLabel})`}
