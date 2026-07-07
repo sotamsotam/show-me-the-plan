@@ -9,6 +9,11 @@ export const GUIDE_NAV_ITEMS = [
     label: '시험기간 계획하기',
     icon: 'exam-period-planning',
   },
+  {
+    href: '/dashboard/guide/exam-study-manual',
+    label: '내신시험공부 실전 메뉴얼',
+    icon: 'exam-study-manual',
+  },
   // {
   //   href: '/dashboard/guide/vacation-period-planning',
   //   label: '방학기간 계획하기',

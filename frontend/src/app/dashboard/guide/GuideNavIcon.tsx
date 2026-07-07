@@ -2,6 +2,7 @@ interface GuideNavIconProps {
   name:
     | 'getting-started'
     | 'exam-period-planning'
+    | 'exam-study-manual'
     | 'vacation-period-planning'
     | 'tips'
     | 'schedule'
@@ -44,6 +45,14 @@ export default function GuideNavIcon({
           <path d="M8 14h.01" />
           <path d="M12 14h.01" />
           <path d="M16 14h.01" />
+        </>
+      )}
+      {name === 'exam-study-manual' && (
+        <>
+          <path d="M12 7v14" />
+          <path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z" />
+          <path d="M8 12h8" />
+          <path d="M8 16h5" />
         </>
       )}
       {name === 'vacation-period-planning' && (

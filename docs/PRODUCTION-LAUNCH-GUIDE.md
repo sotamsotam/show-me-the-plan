@@ -654,7 +654,8 @@ docker compose exec strapi node scripts/test-send-email.mjs <수신이메일>
 
 ## Phase 10 — 이미지 스토리지 (선택: Cloudflare R2)
 
-> 런칭 전 필수는 아니나, **백업·CDN·VPS 디스크** 측면에서 프로덕션 권장.
+> 런칭 전 필수는 아니나, **백업·CDN·VPS 디스크** 측면에서 프로덕션 권장.  
+> **실전 적용 상세 (2026-07):** [`R2-IMAGE-STORAGE-SETUP.md`](./R2-IMAGE-STORAGE-SETUP.md) — `plan-media.odap-coach.com`, 로컬·VPS 절차·체크리스트.
 
 ### 10-1. R2 버킷 생성
 
@@ -948,7 +949,9 @@ crontab -e
 
 ### 16-1. PostgreSQL 자동 백업
 
-`~/backup-db.sh`:
+> **R2 off-site 백업 (권장, 2026-07 적용):** [`R2-DB-BACKUP-SETUP.md`](./R2-DB-BACKUP-SETUP.md) — `backup-db-to-r2.sh`, cron, 90일 Lifecycle.
+
+`~/backup-db.sh` (로컬 디스크만):
 
 ```bash
 #!/bin/bash
@@ -1144,6 +1147,9 @@ docker compose up -d --build frontend   # frontend만 변경
 | [`BILLING-CS-MANUAL.md`](./BILLING-CS-MANUAL.md) | CS·할인·수동 연장 |
 | [`OPS-OPERATOR-SETUP.md`](./OPS-OPERATOR-SETUP.md) | 운영자 계정 |
 | [`CLOUD-DEPLOYMENT-REVIEW.md`](./CLOUD-DEPLOYMENT-REVIEW.md) | 클라우드 옵션 비교 |
+| [`R2-IMAGE-STORAGE-SETUP.md`](./R2-IMAGE-STORAGE-SETUP.md) | Cloudflare R2 이미지 (로컬·VPS) |
+| [`R2-DB-BACKUP-SETUP.md`](./R2-DB-BACKUP-SETUP.md) | Cloudflare R2 DB 백업 (cron) |
+| [`R2-CLOUDFLARE-SETUP-SUMMARY.md`](./R2-CLOUDFLARE-SETUP-SUMMARY.md) | R2 이미지 + DB 백업 한눈에 |
 | [`.env.example`](../.env.example) | 환경 변수 템플릿 |
 
 ---
