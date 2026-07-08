@@ -5,7 +5,7 @@ export const SERVICE_NAME = '쇼미더플랜';
 export const MAIN_SLOGAN = '계획을 플레이하는 순간, 공부는 퀘스트가 된다.';
 
 export const SUB_SLOGAN =
-  '학교 생활에 맞춘 학습 계획부터 실행·기록·통계까지, 한곳에서.';
+  '온라인 스터디 플래너 SHOW ME THE PLAN';
 
 export const NAV_LINKS = [
   { label: '홈', href: '/' },

@@ -73,7 +73,7 @@ function HeroTextBlock({
 
       {badges.length > 0 ? (
         <ul
-          className={`mkt-hero-stagger mkt-hero-stagger-4 mt-10 flex flex-wrap gap-2 sm:gap-3 ${badgeAlignClass}`}
+          className={`mkt-hero-stagger mkt-hero-stagger-4 mt-10 hidden flex-wrap gap-2 sm:gap-3 md:flex ${badgeAlignClass}`}
         >
           {badges.map((badge) => (
             <li

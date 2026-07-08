@@ -674,6 +674,22 @@
   box-shadow: var(--mkt-shadow-card-elevated);
 }
 
+.marketing-site .mkt-story-resolution-card .mkt-h2 {
+  font-size: 1.2rem;
+}
+
+@media (min-width: 640px) {
+  .marketing-site .mkt-story-resolution-card .mkt-h2 {
+    font-size: 1.875rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .marketing-site .mkt-story-resolution-card .mkt-h2 {
+    font-size: 2.25rem;
+  }
+}
+
 .marketing-site .mkt-story-resolution-slide-up {
   animation: mkt-story-resolution-slide-up 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
 }

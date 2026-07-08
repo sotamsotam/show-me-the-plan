@@ -204,7 +204,7 @@ export default function StudyPlannerStorySequence({
             onComplete={handleResolutionTitleComplete}
           />
           <p
-            className={`mt-4 text-lg font-semibold leading-snug tracking-tight text-mkt-accent sm:text-xl lg:text-2xl${
+            className={`mt-4 text-base font-semibold leading-snug tracking-tight text-mkt-accent sm:text-xl lg:text-2xl${
               showResolutionBody ? ' mkt-story-resolution-body-in' : ' mkt-story-resolution-body-pending'
             }`}
             aria-hidden={!showResolutionBody}

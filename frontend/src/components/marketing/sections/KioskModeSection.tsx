@@ -9,11 +9,11 @@ export default function KioskModeSection({ eyebrow, title, paragraphs, youtube }
       <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-12 xl:gap-16">
         <div className="max-w-xl">
           {eyebrow ? (
-            <h2 className="mkt-h2 mb-2 text-2xl text-mkt-primary-light sm:text-3xl lg:text-[2rem] lg:leading-tight">
+            <h2 className="mkt-h2 mb-2 !text-[1.2rem] text-mkt-primary-light sm:!text-3xl lg:!text-[2rem] lg:leading-tight">
               {eyebrow}
             </h2>
           ) : null}
-          <h2 className="mkt-h2 text-2xl sm:text-3xl lg:text-[2rem] lg:leading-tight">
+          <h2 className="mkt-h2 !text-[1.2rem] sm:!text-3xl lg:!text-[2rem] lg:leading-tight">
             <MultilineText text={title} />
           </h2>
           <div className="mt-6 space-y-4">

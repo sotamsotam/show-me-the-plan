@@ -74,7 +74,7 @@ function ShowcaseCard({ item }: { item: KeyFeatureShowcaseItem }) {
     <article className="mkt-showcase-card rounded-3xl bg-white p-8 sm:p-10 lg:p-12">
       <div className="grid items-center gap-10 lg:grid-cols-[1fr_1.2fr] lg:gap-12">
         <div className="max-w-xl lg:pr-4">
-          <h3 className="text-[1.625rem] font-bold leading-[1.3] tracking-[-0.03em] text-mkt-text sm:text-[1.875rem] lg:text-[2rem]">
+          <h3 className="text-[1.2rem] font-bold leading-[1.3] tracking-[-0.03em] text-mkt-text sm:text-[1.875rem] lg:text-[2rem]">
             <span className="block">{item.title}</span>
             <span className="mt-0.5 block">{item.titleAccent}</span>
           </h3>
