@@ -1,10 +1,13 @@
 'use client';
 
+import ResponsiveOverlay from '@/components/ResponsiveOverlay';
+import { triggerHaptic } from '@/lib/haptic';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 const DISMISS_KEY = 'pwa-install-hint-dismissed';
 const DISMISS_DAYS = 7;
+const TOOLTIP_MS = 5000;
 
 type InstallPlatform = 'ios' | 'android' | 'android-samsung';
 
@@ -13,15 +16,16 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
 }
 
-function isIosSafari(): boolean {
+function isIos(): boolean {
   if (typeof window === 'undefined') {
     return false;
   }
 
   const ua = window.navigator.userAgent;
-  const isIos = /iPad|iPhone|iPod/.test(ua);
-  const isSafari = /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS/.test(ua);
-  return isIos && isSafari;
+  return (
+    /iPad|iPhone|iPod/.test(ua) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+  );
 }
 
 function isSamsungInternet(): boolean {
@@ -72,6 +76,31 @@ function dismissHint() {
   localStorage.setItem(DISMISS_KEY, String(Date.now()));
 }
 
+function fabBottomClass(hasBottomNav: boolean) {
+  return hasBottomNav
+    ? 'bottom-[calc(3.5rem+1rem+env(safe-area-inset-bottom))]'
+    : 'bottom-[calc(1rem+env(safe-area-inset-bottom))]';
+}
+
+function InstallFabIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      className="h-6 w-6"
+      aria-hidden
+    >
+      <path
+        d="M12 16V4m0 12-4-4m4 4 4-4M5 20h14"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export default function PwaInstallHint() {
   const pathname = usePathname();
   const [visible, setVisible] = useState(false);
@@ -79,6 +108,8 @@ export default function PwaInstallHint() {
   const [deferredPrompt, setDeferredPrompt] =
     useState<BeforeInstallPromptEvent | null>(null);
   const [installing, setInstalling] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [showTooltip, setShowTooltip] = useState(false);
 
   const hasBottomNav =
     pathname?.startsWith('/dashboard') && pathname !== '/dashboard/pending';
@@ -88,15 +119,17 @@ export default function PwaInstallHint() {
       return;
     }
 
-    if (isIosSafari()) {
+    if (isIos()) {
       setPlatform('ios');
       setVisible(true);
+      setShowTooltip(true);
       return;
     }
 
     if (isSamsungInternet()) {
       setPlatform('android-samsung');
       setVisible(true);
+      setShowTooltip(true);
       return;
     }
 
@@ -105,6 +138,7 @@ export default function PwaInstallHint() {
       setDeferredPrompt(event as BeforeInstallPromptEvent);
       setPlatform('android');
       setVisible(true);
+      setShowTooltip(true);
     }
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -113,6 +147,20 @@ export default function PwaInstallHint() {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     };
   }, []);
+
+  useEffect(() => {
+    if (!showTooltip) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setShowTooltip(false);
+    }, TOOLTIP_MS);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [showTooltip]);
 
   async function handleInstall() {
     if (!deferredPrompt) {
@@ -135,73 +183,106 @@ export default function PwaInstallHint() {
     }
   }
 
+  function handleFabClick() {
+    triggerHaptic('light');
+    setShowTooltip(false);
+
+    if (platform === 'android') {
+      void handleInstall();
+      return;
+    }
+
+    setSheetOpen(true);
+  }
+
   function handleDismiss() {
     dismissHint();
+    setSheetOpen(false);
     setVisible(false);
+  }
+
+  function handleSheetClose() {
+    setSheetOpen(false);
   }
 
   if (!visible) {
     return null;
   }
 
+  const bottomClass = fabBottomClass(hasBottomNav);
+
   return (
-    <div
-      className={`fixed inset-x-0 z-[60] border-t border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900 shadow-lg dark:border-blue-800 dark:bg-blue-950 dark:text-blue-100 ${
-        hasBottomNav
-          ? "bottom-[calc(3.5rem+env(safe-area-inset-bottom))]"
-          : "bottom-0 pb-[env(safe-area-inset-bottom)]"
-      }`}
-    >
-      <div className="mx-auto flex max-w-lg items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          {platform === "ios" && (
+    <>
+      <div
+        className={`fixed left-4 z-50 md:hidden ${bottomClass}`}
+      >
+        {showTooltip && (
+          <div
+            className="pointer-events-none absolute bottom-full left-0 mb-2 whitespace-nowrap rounded-lg bg-gray-900 px-2.5 py-1.5 text-xs font-medium text-white shadow-md dark:bg-gray-100 dark:text-gray-900"
+            role="tooltip"
+          >
+            앱 설치
+          </div>
+        )}
+        <button
+          type="button"
+          onClick={handleFabClick}
+          disabled={installing}
+          aria-label="앱 설치"
+          className="touch-press relative flex h-14 w-14 items-center justify-center rounded-full border-2 border-blue-600 bg-white text-blue-600 shadow-lg shadow-blue-600/20 ring-2 ring-blue-400/30 hover:bg-blue-50 disabled:opacity-60 dark:bg-zinc-900 dark:text-blue-400 dark:hover:bg-zinc-800"
+        >
+          <InstallFabIcon />
+        </button>
+      </div>
+
+      <ResponsiveOverlay
+        open={sheetOpen}
+        onClose={handleSheetClose}
+        title="앱 설치"
+        mobileVariant="sheet"
+      >
+        {platform === 'ios' && (
+          <div className="space-y-4 text-sm text-gray-700 dark:text-gray-300">
             <p>
-              앱처럼 사용하려면 Safari 공유 버튼을 누른 뒤{" "}
-              <strong>홈 화면에 추가</strong>를 선택하세요.
+              쇼미플을 홈 화면에 추가하면 앱처럼 더 편하게 사용할 수 있습니다.
             </p>
-          )}
-          {platform === "android" && (
-            <>
-              <p>
-                쇼미플을 홈 화면에 설치하면 앱처럼 더 편하게 사용할 수 있습니다.
-              </p>
-              <button
-                type="button"
-                onClick={handleInstall}
-                disabled={installing || !deferredPrompt}
-                className="touch-press mt-2 min-h-11 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
-              >
-                {installing ? "설치 중..." : "앱 설치"}
-              </button>
-            </>
-          )}
-          {platform === "android-samsung" && (
-            <>
-              <p>
-                일부 브라우져(삼성브라우저) 앱 설치 시 보안 경고가 뜰 수
-                있습니다. 쇼미플앱은 안전하오니 **[무시하고 설치]**를 누르시거나 
-                <strong>Chrome</strong>브라우져 에서 접속한 뒤 설치하면 경고
-                없이 설치됩니다.
-              </p>
-              <button
-                type="button"
-                onClick={openInChrome}
-                className="touch-press mt-2 min-h-11 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-              >
-                Chrome에서 열기
-              </button>
-            </>
-          )}
-        </div>
+            <ol className="list-decimal space-y-2 pl-5">
+              <li>
+                브라우저 하단의 <strong>공유</strong> 버튼을 누릅니다.
+              </li>
+              <li>
+                <strong>홈 화면에 추가</strong>를 선택합니다.
+              </li>
+            </ol>
+          </div>
+        )}
+
+        {platform === 'android-samsung' && (
+          <div className="space-y-4 text-sm text-gray-700 dark:text-gray-300">
+            <p>
+              일부 브라우저(삼성 브라우저)에서 앱 설치 시 보안 경고가 뜰 수
+              있습니다. 쇼미플은 안전하니 <strong>무시하고 설치</strong>를
+              누르시거나, <strong>Chrome</strong>에서 접속한 뒤 설치하면 경고
+              없이 설치됩니다.
+            </p>
+            <button
+              type="button"
+              onClick={openInChrome}
+              className="touch-press min-h-11 w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+            >
+              Chrome에서 열기
+            </button>
+          </div>
+        )}
+
         <button
           type="button"
           onClick={handleDismiss}
-          className="touch-press shrink-0 rounded px-3 py-2 text-blue-700 hover:bg-blue-100 dark:text-blue-200 dark:hover:bg-blue-900"
-          aria-label="안내 닫기"
+          className="touch-press mt-4 w-full rounded-lg px-3 py-2.5 text-sm text-gray-500 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-zinc-800"
         >
-          닫기
+          다시 안 보기
         </button>
-      </div>
-    </div>
+      </ResponsiveOverlay>
+    </>
   );
 }

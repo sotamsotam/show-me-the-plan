@@ -14,8 +14,8 @@ export default function SectionHeading({
   return (
     <div className={`mb-10 max-w-3xl sm:mb-12 ${alignClass}`}>
       {eyebrow ? <p className="mkt-eyebrow mb-2">{eyebrow}</p> : null}
-      <h2 className="mkt-h2">{title}</h2>
-      {description ? <p className="mkt-lead mt-4">{description}</p> : null}
+      <h2 className="mkt-h2 whitespace-pre-line">{title}</h2>
+      {description ? <p className="mkt-lead mt-4 whitespace-pre-line">{description}</p> : null}
     </div>
   );
 }

@@ -1,4 +1,6 @@
 import type { LandingPageContent } from './types';
+import { GRADE_CARDS } from './common';
+import { MARKETING_DEDICATED_DEVICE } from './marketing-dedicated-device';
 
 export const forParentsContent: LandingPageContent = {
   seo: {
@@ -15,15 +17,16 @@ export const forParentsContent: LandingPageContent = {
       href: "/signup",
       variant: "primary",
     },
-    secondaryCta: {
-      label: "학생용 페이지",
-      href: "/for-students",
-      variant: "secondary",
-    },
-    image: {
-      src: "/images/parent_main.png",
-      alt: "함께 달리는 어머니와 중학생 딸 — 학부모와 아이가 함께하는 학습 관리",
-    },
+    images: [
+      {
+        src: '/images/parent_main.png',
+        alt: '함께 달리는 어머니와 중학생 딸 — 학부모와 아이가 함께하는 학습 관리',
+      },
+      {
+        src: '/images/elementary_main.png',
+        alt: '자전거를 배우는 초등학생 딸을 뒤에서 받쳐 주는 엄마 — 함께 성장하는 초등 공부 습관',
+      },
+    ],
   },
   painPoints: {
     title: "이런 고민이 잔소리로 이어지고 있지는 안나요?",
@@ -51,7 +54,8 @@ export const forParentsContent: LandingPageContent = {
     youtube: {
       videoId: "T6SYF_0VPB8",
       startSeconds: 514,
-      title: "혼공 조남호가 알려주는 집에서 혼공하는 명문대생, 집중력을 잃지 않는 비결",
+      title:
+        "혼공 조남호가 알려주는 집에서 혼공하는 명문대생, 집중력을 잃지 않는 비결",
     },
     source:
       "[명강연 컬렉션] 혼공 조남호가 알려주는 '집에서 혼공하는 명문대생, 집중력을 잃지 않는 비결은?' MBN 220604 방송",
@@ -128,12 +132,14 @@ export const forParentsContent: LandingPageContent = {
     items: [
       {
         title: "혼공시간 자동 집계",
-        paper: "오늘 수학 30분, 영어 20분은 적히지만 일주일·한 달 총 몇 시간인지 알기 어렵습니다.",
+        paper:
+          "오늘 수학 30분, 영어 20분은 적히지만 일주일·한 달 총 몇 시간인지 알기 어렵습니다.",
         smtp: "이번 주 혼공 11시간 20분, 지난주 대비 +2시간 10분 — 학부모가 바로 확인합니다.",
       },
       {
         title: "과목 편중 발견",
-        paper: "수학 12시간, 영어 8시간, 국어 1시간 같은 불균형을 스스로 발견하기 어렵습니다.",
+        paper:
+          "수학 12시간, 영어 8시간, 국어 1시간 같은 불균형을 스스로 발견하기 어렵습니다.",
         smtp: "과목별 공부시간이 자동집계되어 실시간으로 과목별 비중을 확인할 수 있습니다.",
       },
       {
@@ -186,8 +192,6 @@ export const forParentsContent: LandingPageContent = {
     ],
     tagline:
       "종이 플래너는 공부를 기록합니다. 쇼미플은 공부 습관을 보여줍니다.",
-    subtagline:
-      "스터디플랜은 아이 혼자 시작하기 어렵습니다. 2인3각 경기처럼 함께 뛰어주세요.",
   },
   features: {
     title: "SHOW ME THE PLAN 은?",
@@ -224,31 +228,11 @@ export const forParentsContent: LandingPageContent = {
       },
     ],
   },
-  dedicatedDevice: {
-    title: "그래도 스마트폰으로 스터디플랜을 쓰기에는..",
-    headline: "안 쓰는 스마트폰 공기계를 쇼미플 전용 기기로 만들어 주세요",
-    description:
-      "단 1분이면 오직 쇼미플 어플만 사용할 수 있도록 설정하실 수 있습니다.",
-  },
+  dedicatedDevice: MARKETING_DEDICATED_DEVICE,
   grades: {
+    eyebrow: "학년별 맞춤",
     title: "우리 아이 학년에 맞게 시작하세요",
-    items: [
-      {
-        title: "초등",
-        description: "습관·칭찬·함께 보는 공부",
-        href: "/elementary",
-      },
-      {
-        title: "중등",
-        description: "내신·시험 주기 관리",
-        href: "/middle",
-      },
-      {
-        title: "고등",
-        description: "자율성 존중 + 데이터 기반 지원",
-        href: "/high",
-      },
-    ],
+    items: GRADE_CARDS,
   },
   bottomCta: {
     headline: "잔소리 대신, 함께 보는 공부를 시작하세요.",

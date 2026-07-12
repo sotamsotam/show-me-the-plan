@@ -439,8 +439,9 @@ export default function StudyPlanCalendar() {
   const isMonthView = activeViewType === 'dayGridMonth';
   const isMobileDayView = isMobileDayCalendarView(isMobile, activeViewType);
   const isTimeGridView = !isListView && !isMonthView;
+  const usesMeasuredCalendarHeight = isTimeGridView || isListView;
   const calendarHeight = useResponsiveCalendarHeight(calendarContainerRef, {
-    enabled: isTimeGridView,
+    enabled: usesMeasuredCalendarHeight,
   });
 
   const calendarLocale = useMemo(
@@ -1382,12 +1383,12 @@ export default function StudyPlanCalendar() {
   }, [editSession, isListView, isMobile]);
 
   useEffect(() => {
-    if (!isTimeGridView || calendarHeight === 'auto') {
+    if (!usesMeasuredCalendarHeight || calendarHeight === 'auto') {
       return;
     }
 
     calendarRef.current?.getApi().updateSize();
-  }, [calendarHeight, isTimeGridView]);
+  }, [calendarHeight, usesMeasuredCalendarHeight]);
 
   const showWeeklyPlanPanel = useMemo(() => {
     if (!visibleRange) {
@@ -1626,7 +1627,7 @@ export default function StudyPlanCalendar() {
         <div
           ref={calendarContainerRef}
           className={`study-plan-calendar-main relative study-plan-calendar schedule-calendar overflow-hidden rounded-xl border border-gray-200 bg-white p-4 shadow-sm max-[580px]:p-3 max-[480px]:p-2.5 max-[360px]:p-2 dark:border-neutral-800 dark:bg-zinc-900${
-            isTimeGridView ? ' flex min-h-0 flex-1 flex-col' : ''
+            usesMeasuredCalendarHeight ? ' flex min-h-0 flex-1 flex-col' : ''
           }`}
         >
           {(loading || savingDrag) && (

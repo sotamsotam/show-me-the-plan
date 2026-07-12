@@ -149,6 +149,10 @@
   );
 }
 
+.marketing-site .mkt-cta-bg .mkt-h2 {
+  color: #fff;
+}
+
 .marketing-site .mkt-card-shadow {
   box-shadow: var(--mkt-shadow-card);
 }

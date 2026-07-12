@@ -1,4 +1,4 @@
-import { MAIN_SLOGAN, NAV_LINKS } from '@/content/marketing/common';
+import { MAIN_SLOGAN } from '@/content/marketing/common';
 import { OPERATOR_INFO } from '@/content/legal/meta';
 import Link from 'next/link';
 
@@ -56,7 +56,7 @@ export default function MarketingFooter() {
         </div>
 
         <div className="grid gap-10 pt-10 sm:grid-cols-2 lg:grid-cols-12 lg:gap-8">
-          <div className="lg:col-span-5">
+          <div className="lg:col-span-8">
             <p className="text-lg font-bold text-white">
               {OPERATOR_INFO.serviceName}
               <span className="ml-2 text-sm font-medium text-white/60">
@@ -72,30 +72,7 @@ export default function MarketingFooter() {
             <OperatorLegalLines />
           </div>
 
-          <div className="lg:col-span-2">
-            <p className="text-xs font-bold uppercase tracking-wider text-white/50">학령별</p>
-            <nav className="mt-4 flex flex-col gap-2.5 text-sm">
-              {NAV_LINKS.filter((l) => l.href !== '/').map((link) => (
-                <Link key={link.href} href={link.href} className="hover:text-white">
-                  {link.label}
-                </Link>
-              ))}
-            </nav>
-          </div>
-
-          <div className="lg:col-span-2">
-            <p className="text-xs font-bold uppercase tracking-wider text-white/50">대상별</p>
-            <nav className="mt-4 flex flex-col gap-2.5 text-sm">
-              <Link href="/for-parents" className="hover:text-white">
-                학부모·선생님
-              </Link>
-              <Link href="/for-students" className="hover:text-white">
-                중·고등학생
-              </Link>
-            </nav>
-          </div>
-
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-4">
             <p className="text-xs font-bold uppercase tracking-wider text-white/50">고객지원</p>
             <div className="mt-4 flex flex-col gap-2.5 text-sm">
               <p>

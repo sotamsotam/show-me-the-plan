@@ -16,6 +16,12 @@ export const NAV_LINKS = [
   { label: '사용후기', href: '/reviews' },
 ] as const;
 
+const HIDDEN_HEADER_NAV_HREFS = new Set(['/elementary', '/middle', '/high']);
+
+export const HEADER_NAV_LINKS = NAV_LINKS.filter(
+  (link) => !HIDDEN_HEADER_NAV_HREFS.has(link.href),
+);
+
 export const HOME_KEY_FEATURES_SHOWCASE = [
   {
     title: "학교시간표·시험·방학·학사일정",
@@ -72,22 +78,34 @@ export const HOME_FEATURES = [
 
 export const GRADE_CARDS: GradeCard[] = [
   {
-    title: '초등',
-    subtitle: '공부 습관의 첫걸음',
-    description: '선생님과의 약속(숙제)부터, 꾸준한 루틴까지',
-    href: '/elementary',
+    title: "초등",
+    subtitle: "공부 습관의 황금기",
+    description: [
+      "학교시간표에 맞춰 복습습관 만들기",
+      "분량·예상 시간으로 공부하는 연습하기",
+      "매니저(부모)와 달성률을 함께 보며 칭찬·격려",
+    ],
+    href: "/elementary",
   },
   {
-    title: '중등',
-    subtitle: '늘어나는 과목, 전략적 내신',
-    description: '시험 2~4주 전 역산형 주차 계획',
-    href: '/middle',
+    title: "중등",
+    subtitle: "고등진학 전 실전연습",
+    description: [
+      "시험·평소·방학 3모드로 상황에 맞게 전환",
+      "주차별 시험계획과 실천연습",
+      "벼락치기 대신 꾸준한 공부루틴 완성하기",
+    ],
+    href: "/middle",
   },
   {
-    title: '고등',
-    subtitle: '데이터 기반 자기주도',
-    description: '감이 아닌 숫자로 입시를 설계',
-    href: '/high',
+    title: "고등",
+    subtitle: "데이터 기반 자기주도",
+    description: [
+      "N회독 주차 계획으로 반복 학습 설계",
+      "계획 대비 실행·달성률을 숫자로 확인",
+      "내신·모의고사·방학 기간별 학습 리듬 관리",
+    ],
+    href: "/high",
   },
 ];
 

@@ -1,6 +1,6 @@
 import { GRADE_CARDS, HOME_FEATURES, HOME_KEY_FEATURES_SHOWCASE } from './common';
 import { HOME_FAQ, HOME_PROCESS } from './home-faq';
-import { HOME_KIOSK_MODE } from './home-kiosk-mode';
+import { MARKETING_DEDICATED_DEVICE } from './marketing-dedicated-device';
 import { HOME_PC_MOBILE_SHOWCASE } from './home-pc-mobile-showcase';
 import { HOME_PLANNER_COMPARISON } from './home-planner-comparison';
 import { HOME_STUDY_PLANNER_STORY } from './home-study-planner-story';
@@ -18,11 +18,6 @@ export const homeContent = {
     subcopy:
       "학교 생활에 맞춘 학습 계획부터 실행·기록·통계까지\nSHOW ME THE PLAN(쇼미플) 은 \n초·중·고 학생과 학부모(매니저)가 함께 쓰는 학습 관리 앱입니다.",
     primaryCta: { label: "무료로 시작하기", href: "/signup" },
-    secondaryCta: {
-      label: "학부모용 보기",
-      href: "/for-parents",
-      variant: "secondary" as const,
-    },
     appPreview: true,
   },
   studyPlannerStory: HOME_STUDY_PLANNER_STORY,
@@ -40,7 +35,7 @@ export const homeContent = {
   })),
   gradesTitle: "우리 학년에 맞는 이야기",
   grades: GRADE_CARDS,
-  kioskMode: HOME_KIOSK_MODE,
+  dedicatedDevice: MARKETING_DEDICATED_DEVICE,
   process: HOME_PROCESS,
   faq: HOME_FAQ,
 };

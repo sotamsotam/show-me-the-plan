@@ -3,7 +3,7 @@ import FeatureGridSection from '@/components/marketing/sections/FeatureGridSecti
 import GradeCardsSection from '@/components/marketing/sections/GradeCardsSection';
 import HeroSection from '@/components/marketing/sections/HeroSection';
 import HomeFeaturedReviewsSection from '@/components/marketing/sections/HomeFeaturedReviewsSection';
-import KioskModeSection from '@/components/marketing/sections/KioskModeSection';
+import DedicatedDeviceSection from '@/components/marketing/sections/DedicatedDeviceSection';
 import KeyFeaturesShowcaseSection from '@/components/marketing/sections/KeyFeaturesShowcaseSection';
 import PlannerComparisonSection from '@/components/marketing/sections/PlannerComparisonSection';
 import PcMobileShowcaseSection from '@/components/marketing/sections/PcMobileShowcaseSection';
@@ -79,7 +79,7 @@ export default async function HomePage({
         title={homeContent.gradesTitle}
         items={homeContent.grades}
       />
-      <KioskModeSection {...homeContent.kioskMode} />
+      <DedicatedDeviceSection {...homeContent.dedicatedDevice} />
       <HomeFeaturedReviewsSection reviews={homeFeaturedReviews} />
       <FaqSection
         eyebrow={homeContent.faq.eyebrow}

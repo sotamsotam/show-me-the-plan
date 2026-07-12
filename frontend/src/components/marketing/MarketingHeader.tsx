@@ -5,7 +5,7 @@ import {
   getDefaultDashboardPathFromSession,
   getMarketingAppEntryFromSession,
 } from '@/lib/account-helpers';
-import { NAV_LINKS, SERVICE_NAME } from '@/content/marketing/common';
+import { HEADER_NAV_LINKS, SERVICE_NAME } from '@/content/marketing/common';
 import { getServerSession } from 'next-auth';
 import Link from 'next/link';
 
@@ -30,7 +30,7 @@ export default async function MarketingHeader() {
         </Link>
 
         <nav className="hidden items-center gap-7 text-[15px] font-medium text-mkt-text-muted lg:flex">
-          {NAV_LINKS.map((link) => (
+          {HEADER_NAV_LINKS.map((link) => (
             <Link
               key={link.href}
               href={link.href}

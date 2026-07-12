@@ -46,7 +46,11 @@ export default function LandingPageView({
       {dedicatedDevice ? <DedicatedDeviceSection {...dedicatedDevice} /> : null}
       {grades ? (
         <>
-          <GradeCardsSection title={grades.title} items={grades.items} />
+          <GradeCardsSection
+            eyebrow={grades.eyebrow}
+            title={grades.title}
+            items={grades.items}
+          />
           {elementaryNote ? (
             <p className="-mt-6 bg-mkt-surface-accent-strong pb-10 text-center text-sm text-mkt-text-muted">
               초등학생은{' '}

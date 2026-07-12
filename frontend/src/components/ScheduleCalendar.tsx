@@ -351,8 +351,9 @@ export default function ScheduleCalendar() {
   const isMobileDayView = isMobileDayCalendarView(isMobile, currentViewType);
   const isMobileMonthEditDisabled = isMonthView && isMobile;
   const isTimeGridView = !isListView && !isMonthView;
+  const usesMeasuredCalendarHeight = isTimeGridView || isListView;
   const calendarHeight = useResponsiveCalendarHeight(calendarContainerRef, {
-    enabled: isTimeGridView,
+    enabled: usesMeasuredCalendarHeight,
   });
 
   const calendarLocale = useMemo(
@@ -1176,12 +1177,12 @@ export default function ScheduleCalendar() {
   }, [editSession, isListView, isMobile, isMonthView]);
 
   useEffect(() => {
-    if (!isTimeGridView || calendarHeight === 'auto') {
+    if (!usesMeasuredCalendarHeight || calendarHeight === 'auto') {
       return;
     }
 
     calendarRef.current?.getApi().updateSize();
-  }, [calendarHeight, isTimeGridView]);
+  }, [calendarHeight, usesMeasuredCalendarHeight]);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4">
@@ -1194,7 +1195,7 @@ export default function ScheduleCalendar() {
       <div
         ref={calendarContainerRef}
         className={`relative schedule-calendar w-full overflow-hidden rounded-xl border border-gray-200 bg-white p-4 shadow-sm max-[580px]:p-3 max-[480px]:p-2.5 max-[360px]:p-2 dark:border-neutral-800 dark:bg-zinc-900${
-          isTimeGridView ? ' flex min-h-0 flex-1 flex-col' : ''
+          usesMeasuredCalendarHeight ? ' flex min-h-0 flex-1 flex-col' : ''
         }${isMonthView ? ' schedule-calendar--month' : ''}`}
       >
         {(loading || savingDrag) && (

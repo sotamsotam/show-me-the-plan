@@ -1,6 +1,6 @@
 'use client';
 
-import { NAV_LINKS } from '@/content/marketing/common';
+import { HEADER_NAV_LINKS } from '@/content/marketing/common';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -19,7 +19,7 @@ export default function MarketingMobileNav() {
       className="flex gap-5 overflow-x-auto border-t border-mkt-border px-4 [-ms-overflow-style:none] [scrollbar-width:none] lg:hidden [&::-webkit-scrollbar]:hidden"
       aria-label="주요 메뉴"
     >
-      {NAV_LINKS.map((link) => {
+      {HEADER_NAV_LINKS.map((link) => {
         const active = isActive(pathname, link.href);
 
         return (

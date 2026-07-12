@@ -80,7 +80,7 @@ export type MessageGroupsContent = {
 export type GradeCard = {
   title: string;
   subtitle?: string;
-  description: string;
+  description: string | string[];
   href: string;
 };
 
@@ -112,12 +112,15 @@ export type HeroContent = {
   primaryCta?: MarketingCta;
   secondaryCta?: MarketingCta;
   image?: HeroImage;
+  /** 여러 장이면 페이드 전환으로 순환 표시 */
+  images?: HeroImage[];
   /** CSS 앱 UI 목업 (홈 등) */
   appPreview?: boolean;
 };
 
 export type SectionWithTitle<T> = {
   title: string;
+  eyebrow?: string;
   items: T[];
 };
 
@@ -131,11 +134,14 @@ export type BottomCtaContent = {
 export type GradePageContent = {
   seo: PageSeo;
   hero: HeroContent;
-  painPoints: SectionWithTitle<PainPoint>;
+  painPoints?: SectionWithTitle<PainPoint>;
+  messageGroups?: MessageGroupsContent;
   approach: {
     title?: string;
     body: string;
+    footnote?: string;
   };
+  plannerComparison?: PlannerComparisonContent;
   features: SectionWithTitle<FeatureItem>;
   strategy?: {
     title: string;
@@ -170,10 +176,15 @@ export type VideoInsightContent = {
   };
 };
 
+export type KioskModeParagraph = {
+  text: string;
+  highlights?: string[];
+};
+
 export type KioskModeContent = {
   eyebrow?: string;
   title: string;
-  paragraphs: readonly string[];
+  paragraphs: readonly (string | KioskModeParagraph)[];
   youtube: {
     videoId: string;
     title?: string;
@@ -203,6 +214,10 @@ export type DedicatedDeviceContent = {
   title: string;
   headline: string;
   description: string;
+  youtube?: {
+    videoId: string;
+    title?: string;
+  };
 };
 
 export type StudyPlannerStoryPainPoint = {

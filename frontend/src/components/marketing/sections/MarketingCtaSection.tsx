@@ -26,12 +26,12 @@ export default function MarketingCtaSection({
       <div className="pointer-events-none absolute -right-20 bottom-0 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
 
       <div className="relative mx-auto max-w-3xl px-4 text-center sm:px-6">
-        <p className="text-sm font-bold tracking-wide text-mkt-text-on-accent">{eyebrow}</p>
+        <p className="text-sm font-bold tracking-wide text-white">{eyebrow}</p>
         <h2 className="mkt-h2 mt-3 text-white">
           <MultilineText text={headline} />
         </h2>
         {subcopy ? (
-          <p className="mt-4 text-sm text-mkt-text-on-accent sm:text-base">
+          <p className="mt-4 text-sm text-white sm:text-base">
             <MultilineText text={subcopy} />
           </p>
         ) : null}

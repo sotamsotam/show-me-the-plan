@@ -60,5 +60,4 @@ export const HOME_PLANNER_COMPARISON: PlannerComparisonContent = {
     { paper: '공부를 기록한다', smtp: '공부 습관을 만든다' },
   ],
   tagline: '종이 플래너는 공부를 기록합니다. 쇼미플은 공부 습관을 보여줍니다.',
-  subtagline: '스터디플랜은 아이 혼자 시작하기 어렵습니다. 2인3각 경기처럼 함께 뛰어주세요.',
 };

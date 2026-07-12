@@ -57,13 +57,21 @@ export default function GradeCardsSection({
                     {item.title}
                   </h3>
                 )}
-                <p className="mkt-body mt-3 text-sm">{item.description}</p>
-                <span className="mt-5 inline-flex items-center gap-1 text-sm font-bold text-mkt-accent">
-                  자세히 보기
-                  <span aria-hidden className="transition-transform group-hover:translate-x-1">
-                    →
-                  </span>
-                </span>
+                {Array.isArray(item.description) ? (
+                  <ul className="mt-3 space-y-2">
+                    {item.description.map((point) => (
+                      <li key={point} className="mkt-body flex gap-2 text-sm">
+                        <span
+                          className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-mkt-accent"
+                          aria-hidden
+                        />
+                        <span className="whitespace-pre-line">{point}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="mkt-body mt-3 text-sm whitespace-pre-line">{item.description}</p>
+                )}
               </div>
             </Link>
           );

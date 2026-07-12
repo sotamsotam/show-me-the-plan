@@ -1,5 +1,6 @@
 import HeroAnimatedHeadline from '@/components/marketing/HeroAnimatedHeadline';
 import HeroAppPreview from '@/components/marketing/HeroAppPreview';
+import HeroFadeImages from '@/components/marketing/HeroFadeImages';
 import MarketingCtaButton from '@/components/marketing/MarketingCtaButton';
 import { MultilineText } from '@/components/marketing/MarketingSection';
 import { SUB_SLOGAN } from '@/content/marketing/common';
@@ -90,6 +91,10 @@ function HeroTextBlock({
 }
 
 function HeroVisual({ hero }: { hero: HeroContent }) {
+  if (hero.images && hero.images.length > 0) {
+    return <HeroFadeImages images={hero.images} />;
+  }
+
   if (hero.image) {
     return (
       <div className="relative mx-auto w-full max-w-lg lg:max-w-none">
@@ -121,7 +126,7 @@ export default function HeroSection({
   animateHeadline = false,
 }: HeroSectionProps) {
   const displayBadges = badges ?? (showDefaultBadges ? DEFAULT_BADGES : []);
-  const hasVisual = Boolean(hero.image || hero.appPreview);
+  const hasVisual = Boolean(hero.images?.length || hero.image || hero.appPreview);
 
   return (
     <section className="mkt-hero-bg relative overflow-hidden">
