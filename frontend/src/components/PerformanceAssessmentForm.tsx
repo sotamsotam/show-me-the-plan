@@ -443,7 +443,10 @@ export default function PerformanceAssessmentForm({
             </label>
 
             <div className="space-y-1">
-              <span className="text-sm text-gray-600 dark:text-gray-300">수행평가서 사진</span>
+              <div className="flex items-baseline gap-2">
+                <span className="text-sm text-gray-600 dark:text-gray-300">수행평가서 사진</span>
+                <span className="text-xs text-gray-400 dark:text-gray-500">최대 5장</span>
+              </div>
               <ScheduleAttachmentField
                 attachments={attachments}
                 pendingAttachments={pendingAttachments}
@@ -451,6 +454,7 @@ export default function PerformanceAssessmentForm({
                 onRemoveAttachment={handleRemoveAttachment}
                 onRemovePending={handleRemovePendingAttachment}
                 disabled={loading || deleting}
+                hideHeader
               />
             </div>
           </>
@@ -458,14 +462,17 @@ export default function PerformanceAssessmentForm({
 
         {error ? <p className="text-sm text-red-600 dark:text-red-400">{error}</p> : null}
 
-        <div className="flex flex-wrap gap-2 pt-2">
-          <button
-            type="submit"
-            disabled={loading || deleting}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
-          >
-            {loading ? '저장 중...' : '저장'}
-          </button>
+        <div className="flex flex-wrap items-center justify-end gap-2 pt-2">
+          {isEdit ? (
+            <button
+              type="button"
+              onClick={() => void handleDelete()}
+              disabled={loading || deleting}
+              className="mr-auto rounded-lg px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40"
+            >
+              {deleting ? '삭제 중...' : '삭제'}
+            </button>
+          ) : null}
           <button
             type="button"
             onClick={onClose}
@@ -474,16 +481,13 @@ export default function PerformanceAssessmentForm({
           >
             취소
           </button>
-          {isEdit ? (
-            <button
-              type="button"
-              onClick={() => void handleDelete()}
-              disabled={loading || deleting}
-              className="ml-auto rounded-lg px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40"
-            >
-              {deleting ? '삭제 중...' : '삭제'}
-            </button>
-          ) : null}
+          <button
+            type="submit"
+            disabled={loading || deleting}
+            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+          >
+            {loading ? '저장 중...' : '저장'}
+          </button>
         </div>
       </form>
     </ResponsiveOverlay>

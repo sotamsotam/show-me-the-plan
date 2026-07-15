@@ -7,7 +7,7 @@ import {
   validateScheduleAttachmentFile,
 } from '@/lib/schedule-attachment';
 import { prepareScheduleAttachmentFile } from '@/lib/resize-schedule-image';
-import { ScheduleAttachmentPickerIcon } from '@/components/ScheduleAttachmentBadgeIcon';
+import { ScheduleAttachmentCameraIcon, ScheduleAttachmentPickerIcon } from '@/components/ScheduleAttachmentBadgeIcon';
 import type { ScheduleAttachment } from '@/lib/user-schedule';
 import Image from 'next/image';
 import { ChangeEvent, useRef, useState } from 'react';
@@ -33,7 +33,15 @@ interface ScheduleAttachmentFieldProps {
   onRemoveAttachment: (attachmentId: number) => void;
   onRemovePending: (key: string) => void;
   disabled?: boolean;
+  /** 부모가 라벨을 표시할 때 내부 헤더 숨김 */
+  hideHeader?: boolean;
 }
+
+const PICKER_BUTTON_CLASS =
+  'flex w-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-gray-300 px-4 py-5 text-sm text-gray-500 transition-colors hover:border-amber-400 hover:bg-amber-50/40 hover:text-amber-700 disabled:opacity-50 dark:border-neutral-600 dark:text-gray-400 dark:hover:border-amber-500 dark:hover:bg-amber-950/20 dark:hover:text-amber-300';
+
+const ADD_MORE_BUTTON_CLASS =
+  'flex aspect-[4/3] flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-gray-300 px-2 py-4 text-xs text-gray-500 transition-colors hover:border-amber-400 hover:bg-amber-50/40 hover:text-amber-700 disabled:opacity-50 dark:border-neutral-600 dark:text-gray-400 dark:hover:border-amber-500 dark:hover:bg-amber-950/20 dark:hover:text-amber-300';
 
 export default function ScheduleAttachmentField({
   attachments,
@@ -42,13 +50,16 @@ export default function ScheduleAttachmentField({
   onRemoveAttachment,
   onRemovePending,
   disabled = false,
+  hideHeader = false,
 }: ScheduleAttachmentFieldProps) {
-  const inputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
   const [localError, setLocalError] = useState('');
   const [processing, setProcessing] = useState(false);
 
   const totalCount = attachments.length + pendingAttachments.length;
   const canAddMore = totalCount < SCHEDULE_ATTACHMENT_MAX_COUNT;
+  const inputsDisabled = disabled || processing || !canAddMore;
 
   async function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     const selectedFiles = Array.from(event.target.files ?? []);
@@ -97,14 +108,16 @@ export default function ScheduleAttachmentField({
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-sm text-gray-600 dark:text-gray-300">
-          첨부 이미지(수행평가 기준 프린트물 등)
-        </span>
-        <span className="text-xs text-gray-400 dark:text-gray-500">
-          최대 {SCHEDULE_ATTACHMENT_MAX_COUNT}장 · 자동 최적화 · 장당 5MB
-        </span>
-      </div>
+      {!hideHeader ? (
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-sm text-gray-600 dark:text-gray-300">
+            첨부 이미지(수행평가 기준 프린트물 등)
+          </span>
+          <span className="text-xs text-gray-400 dark:text-gray-500">
+            최대 {SCHEDULE_ATTACHMENT_MAX_COUNT}장 · 자동 최적화 · 장당 5MB
+          </span>
+        </div>
+      ) : null}
 
       {totalCount > 0 ? (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -129,38 +142,68 @@ export default function ScheduleAttachmentField({
           ))}
 
           {canAddMore ? (
-            <button
-              type="button"
-              disabled={disabled || processing}
-              onClick={() => inputRef.current?.click()}
-              className="flex aspect-[4/3] flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-gray-300 px-2 py-4 text-xs text-gray-500 transition-colors hover:border-amber-400 hover:bg-amber-50/40 hover:text-amber-700 disabled:opacity-50 dark:border-neutral-600 dark:text-gray-400 dark:hover:border-amber-500 dark:hover:bg-amber-950/20 dark:hover:text-amber-300"
-            >
-              <span className="text-xl leading-none" aria-hidden="true">
-                +
-              </span>
-              <span>{processing ? '최적화 중…' : '사진 추가'}</span>
-            </button>
+            <>
+              <button
+                type="button"
+                disabled={inputsDisabled}
+                onClick={() => galleryInputRef.current?.click()}
+                className={ADD_MORE_BUTTON_CLASS}
+              >
+                <span>{processing ? '최적화 중…' : '갤러리'}</span>
+              </button>
+              <button
+                type="button"
+                disabled={inputsDisabled}
+                onClick={() => cameraInputRef.current?.click()}
+                className={ADD_MORE_BUTTON_CLASS}
+              >
+                <span>{processing ? '최적화 중…' : '촬영'}</span>
+              </button>
+            </>
           ) : null}
         </div>
       ) : (
-        <button
-          type="button"
-          disabled={disabled || processing}
-          onClick={() => inputRef.current?.click()}
-          className="flex w-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-gray-300 px-4 py-6 text-sm text-gray-500 transition-colors hover:border-amber-400 hover:bg-amber-50/40 hover:text-amber-700 disabled:opacity-50 dark:border-neutral-600 dark:text-gray-400 dark:hover:border-amber-500 dark:hover:bg-amber-950/20 dark:hover:text-amber-300"
-        >
-          <ScheduleAttachmentPickerIcon className="h-7 w-7 text-amber-600 dark:text-amber-400" />
-          <span>{processing ? '이미지 최적화 중…' : '사진 촬영 또는 갤러리에서 선택'}</span>
-        </button>
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            type="button"
+            disabled={inputsDisabled}
+            onClick={() => galleryInputRef.current?.click()}
+            className={PICKER_BUTTON_CLASS}
+          >
+            <ScheduleAttachmentPickerIcon className="h-7 w-7 text-amber-600 dark:text-amber-400" />
+            <span>{processing ? '이미지 최적화 중…' : '갤러리에서 선택'}</span>
+          </button>
+          <button
+            type="button"
+            disabled={inputsDisabled}
+            onClick={() => cameraInputRef.current?.click()}
+            className={PICKER_BUTTON_CLASS}
+          >
+            <ScheduleAttachmentCameraIcon className="h-7 w-7 text-amber-600 dark:text-amber-400" />
+            <span>{processing ? '이미지 최적화 중…' : '사진 촬영'}</span>
+          </button>
+        </div>
       )}
 
+      {/* 카메라: capture로 촬영 앱 우선 호출 (한 장씩) */}
       <input
-        ref={inputRef}
+        ref={cameraInputRef}
+        type="file"
+        accept={SCHEDULE_ATTACHMENT_ACCEPT}
+        capture="environment"
+        className="hidden"
+        disabled={inputsDisabled}
+        onChange={handleFileChange}
+      />
+
+      {/* 갤러리/앨범: capture 없이 다중 선택 */}
+      <input
+        ref={galleryInputRef}
         type="file"
         accept={SCHEDULE_ATTACHMENT_ACCEPT}
         multiple
         className="hidden"
-        disabled={disabled || processing || !canAddMore}
+        disabled={inputsDisabled}
         onChange={handleFileChange}
       />
 
