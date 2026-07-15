@@ -91,6 +91,12 @@
     "guardianConsentConfirmedAt": {
       "type": "datetime"
     },
+    "paidServiceAgreedAt": {
+      "type": "datetime"
+    },
+    "paidServiceVersion": {
+      "type": "string"
+    },
     "isOperator": {
       "type": "boolean",
       "default": false

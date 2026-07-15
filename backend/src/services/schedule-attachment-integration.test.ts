@@ -81,10 +81,32 @@ describe('schedule attachment integration', () => {
       attachmentIds: [42],
     });
 
-    expect(error).toBe('첨부 이미지는 종일 일정에서만 사용할 수 있습니다.');
+    expect(error).toBe('첨부 이미지는 종일 일정 또는 수행평가에서만 사용할 수 있습니다.');
     expect(
       validateScheduleAttachmentPolicy({ allDay: false, attachmentIds: [42] })
-    ).toBe('첨부 이미지는 종일 일정에서만 사용할 수 있습니다.');
+    ).toBe('첨부 이미지는 종일 일정 또는 수행평가에서만 사용할 수 있습니다.');
+  });
+
+  it('allows performance assessment with attachment ids', () => {
+    const payload = {
+      title: '수학 수행평가',
+      scheduleCategory: 'performance' as const,
+      startTime: '00:00',
+      endTime: '23:59',
+      allDay: true,
+      recurrenceType: 'once' as const,
+      date: '2026-06-12',
+      linkedSubject: '수학',
+      linkedPeriod: 3,
+      attachmentIds: [42],
+    };
+
+    expect(validateScheduleInput(payload)).toBeNull();
+    expect(buildScheduleData(payload)).toMatchObject({
+      scheduleCategory: 'performance',
+      linkedSubject: '수학',
+      linkedPeriod: 3,
+    });
   });
 
   it('expands all-day once schedules with attachments into API events', () => {

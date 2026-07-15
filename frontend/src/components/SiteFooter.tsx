@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { OPERATOR_INFO } from '@/content/legal/meta';
+import OperatorLegalBlock from '@/components/OperatorLegalBlock';
 
 type SiteFooterProps = {
   tone?: 'light' | 'dark';
@@ -46,23 +47,21 @@ export default function SiteFooter({ tone = 'light' }: SiteFooterProps) {
           >
             개인정보 처리방침
           </Link>
-        </nav>
-        <p className={isDark ? 'text-gray-300' : 'text-gray-600 dark:text-gray-400'}>
-          {OPERATOR_INFO.serviceDescription}
-        </p>
-        <p>
-          {OPERATOR_INFO.serviceName} · {OPERATOR_INFO.operatorName}
-        </p>
-        <p>
-          문의:{' '}
-          <a
-            href={`mailto:${OPERATOR_INFO.contactEmail}`}
+          <Link
+            href="/pricing"
             className={
               isDark ? 'hover:text-gray-200' : 'hover:text-gray-700 dark:hover:text-gray-200'
             }
           >
-            {OPERATOR_INFO.contactEmail}
-          </a>
+            요금 안내
+          </Link>
+        </nav>
+        <p className={isDark ? 'text-gray-300' : 'text-gray-600 dark:text-gray-400'}>
+          {OPERATOR_INFO.serviceDescription}
+        </p>
+        <OperatorLegalBlock tone={tone} className="text-center" />
+        <p className={isDark ? 'text-gray-500' : 'text-gray-400'}>
+          © {new Date().getFullYear()} {OPERATOR_INFO.operatorName}. All rights reserved.
         </p>
       </div>
     </footer>

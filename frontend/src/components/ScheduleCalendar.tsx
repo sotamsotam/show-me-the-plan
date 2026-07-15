@@ -19,6 +19,7 @@ import { useNeisTimetableEnabled } from '@/hooks/useNeisTimetableEnabled';
 import { useStudentApi } from '@/hooks/useStudentApi';
 import { useUserSchedulesInRange } from '@/hooks/useUserSchedulesInRange';
 import { invalidateUserSchedules } from '@/lib/dashboard-data-invalidation';
+import { attachPerformanceBadgesToTimetableEvents } from '@/lib/performance-assessment';
 import {
   buildOccurrenceKey,
   buildUserEventId,
@@ -238,8 +239,11 @@ export default function ScheduleCalendar() {
     enabled: Boolean(scheduleRange),
   });
   const fetchedEvents = useMemo(
-    () => [...timetableEvents, ...userScheduleEvents],
-    [timetableEvents, userScheduleEvents]
+    () => [
+      ...attachPerformanceBadgesToTimetableEvents(timetableEvents, userSchedules),
+      ...userScheduleEvents,
+    ],
+    [timetableEvents, userScheduleEvents, userSchedules]
   );
   const loading = timetableLoading || userSchedulesLoading;
   const loadError = timetableError || userSchedulesError;

@@ -22,6 +22,10 @@ import { useStudentApi } from '@/hooks/useStudentApi';
 import { useStudyPlanTodosInRange } from '@/hooks/useStudyPlanTodosInRange';
 import { useUserSchedulesInRange } from '@/hooks/useUserSchedulesInRange';
 import { invalidateStudyPlanTodos } from '@/lib/dashboard-data-invalidation';
+import {
+  attachPerformanceBadgesToTimetableEvents,
+  buildPerformancePhotoOverlayEvents,
+} from '@/lib/performance-assessment';
 import StudyPlanOccurrenceChooser from '@/components/StudyPlanOccurrenceChooser';
 import StudyPlanTodoForm, {
   buildInitialFromSelection,
@@ -157,6 +161,9 @@ function resolveBackgroundClassNames(classNames: EventInput['classNames']): stri
 
   if (names.includes('school-event')) {
     result.push('schedule-bg-school');
+    if (names.includes('school-event--performance')) {
+      result.push('school-event--performance');
+    }
     return result;
   }
 
@@ -303,6 +310,7 @@ export default function StudyPlanCalendar() {
   const [savingDrag, setSavingDrag] = useState(false);
   const [error, setError] = useState('');
   const {
+    schedules: userSchedules,
     events: userScheduleEvents,
     isLoading: userSchedulesLoading,
     error: userSchedulesError,
@@ -323,8 +331,11 @@ export default function StudyPlanCalendar() {
     enabled: Boolean(scheduleRange),
   });
   const scheduleEvents = useMemo(
-    () => [...timetableEvents, ...userScheduleEvents],
-    [timetableEvents, userScheduleEvents]
+    () => [
+      ...attachPerformanceBadgesToTimetableEvents(timetableEvents, userSchedules),
+      ...userScheduleEvents,
+    ],
+    [timetableEvents, userScheduleEvents, userSchedules]
   );
   const loading = timetableLoading || userSchedulesLoading || studyPlanTodosLoading;
   const loadError = timetableError || userSchedulesError || studyPlanTodosError;
@@ -467,6 +478,26 @@ export default function StudyPlanCalendar() {
     [scheduleEvents]
   );
 
+  /** 주간 리스트용: 수행평가가 붙은 학교 교시 (배경이 아닌 일반 리스트 행) */
+  const performanceSchoolListEvents = useMemo(
+    () =>
+      scheduleEvents.filter((event) => {
+        const props = event.extendedProps as Record<string, unknown> | undefined;
+        return (
+          props?.type === 'school' &&
+          props.performanceAssessment != null &&
+          !event.allDay
+        );
+      }),
+    [scheduleEvents]
+  );
+
+  /** 일간/주간 그리드: 배경 위 클릭 가능한 사진 아이콘 오버레이 */
+  const performancePhotoOverlayEvents = useMemo(
+    () => buildPerformancePhotoOverlayEvents(scheduleEvents),
+    [scheduleEvents]
+  );
+
   const editableTodoEvents = useMemo(() => {
     return todoEvents.map((event) => {
       const props = (event.extendedProps ?? {}) as Record<string, unknown>;
@@ -495,10 +526,19 @@ export default function StudyPlanCalendar() {
 
   const calendarEvents = useMemo(() => {
     const events = isListView
-      ? [...allDayScheduleEvents, ...editableTodoEvents]
+      ? [
+          ...allDayScheduleEvents,
+          ...performanceSchoolListEvents,
+          ...editableTodoEvents,
+        ]
       : isMonthView
         ? [...allDayScheduleEvents]
-        : [...backgroundEvents, ...allDayScheduleEvents, ...editableTodoEvents];
+        : [
+            ...backgroundEvents,
+            ...allDayScheduleEvents,
+            ...performancePhotoOverlayEvents,
+            ...editableTodoEvents,
+          ];
 
     if (draftEvent && !isListView && !isMonthView) {
       events.push(draftToEventInput(draftEvent));
@@ -512,6 +552,8 @@ export default function StudyPlanCalendar() {
     editableTodoEvents,
     isListView,
     isMonthView,
+    performancePhotoOverlayEvents,
+    performanceSchoolListEvents,
   ]);
 
   const closeAllModals = useCallback(() => {

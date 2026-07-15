@@ -4,6 +4,7 @@ import type { EventContentArg } from '@fullcalendar/core';
 import ExecutionStatusCheckbox from '@/components/ExecutionStatusCheckbox';
 import ScheduleAttachmentViewer from '@/components/ScheduleAttachmentViewer';
 import { readEventAttachments } from '@/lib/schedule-attachment';
+import type { PerformanceAssessmentBadge } from '@/lib/performance-assessment';
 import type { CheckboxVisualState, StudyPlanSubject } from '@/lib/study-plan-todo';
 import { formatStudyPlanEventTitle, getSubjectLabel } from '@/lib/study-plan-todo';
 import type { ProfileSubjectsInput } from '@/lib/user-subject';
@@ -12,6 +13,14 @@ import {
   type ScheduleCategory,
 } from '@/lib/user-schedule';
 
+function readPerformanceAssessment(
+  arg: EventContentArg
+): PerformanceAssessmentBadge | null {
+  const value = arg.event.extendedProps.performanceAssessment as
+    | PerformanceAssessmentBadge
+    | undefined;
+  return value ?? null;
+}
 const EVENT_TIME_FORMATTER = new Intl.DateTimeFormat('ko-KR', {
   hour: '2-digit',
   minute: '2-digit',
@@ -259,6 +268,39 @@ export function renderCalendarEventContent(
     );
   }
 
+  if (type === 'performance-photo') {
+    const performance = readPerformanceAssessment(arg);
+    if (!performance || performance.attachments.length === 0) {
+      return null;
+    }
+
+    const subjectLabel =
+      (arg.event.extendedProps.subjectLabel as string | undefined)?.trim() ||
+      performance.linkedSubject?.trim() ||
+      '과목';
+
+    return (
+      <div
+        className="cal-event-inner cal-event-inner--performance-photo"
+        onMouseDown={(event) => event.stopPropagation()}
+        onTouchStart={(event) => event.stopPropagation()}
+      >
+        <span className="cal-performance-photo-subject">{subjectLabel}</span>
+        <span className="cal-event-performance-label">수행평가</span>
+        <ScheduleAttachmentViewer
+          event={{
+            id: String(arg.event.id),
+            title: performance.title,
+            extendedProps: { attachments: performance.attachments },
+          }}
+          title={performance.title}
+          variant="badge"
+          badgeClassName="performance-photo-overlay-badge"
+        />
+      </div>
+    );
+  }
+
   if (isMonthView) {
     if (type === 'user') {
       const eventInput = {
@@ -317,6 +359,14 @@ export function renderCalendarEventContent(
     const listTitle = resolveListDisplayTitle(arg, subjects);
     const executionStatus =
       type === 'study-plan' ? resolveStudyPlanExecutionStatus(arg) : null;
+    const performance = type === 'school' ? readPerformanceAssessment(arg) : null;
+    const attachmentEvent = performance
+      ? {
+          id: String(arg.event.id),
+          title: performance.title,
+          extendedProps: { attachments: performance.attachments },
+        }
+      : null;
 
     return (
       <div className="cal-event-inner cal-event-inner--list">
@@ -330,7 +380,16 @@ export function renderCalendarEventContent(
             <span className="cal-event-title cal-event-title--wrap">{listTitle}</span>
           </span>
         ) : (
-          <span className="cal-event-title cal-event-title--wrap">{listTitle}</span>
+          <span className="cal-event-list-row">
+            <span className="cal-event-title cal-event-title--wrap">{listTitle}</span>
+            {attachmentEvent && performance.attachments.length > 0 ? (
+              <ScheduleAttachmentViewer
+                event={attachmentEvent}
+                title={performance.title}
+                variant="badge"
+              />
+            ) : null}
+          </span>
         )}
       </div>
     );
@@ -410,14 +469,34 @@ export function renderCalendarEventContent(
     );
   }
 
+  const schoolPerformance = type === 'school' ? readPerformanceAssessment(arg) : null;
+
   return (
     <div className="cal-event-inner">
-      <div className="cal-event-title">{title}</div>
+      <div className="cal-event-title">
+        {title}
+        {schoolPerformance ? (
+          <span className="cal-event-performance-label"> 수행평가</span>
+        ) : null}
+      </div>
       {!isCompact && timeText ? (
         <div className="cal-event-time">{timeText}</div>
       ) : null}
       {!isCompact && type === 'school' && period ? (
         <div className="cal-event-meta">{period}교시</div>
+      ) : null}
+      {schoolPerformance && schoolPerformance.attachments.length > 0 ? (
+        <ScheduleAttachmentViewer
+          event={{
+            id: String(arg.event.id),
+            title: schoolPerformance.title,
+            extendedProps: {
+              attachments: schoolPerformance.attachments,
+            },
+          }}
+          title={schoolPerformance.title}
+          variant="badge"
+        />
       ) : null}
     </div>
   );

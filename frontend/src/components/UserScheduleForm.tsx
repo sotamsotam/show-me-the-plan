@@ -541,7 +541,7 @@ export default function UserScheduleForm({
               onChange={(e) => setTitle(e.target.value)}
               placeholder={
                 isMonthAllDay
-                  ? '예: 수행평가 일정, 가족 여행 등'
+                  ? '예: 행사, 가족여행 등'
                   : '예: 수학학원, 논술학원'
               }
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-zinc-800"

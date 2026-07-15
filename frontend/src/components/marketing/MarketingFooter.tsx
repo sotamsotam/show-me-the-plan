@@ -1,29 +1,7 @@
 import { MAIN_SLOGAN } from '@/content/marketing/common';
 import { OPERATOR_INFO } from '@/content/legal/meta';
+import OperatorLegalBlock from '@/components/OperatorLegalBlock';
 import Link from 'next/link';
-
-function OperatorLegalLines() {
-  const segments = [
-    OPERATOR_INFO.operatorName,
-    OPERATOR_INFO.representativeName
-      ? `대표 ${OPERATOR_INFO.representativeName}`
-      : null,
-    OPERATOR_INFO.businessRegistrationNumber
-      ? `사업자등록번호 ${OPERATOR_INFO.businessRegistrationNumber}`
-      : null,
-    OPERATOR_INFO.businessAddress ? `주소 ${OPERATOR_INFO.businessAddress}` : null,
-  ].filter(Boolean);
-
-  if (segments.length === 0) {
-    return null;
-  }
-
-  return (
-    <p className="mt-3 text-xs leading-relaxed text-white/55">
-      {segments.join(' · ')}
-    </p>
-  );
-}
 
 export default function MarketingFooter() {
   const serviceHost = (() => {
@@ -69,14 +47,23 @@ export default function MarketingFooter() {
             <p className="mt-2 max-w-md text-sm leading-relaxed text-white/55">
               {MAIN_SLOGAN}
             </p>
-            <OperatorLegalLines />
+            <OperatorLegalBlock tone="marketing" className="mt-4" />
           </div>
 
           <div className="lg:col-span-4">
             <p className="text-xs font-bold uppercase tracking-wider text-white/50">고객지원</p>
             <div className="mt-4 flex flex-col gap-2.5 text-sm">
               <p>
-                문의:{' '}
+                전화:{' '}
+                <a
+                  href={`tel:${OPERATOR_INFO.contactPhone.replace(/[^0-9+]/g, '')}`}
+                  className="text-white/90 hover:text-white"
+                >
+                  {OPERATOR_INFO.contactPhone}
+                </a>
+              </p>
+              <p>
+                이메일:{' '}
                 <a
                   href={`mailto:${OPERATOR_INFO.contactEmail}`}
                   className="text-white/90 hover:text-white"
@@ -104,7 +91,7 @@ export default function MarketingFooter() {
 
         <div className="mt-10 border-t border-white/10 pt-8 text-center text-xs leading-relaxed text-white/50">
           <p>
-            © {new Date().getFullYear()} {OPERATOR_INFO.serviceName}. All rights reserved.
+            © {new Date().getFullYear()} {OPERATOR_INFO.operatorName}. All rights reserved.
           </p>
         </div>
       </div>

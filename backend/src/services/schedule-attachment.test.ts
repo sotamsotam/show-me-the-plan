@@ -51,13 +51,20 @@ describe('schedule-attachment', () => {
   });
 
   describe('validateScheduleAttachmentPolicy', () => {
-    it('allows attachments only on all-day schedules', () => {
+    it('allows attachments only on all-day schedules or performance assessments', () => {
       expect(
         validateScheduleAttachmentPolicy({ allDay: true, attachmentIds: [1] })
       ).toBeNull();
       expect(
+        validateScheduleAttachmentPolicy({
+          allDay: false,
+          scheduleCategory: 'performance',
+          attachmentIds: [1],
+        })
+      ).toBeNull();
+      expect(
         validateScheduleAttachmentPolicy({ allDay: false, attachmentIds: [1] })
-      ).toBe('첨부 이미지는 종일 일정에서만 사용할 수 있습니다.');
+      ).toBe('첨부 이미지는 종일 일정 또는 수행평가에서만 사용할 수 있습니다.');
     });
 
     it('enforces max attachment count', () => {

@@ -1,7 +1,7 @@
 import type { EventInput } from '@fullcalendar/core';
 
 export type RecurrenceType = 'weekly' | 'once';
-export type ScheduleCategory = 'managed' | 'academy' | 'fixed' | 'other';
+export type ScheduleCategory = 'managed' | 'academy' | 'fixed' | 'other' | 'performance';
 
 export const SCHEDULE_CATEGORY_OPTIONS = [
   { value: 'managed' as const, label: '공부 가능시간' },
@@ -27,6 +27,7 @@ const SCHEDULE_CATEGORY_LIST_PREFIX: Record<ScheduleCategory, string> = {
   academy: '학원',
   fixed: '고정',
   other: '기타',
+  performance: '수행',
 };
 
 export function getScheduleCategoryListPrefix(category: ScheduleCategory): string {
@@ -163,6 +164,8 @@ export interface UserSchedule {
   excludedDates: string[];
   overrides: Record<string, ScheduleOccurrenceOverride>;
   attachments?: ScheduleAttachment[];
+  linkedSubject?: string | null;
+  linkedPeriod?: number | null;
 }
 
 export interface ExpandedScheduleEvent {
@@ -177,6 +180,8 @@ export interface ExpandedScheduleEvent {
   scheduleCategory: ScheduleCategory;
   hasOverride: boolean;
   attachments?: ScheduleAttachment[];
+  linkedSubject?: string | null;
+  linkedPeriod?: number | null;
 }
 
 export interface UserScheduleInput {
@@ -192,6 +197,8 @@ export interface UserScheduleInput {
   date?: string;
   endDate?: string | null;
   attachmentIds?: number[];
+  linkedSubject?: string | null;
+  linkedPeriod?: number | null;
 }
 
 export interface OccurrenceOverrideInput {
@@ -200,10 +207,30 @@ export interface OccurrenceOverrideInput {
   endTime: string;
 }
 
+export function isPerformanceAssessment(schedule: {
+  scheduleCategory?: ScheduleCategory | string | null;
+}): boolean {
+  return schedule.scheduleCategory === 'performance';
+}
+
+export function isPerformancePeriodBadge(schedule: {
+  scheduleCategory?: ScheduleCategory | string | null;
+  linkedPeriod?: number | null;
+}): boolean {
+  return isPerformanceAssessment(schedule) && schedule.linkedPeriod != null;
+}
+
+export function buildPerformanceAssessmentTitle(subject: string): string {
+  const trimmed = subject.trim();
+  return trimmed ? `${trimmed} 수행평가` : '수행평가';
+}
+
 export function expandedEventsToCalendarEvents(
   events: ExpandedScheduleEvent[]
 ): EventInput[] {
-  return events.map((event) => ({
+  return events
+    .filter((event) => !isPerformanceAssessment(event))
+    .map((event) => ({
     id: event.id,
     title: event.title,
     start: event.start,
@@ -223,6 +250,8 @@ export function expandedEventsToCalendarEvents(
       date: event.date,
       hasOverride: event.hasOverride,
       allDay: event.allDay,
+      linkedSubject: event.linkedSubject ?? null,
+      linkedPeriod: event.linkedPeriod ?? null,
       ...(event.attachments?.length ? { attachments: event.attachments } : {}),
     },
   }));

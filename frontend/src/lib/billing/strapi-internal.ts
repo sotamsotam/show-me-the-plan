@@ -93,6 +93,22 @@ export async function grantFreePeriodInternal(body: {
   }
 }
 
+export async function recordPaidServiceConsentInternal(body: {
+  userId: number;
+  paidServiceAgreed: boolean;
+  paidServiceVersion: string;
+}) {
+  const res = await billingInternalFetch('/api/user-profiles/internal/paid-service-consent', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error?.message ?? data.error ?? '유료서비스 약관 동의 저장에 실패했습니다.');
+  }
+}
+
 export type RenewalCandidate = {
   userId: number;
   subscriptionId: number;

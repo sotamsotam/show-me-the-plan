@@ -47,6 +47,8 @@ export async function GET(request: NextRequest) {
 
   return NextResponse.json({
     profile: data.profile ?? null,
+    subjects: data.subjects ?? [],
+    entries: data.entries ?? [],
     events: timetableToCalendarEvents(
       data.entries ?? [],
       data.scheduleEvents ?? data.examEvents?.map((event: { date: string; title: string; description?: string; category: string }) => ({

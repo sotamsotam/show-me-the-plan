@@ -990,6 +990,28 @@ body:has([data-dashboard-app]) {
   opacity: 0.7;
 }
 
+.cal-event-performance-label {
+  font-size: 0.85em;
+  font-weight: 700;
+  color: #c2410c;
+}
+
+.cal-event-list-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.cal-event-list-row .cal-event-title {
+  min-width: 0;
+}
+
+.dark .cal-event-performance-label {
+  color: #fdba74;
+}
+
 .schedule-calendar .fc .fc-event.cal-event-card.subject-korean {
   --cal-event-bg: #fce8e6;
   --cal-event-accent: #d93025;
@@ -1119,6 +1141,12 @@ body:has([data-dashboard-app]) {
   --cal-event-bg: #f3e8fd;
   --cal-event-accent: #9334e6;
   --cal-event-text: #7627bb;
+}
+
+.schedule-calendar .fc .fc-event.cal-event-card.user-event-performance {
+  --cal-event-bg: #fff7ed;
+  --cal-event-accent: #ea580c;
+  --cal-event-text: #c2410c;
 }
 
 .schedule-calendar .fc .fc-event.cal-event-card.draft-event {
@@ -1654,6 +1682,75 @@ body:has([data-dashboard-app]) {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.study-plan-calendar .fc .fc-bg-event.cal-bg-event .cal-bg-performance-label {
+  color: #c2410c;
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-top: 2px;
+}
+
+.study-plan-calendar .fc .fc-bg-event.cal-bg-event.school-event--performance {
+  --cal-bg-fill: color-mix(in srgb, var(--cal-bg-fill) 70%, #fed7aa 30%);
+}
+
+.study-plan-calendar .fc .fc-event.performance-photo-overlay.cal-event-card {
+  background: rgba(255, 247, 237, 0.95) !important;
+  border: 1px solid rgba(234, 88, 12, 0.35) !important;
+  border-left: 3px solid #ea580c !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  cursor: default;
+  overflow: visible;
+  z-index: 6 !important;
+}
+
+.study-plan-calendar .fc .fc-event.performance-photo-overlay .fc-event-main {
+  overflow: visible;
+}
+
+.study-plan-calendar .fc .fc-event.performance-photo-overlay .cal-event-inner--performance-photo {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: 4px;
+  min-width: 0;
+  padding: 2px 4px;
+  white-space: nowrap;
+}
+
+.study-plan-calendar .fc .fc-event.performance-photo-overlay .cal-performance-photo-subject {
+  color: #9a3412;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
+  max-width: 4.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.study-plan-calendar .fc .fc-event.performance-photo-overlay .cal-event-performance-label {
+  color: #c2410c;
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.study-plan-calendar .fc .fc-event.performance-photo-overlay .performance-photo-overlay-badge {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  flex-shrink: 0;
+  max-width: none;
+  padding: 0;
+}
+
+.study-plan-calendar .fc .fc-event.performance-photo-overlay .performance-photo-overlay-badge .day-slot-allday-badge-label {
+  display: none;
 }
 
 .study-plan-calendar .fc .fc-bg-event.cal-bg-event.subject-korean {

@@ -1,6 +1,7 @@
 export const LEGAL_VERSIONS = {
   terms: '1.0',
   privacy: '1.0',
+  paidService: '1.0',
 } as const;
 
 export type SignupConsentsInput = {
@@ -9,6 +10,11 @@ export type SignupConsentsInput = {
   guardianConsentConfirmed?: boolean;
   termsVersion?: string;
   privacyVersion?: string;
+};
+
+export type PaidServiceConsentInput = {
+  paidServiceAgreed?: boolean;
+  paidServiceVersion?: string;
 };
 
 export function validateSignupConsents(consents: SignupConsentsInput | undefined): string | null {
@@ -48,5 +54,30 @@ export function buildConsentProfileFields(consents: SignupConsentsInput) {
     privacyAgreedAt: agreedAt,
     privacyVersion: consents.privacyVersion!,
     guardianConsentConfirmedAt: agreedAt,
+  };
+}
+
+export function validatePaidServiceConsent(
+  consent: PaidServiceConsentInput | undefined
+): string | null {
+  if (!consent || typeof consent !== 'object') {
+    return '유료서비스 이용약관 동의 정보가 필요합니다.';
+  }
+
+  if (!consent.paidServiceAgreed) {
+    return '유료서비스 이용약관에 동의해 주세요.';
+  }
+
+  if (consent.paidServiceVersion !== LEGAL_VERSIONS.paidService) {
+    return '유료서비스 이용약관 버전이 올바르지 않습니다. 페이지를 새로고침 후 다시 시도해 주세요.';
+  }
+
+  return null;
+}
+
+export function buildPaidServiceConsentFields(version: string) {
+  return {
+    paidServiceAgreedAt: new Date().toISOString(),
+    paidServiceVersion: version,
   };
 }

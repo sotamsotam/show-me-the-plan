@@ -50,6 +50,8 @@ function serializeSchedule(raw: Record<string, unknown>) {
     excludedDates: schedule.excludedDates,
     overrides: schedule.overrides,
     attachments: schedule.attachments,
+    linkedSubject: schedule.linkedSubject,
+    linkedPeriod: schedule.linkedPeriod,
   };
 }
 
@@ -217,6 +219,10 @@ export default factories.createCoreController(UID, ({ strapi }) => ({
       endDate: body.endDate ?? current.endDate ?? undefined,
       excludedDates: body.excludedDates ?? current.excludedDates,
       overrides: body.overrides ?? current.overrides,
+      linkedSubject:
+        body.linkedSubject !== undefined ? body.linkedSubject : current.linkedSubject,
+      linkedPeriod:
+        body.linkedPeriod !== undefined ? body.linkedPeriod : current.linkedPeriod,
       attachmentIds:
         body.attachmentIds !== undefined
           ? normalizeAttachmentIds(body.attachmentIds)

@@ -17,9 +17,17 @@
     },
     "scheduleCategory": {
       "type": "enumeration",
-      "enum": ["managed", "academy", "fixed", "other"],
+      "enum": ["managed", "academy", "fixed", "other", "performance"],
       "required": true,
       "default": "managed"
+    },
+    "linkedSubject": {
+      "type": "string"
+    },
+    "linkedPeriod": {
+      "type": "integer",
+      "min": 1,
+      "max": 15
     },
     "startTime": {
       "type": "string",

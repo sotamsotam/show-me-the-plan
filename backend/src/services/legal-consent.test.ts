@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildConsentProfileFields,
+  buildPaidServiceConsentFields,
+  validatePaidServiceConsent,
   validateSignupConsents,
 } from './legal-consent';
 
@@ -49,5 +51,34 @@ describe('buildConsentProfileFields', () => {
     expect(fields.termsAgreedAt).toBeTruthy();
     expect(fields.privacyAgreedAt).toBeTruthy();
     expect(fields.guardianConsentConfirmedAt).toBeTruthy();
+  });
+});
+
+describe('validatePaidServiceConsent', () => {
+  it('accepts valid paid service consent', () => {
+    expect(
+      validatePaidServiceConsent({
+        paidServiceAgreed: true,
+        paidServiceVersion: '1.0',
+      })
+    ).toBeNull();
+  });
+
+  it('rejects when not agreed', () => {
+    expect(
+      validatePaidServiceConsent({
+        paidServiceAgreed: false,
+        paidServiceVersion: '1.0',
+      })
+    ).toBe('유료서비스 이용약관에 동의해 주세요.');
+  });
+});
+
+describe('buildPaidServiceConsentFields', () => {
+  it('returns paid service consent timestamps and version', () => {
+    const fields = buildPaidServiceConsentFields('1.0');
+
+    expect(fields.paidServiceVersion).toBe('1.0');
+    expect(fields.paidServiceAgreedAt).toBeTruthy();
   });
 });

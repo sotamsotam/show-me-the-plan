@@ -2,13 +2,13 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import ResponsiveOverlay from '@/components/ResponsiveOverlay';
 import {
-  ExecutionNavIcon,
   MoreNavIcon,
   ManagerGuideNavIcon,
   OverviewNavIcon,
+  PerformanceNavIcon,
   ScheduleNavIcon,
   StudentsNavIcon,
   StudyPlanNavIcon,
@@ -23,12 +23,15 @@ import {
   STUDENT_TAB_ITEMS,
 } from '@/lib/dashboard-nav-config';
 import SignOutButton from '@/app/dashboard/SignOutButton';
+import { useUserSchedulesInRange } from '@/hooks/useUserSchedulesInRange';
+import { countUpcomingPerformanceAssessments } from '@/lib/performance-assessment';
+import { getTodayIsoDate, shiftIsoDate } from '@/lib/user-schedule';
 
 const STUDENT_TAB_ICONS = [
-  TodoNavIcon,
   ScheduleNavIcon,
+  PerformanceNavIcon,
   StudyPlanNavIcon,
-  ExecutionNavIcon,
+  TodoNavIcon,
 ] as const;
 
 const MANAGER_TAB_ICONS = [OverviewNavIcon, StudentsNavIcon, ManagerGuideNavIcon] as const;
@@ -45,9 +48,52 @@ function tabButtonClass(active: boolean) {
   }`;
 }
 
+function PerformanceTabIcon({
+  active,
+  count,
+}: {
+  active: boolean;
+  count: number;
+}) {
+  const badgeLabel = count > 9 ? '9+' : String(count);
+
+  return (
+    <span className="relative inline-flex">
+      <PerformanceNavIcon className={`h-5 w-5 shrink-0 ${active ? 'stroke-[2.5]' : ''}`} />
+      {count > 0 ? (
+        <span
+          className="absolute -right-2.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-0.5 text-[9px] font-bold leading-none text-white"
+          aria-label={`수행평가 ${count}개`}
+        >
+          {badgeLabel}
+        </span>
+      ) : null}
+    </span>
+  );
+}
+
 export default function DashboardBottomNav({ variant }: DashboardBottomNavProps) {
   const pathname = usePathname();
   const [moreOpen, setMoreOpen] = useState(false);
+  const today = getTodayIsoDate();
+  const performanceRangeEnd = useMemo(() => shiftIsoDate(today, 120), [today]);
+  const { schedules: performanceSchedules, refetch: refetchPerformanceSchedules } =
+    useUserSchedulesInRange({
+      start: today,
+      end: performanceRangeEnd,
+      enabled: variant === 'student',
+    });
+  const upcomingPerformanceCount = useMemo(
+    () => countUpcomingPerformanceAssessments(performanceSchedules, today),
+    [performanceSchedules, today]
+  );
+
+  useEffect(() => {
+    if (variant !== 'student') {
+      return;
+    }
+    void refetchPerformanceSchedules(true);
+  }, [pathname, refetchPerformanceSchedules, variant]);
 
   function isActive(href: string, exact = false) {
     if (exact) {
@@ -135,6 +181,7 @@ export default function DashboardBottomNav({ variant }: DashboardBottomNavProps)
           {STUDENT_TAB_ITEMS.map(({ href, shortLabel }, index) => {
             const active = isActive(href);
             const Icon = STUDENT_TAB_ICONS[index];
+            const isPerformanceTab = href === '/dashboard/performance';
 
             return (
               <Link
@@ -143,7 +190,11 @@ export default function DashboardBottomNav({ variant }: DashboardBottomNavProps)
                 className={tabButtonClass(active)}
                 aria-current={active ? 'page' : undefined}
               >
-                <Icon className={`h-5 w-5 shrink-0 ${active ? 'stroke-[2.5]' : ''}`} />
+                {isPerformanceTab ? (
+                  <PerformanceTabIcon active={active} count={upcomingPerformanceCount} />
+                ) : (
+                  <Icon className={`h-5 w-5 shrink-0 ${active ? 'stroke-[2.5]' : ''}`} />
+                )}
                 <span className="truncate">{shortLabel}</span>
               </Link>
             );

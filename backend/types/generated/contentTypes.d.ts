@@ -847,6 +847,8 @@ export interface ApiUserProfileUserProfile extends Struct.CollectionTypeSchema {
     >;
     notificationsEnabled: Schema.Attribute.Boolean &
       Schema.Attribute.DefaultTo<true>;
+    paidServiceAgreedAt: Schema.Attribute.DateTime;
+    paidServiceVersion: Schema.Attribute.String;
     privacyAgreedAt: Schema.Attribute.DateTime;
     privacyVersion: Schema.Attribute.String;
     publishedAt: Schema.Attribute.DateTime;
@@ -952,6 +954,15 @@ export interface ApiUserScheduleUserSchedule
     endDate: Schema.Attribute.Date;
     endTime: Schema.Attribute.String & Schema.Attribute.Required;
     excludedDates: Schema.Attribute.JSON;
+    linkedPeriod: Schema.Attribute.Integer &
+      Schema.Attribute.SetMinMax<
+        {
+          max: 15;
+          min: 1;
+        },
+        number
+      >;
+    linkedSubject: Schema.Attribute.String;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
@@ -963,7 +974,7 @@ export interface ApiUserScheduleUserSchedule
     recurrenceType: Schema.Attribute.Enumeration<['weekly', 'once']> &
       Schema.Attribute.Required;
     scheduleCategory: Schema.Attribute.Enumeration<
-      ['managed', 'academy', 'fixed', 'other']
+      ['managed', 'academy', 'fixed', 'other', 'performance']
     > &
       Schema.Attribute.Required &
       Schema.Attribute.DefaultTo<'managed'>;

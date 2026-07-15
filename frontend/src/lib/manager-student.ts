@@ -15,6 +15,7 @@ export const MANAGER_SELECTED_STUDENT_KEY = 'managerSelectedStudentId';
 
 export const MANAGER_STUDENT_REQUIRED_PATHS = [
   '/dashboard/schedule',
+  '/dashboard/performance',
   '/dashboard/study-plan',
   '/dashboard/study-execution-detail',
   '/dashboard/todo',
@@ -25,6 +26,7 @@ export const MANAGER_STUDENT_REQUIRED_PATHS = [
 
 export const MANAGER_STUDENT_NAV_ITEMS = [
   { href: '/dashboard/schedule', label: '스케줄', exact: false },
+  { href: '/dashboard/performance', label: '수행평가일정', exact: false },
   { href: '/dashboard/study-plan', label: '스터디 플랜', exact: false },
   { href: '/dashboard/study-execution-detail', label: '공부현황', exact: false },
   { href: '/dashboard/todo', label: 'TODO', exact: false },

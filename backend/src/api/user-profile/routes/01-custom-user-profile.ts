@@ -280,5 +280,13 @@ export default {
         auth: {},
       },
     },
+    {
+      method: 'POST',
+      path: '/user-profiles/internal/paid-service-consent',
+      handler: 'user-profile.internalPaidServiceConsent',
+      config: {
+        auth: false,
+      },
+    },
   ],
 };

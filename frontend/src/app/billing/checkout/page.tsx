@@ -1,9 +1,13 @@
 import BillingCheckoutClient from './BillingCheckoutClient';
+import SiteFooter from '@/components/SiteFooter';
 
 export default function BillingCheckoutPage() {
   return (
-    <main className="min-h-dvh bg-gray-50 px-4 py-10">
-      <BillingCheckoutClient />
-    </main>
+    <div className="flex min-h-dvh flex-col bg-gray-50">
+      <main className="flex-1 px-4 py-10">
+        <BillingCheckoutClient />
+      </main>
+      <SiteFooter />
+    </div>
   );
 }

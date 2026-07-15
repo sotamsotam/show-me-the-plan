@@ -32,6 +32,8 @@ function buildAllDayOnceSchedule(
         height: 600,
       },
     ],
+    linkedSubject: null,
+    linkedPeriod: null,
     ...overrides,
   };
 }
@@ -68,5 +70,33 @@ describe('user-schedule attachments expansion', () => {
     );
 
     expect(events[0]?.attachments).toBeUndefined();
+  });
+
+  it('skips expanding all performance schedules from calendar events', () => {
+    const withPeriod = expandSchedulesToEvents(
+      [
+        buildAllDayOnceSchedule({
+          scheduleCategory: 'performance',
+          linkedSubject: '수학',
+          linkedPeriod: 3,
+        }),
+      ],
+      '2026-06-01',
+      '2026-06-30'
+    );
+    const withoutPeriod = expandSchedulesToEvents(
+      [
+        buildAllDayOnceSchedule({
+          scheduleCategory: 'performance',
+          linkedSubject: '수학',
+          linkedPeriod: null,
+        }),
+      ],
+      '2026-06-01',
+      '2026-06-30'
+    );
+
+    expect(withPeriod).toHaveLength(0);
+    expect(withoutPeriod).toHaveLength(0);
   });
 });

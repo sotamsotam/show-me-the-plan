@@ -22,6 +22,7 @@ export const PRIVACY_SECTIONS: LegalSection[] = [
       '필수: 이메일, 비밀번호(암호화 저장), 닉네임(사용자명), 회원 구분(학생/매니저 등)',
       '학생(NEIS 연동): 학교명, 학교 코드, 학년, 반',
       '서비스 이용 과정에서 생성되는 정보: 개인 일정, 스터디 플랜, TODO 실행 기록, 학습 통계, 과목 설정, 매니저 담당 관계',
+      '결제(유료 구독): 결제 수단 정보(카드번호 등)는 포트원 및 연동 PG사가 직접 처리하며, 운영자는 카드번호 전체를 저장하지 않습니다. 운영자는 결제 식별자, 결제 금액, 결제 일시, 영수증 URL 등 결제 내역 정보만 보관합니다.',
       '자동 수집: 서비스 이용 기록, 접속 로그, 쿠키(세션 유지)',
     ],
   },
@@ -54,6 +55,8 @@ export const PRIVACY_SECTIONS: LegalSection[] = [
     list: [
       '이메일 발송: Brevo(SMTP) — 비밀번호 재설정 메일 발송',
       '클라우드 호스팅: 서비스 운영을 위한 서버·데이터베이스 호스팅',
+      '결제 처리: ㈜포트원(PortOne) — 결제 대행, 빌링키 발급, 정기결제 처리',
+      '결제 처리: 포트원에 연동된 결제대행사(PG) — 신용카드 결제 승인·정산',
     ],
   },
   {
@@ -84,8 +87,9 @@ export const PRIVACY_SECTIONS: LegalSection[] = [
   {
     title: '10. 개인정보 보호책임자',
     paragraphs: [
-      `성명(또는 부서): ${OPERATOR_INFO.privacyOfficer}`,
-      `이메일: ${OPERATOR_INFO.contactEmail}`,
+      `성명: ${OPERATOR_INFO.privacyOfficerName}`,
+      `직책: ${OPERATOR_INFO.privacyOfficerTitle}`,
+      `연락처: ${OPERATOR_INFO.contactPhone} · ${OPERATOR_INFO.contactEmail}`,
       `서비스 URL: ${OPERATOR_INFO.serviceUrl}`,
     ],
   },

@@ -3,8 +3,10 @@ import {
   buildCustomerKey,
   requireStudentBillingSession,
 } from '@/lib/billing/auth';
+import { recordPaidServiceConsentInternal } from '@/lib/billing/strapi-internal';
 import { isPortOneConfigured } from '@/lib/portone/config';
 import { strapiFetch } from '@/lib/strapi';
+import { LEGAL_VERSIONS } from '@/content/legal/meta';
 import { DEFAULT_MONTHLY_PLAN_CODE } from '@/types/subscription';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -29,10 +31,28 @@ export async function POST(request: NextRequest) {
     billingKey?: string;
     planCode?: string;
     paymentId?: string;
+    paidServiceAgreed?: boolean;
+    paidServiceVersion?: string;
   };
 
   if (!body.billingKey) {
     return NextResponse.json({ error: 'billingKey가 필요합니다.' }, { status: 400 });
+  }
+
+  if (!body.paidServiceAgreed) {
+    return NextResponse.json(
+      { error: '유료서비스 이용약관에 동의해 주세요.' },
+      { status: 400 }
+    );
+  }
+
+  const paidServiceVersion = body.paidServiceVersion ?? LEGAL_VERSIONS.paidService;
+
+  if (paidServiceVersion !== LEGAL_VERSIONS.paidService) {
+    return NextResponse.json(
+      { error: '유료서비스 이용약관 버전이 올바르지 않습니다.' },
+      { status: 400 }
+    );
   }
 
   const planCode = body.planCode ?? DEFAULT_MONTHLY_PLAN_CODE;
@@ -68,6 +88,12 @@ export async function POST(request: NextRequest) {
   };
 
   try {
+    await recordPaidServiceConsentInternal({
+      userId: session.userId,
+      paidServiceAgreed: true,
+      paidServiceVersion,
+    });
+
     const result = await completeBillingCheckout({
       userId: session.userId,
       planCode,

@@ -25,6 +25,8 @@ function makeWeeklySchedule(
     excludedDates: [],
     overrides: {},
     attachments: [],
+    linkedSubject: null,
+    linkedPeriod: null,
     ...partial,
   };
 }

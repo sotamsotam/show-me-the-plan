@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import BillingDisclosure from '@/components/billing/BillingDisclosure';
+import { LEGAL_VERSIONS } from '@/content/legal/meta';
 import { formatBillingInterval, formatKrw } from '@/lib/billing/format';
 import { DEFAULT_MONTHLY_PLAN_CODE } from '@/types/subscription';
 
@@ -36,6 +37,8 @@ async function confirmBillingCheckout(input: {
   billingKey: string;
   planCode: string;
   paymentId?: string;
+  paidServiceAgreed: boolean;
+  paidServiceVersion: string;
 }) {
   const res = await fetch('/api/billing/billing-key/confirm', {
     method: 'POST',
@@ -133,6 +136,8 @@ export default function BillingCheckoutClient() {
         billingKey: issueResponse.billingKey,
         planCode: prepare.plan.code,
         paymentId: prepare.paymentId,
+        paidServiceAgreed: true,
+        paidServiceVersion: LEGAL_VERSIONS.paidService,
       });
 
       router.replace('/dashboard/settings/billing');
@@ -169,8 +174,8 @@ export default function BillingCheckoutClient() {
       <div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">구독 결제</h1>
         <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
-          14일 무료 체험 중에도 카드 등록 없이 이용할 수 있습니다. 구독을 시작하면
-          아래 요금이 결제되며, 이후 매월 자동 갱신됩니다.
+          14일 무료 체험 중에는 카드 등록 없이 이용할 수 있습니다. 카드 등록 및 결제를
+          완료하면 화면에 표시된 금액이 즉시 결제되며, 이후 매월 자동 갱신됩니다.
         </p>
       </div>
 
@@ -219,7 +224,11 @@ export default function BillingCheckoutClient() {
           <Link href="/legal/paid-service" className="text-blue-600 hover:underline">
             유료서비스 이용약관
           </Link>
-          에 동의합니다. (자동갱신·해지 방법·체험 후 요금을 확인했습니다.)
+          과{' '}
+          <Link href="/legal/privacy" className="text-blue-600 hover:underline">
+            개인정보 처리방침
+          </Link>
+          을 확인했으며, <strong>정기결제(매월 자동 갱신)</strong>에 동의합니다.
         </span>
       </label>
 

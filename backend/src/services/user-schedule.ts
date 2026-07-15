@@ -17,13 +17,14 @@ import {
 } from './schedule-attachment';
 
 export type RecurrenceType = 'weekly' | 'once';
-export type ScheduleCategory = 'managed' | 'academy' | 'fixed' | 'other';
+export type ScheduleCategory = 'managed' | 'academy' | 'fixed' | 'other' | 'performance';
 
 export const SCHEDULE_CATEGORIES: ScheduleCategory[] = [
   'managed',
   'academy',
   'fixed',
   'other',
+  'performance',
 ];
 
 export const ALL_WEEKDAYS = [0, 1, 2, 3, 4, 5, 6] as const;
@@ -55,6 +56,8 @@ export interface UserScheduleInput {
   excludedDates?: string[];
   overrides?: Record<string, ScheduleOccurrenceOverride>;
   attachmentIds?: number[];
+  linkedSubject?: string | null;
+  linkedPeriod?: number | null;
 }
 
 export interface UserScheduleRecord {
@@ -73,6 +76,8 @@ export interface UserScheduleRecord {
   excludedDates: string[];
   overrides: Record<string, ScheduleOccurrenceOverride>;
   attachments: ScheduleAttachment[];
+  linkedSubject: string | null;
+  linkedPeriod: number | null;
 }
 
 export interface ExpandedScheduleEvent {
@@ -87,6 +92,8 @@ export interface ExpandedScheduleEvent {
   scheduleCategory: ScheduleCategory;
   hasOverride: boolean;
   attachments?: ScheduleAttachment[];
+  linkedSubject?: string | null;
+  linkedPeriod?: number | null;
 }
 
 const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -222,6 +229,42 @@ function normalizeScheduleCategory(value: unknown): ScheduleCategory {
   return 'managed';
 }
 
+function normalizeLinkedSubject(value: unknown): string | null {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+function normalizeLinkedPeriod(value: unknown): number | null {
+  if (value == null || value === '') {
+    return null;
+  }
+
+  const period = typeof value === 'number' ? value : Number(value);
+
+  if (!Number.isInteger(period) || period < 1 || period > 15) {
+    return null;
+  }
+
+  return period;
+}
+
+export function isPerformanceLinkedPeriodBadge(schedule: {
+  scheduleCategory: ScheduleCategory;
+  linkedPeriod: number | null;
+}): boolean {
+  return schedule.scheduleCategory === 'performance' && schedule.linkedPeriod != null;
+}
+
+export function isPerformanceAssessmentCategory(schedule: {
+  scheduleCategory: ScheduleCategory;
+}): boolean {
+  return schedule.scheduleCategory === 'performance';
+}
+
 export function toScheduleRecord(raw: Record<string, unknown>): UserScheduleRecord {
   return {
     id: Number(raw.id),
@@ -239,6 +282,8 @@ export function toScheduleRecord(raw: Record<string, unknown>): UserScheduleReco
     excludedDates: normalizeExcludedDates(raw.excludedDates),
     overrides: normalizeOverrides(raw.overrides),
     attachments: normalizeScheduleAttachments(raw.attachments),
+    linkedSubject: normalizeLinkedSubject(raw.linkedSubject),
+    linkedPeriod: normalizeLinkedPeriod(raw.linkedPeriod),
   };
 }
 
@@ -549,7 +594,7 @@ export function validateScheduleInput(
       !input.scheduleCategory ||
       !SCHEDULE_CATEGORIES.includes(input.scheduleCategory)
     ) {
-      return 'scheduleCategory는 managed, academy, fixed, other 중 하나여야 합니다.';
+      return 'scheduleCategory는 managed, academy, fixed, other, performance 중 하나여야 합니다.';
     }
   }
 
@@ -560,6 +605,25 @@ export function validateScheduleInput(
   }
 
   const recurrenceType = input.recurrenceType;
+  const isPerformance = input.scheduleCategory === 'performance';
+
+  if (isPerformance) {
+    if (recurrenceType && recurrenceType !== 'once') {
+      return '수행평가는 단일 일정(once)만 등록할 수 있습니다.';
+    }
+
+    if (!partial || has('linkedSubject')) {
+      if (!normalizeLinkedSubject(input.linkedSubject)) {
+        return '수행평가는 과목(linkedSubject)이 필요합니다.';
+      }
+    }
+
+    if (has('linkedPeriod') && input.linkedPeriod != null) {
+      if (normalizeLinkedPeriod(input.linkedPeriod) == null) {
+        return 'linkedPeriod는 1~15 사이 정수여야 합니다.';
+      }
+    }
+  }
 
   if (recurrenceType === 'weekly') {
     if (!partial || has('daysOfWeek')) {
@@ -616,9 +680,10 @@ export function validateScheduleInput(
   if (has('attachmentIds')) {
     const attachmentIds = normalizeAttachmentIds(input.attachmentIds);
 
-    if (!partial || has('allDay')) {
+    if (!partial || has('allDay') || has('scheduleCategory')) {
       const attachmentError = validateScheduleAttachmentPolicy({
         allDay: input.allDay === true,
+        scheduleCategory: input.scheduleCategory,
         attachmentIds,
       });
 
@@ -636,6 +701,7 @@ export function validateScheduleInput(
 export function buildScheduleData(input: UserScheduleInput): Record<string, unknown> {
   const recurrenceType = input.recurrenceType!;
   const allDay = input.allDay === true;
+  const isPerformance = input.scheduleCategory === 'performance';
   const data: Record<string, unknown> = {
     title: input.title!.trim(),
     scheduleCategory: input.scheduleCategory ?? 'managed',
@@ -649,6 +715,8 @@ export function buildScheduleData(input: UserScheduleInput): Record<string, unkn
     date: null,
     excludedDates: [],
     overrides: {},
+    linkedSubject: isPerformance ? normalizeLinkedSubject(input.linkedSubject) : null,
+    linkedPeriod: isPerformance ? normalizeLinkedPeriod(input.linkedPeriod) : null,
   };
 
   if (recurrenceType === 'weekly') {
@@ -714,8 +782,10 @@ function buildExpandedEvent(
   endTime: string,
   hasOverride: boolean
 ): ExpandedScheduleEvent {
-  const attachments =
-    schedule.allDay && schedule.attachments.length > 0 ? schedule.attachments : undefined;
+  const includeAttachments =
+    schedule.attachments.length > 0 &&
+    (schedule.allDay || schedule.scheduleCategory === 'performance');
+  const attachments = includeAttachments ? schedule.attachments : undefined;
 
   const base = {
     id: `user-${schedule.id}-${date}`,
@@ -725,6 +795,8 @@ function buildExpandedEvent(
     recurrenceType: schedule.recurrenceType,
     scheduleCategory: schedule.scheduleCategory,
     hasOverride,
+    linkedSubject: schedule.linkedSubject,
+    linkedPeriod: schedule.linkedPeriod,
     ...(attachments ? { attachments } : {}),
   };
 
@@ -873,6 +945,11 @@ export function expandSchedulesToEvents(
   const events: ExpandedScheduleEvent[] = [];
 
   for (const schedule of schedules) {
+    // 수행평가는 전용 메뉴·학교시간표 배지로만 표시 (캘린더 독립 이벤트 제외)
+    if (isPerformanceAssessmentCategory(schedule)) {
+      continue;
+    }
+
     if (!scheduleOverlapsRange(schedule, rangeStart, rangeEnd)) {
       continue;
     }

@@ -72,6 +72,7 @@ export function normalizeScheduleAttachments(value: unknown): ScheduleAttachment
 
 export function validateScheduleAttachmentPolicy(input: {
   allDay: boolean;
+  scheduleCategory?: string;
   attachmentIds?: number[];
 }): string | null {
   const attachmentIds = input.attachmentIds ?? [];
@@ -80,8 +81,11 @@ export function validateScheduleAttachmentPolicy(input: {
     return null;
   }
 
-  if (!input.allDay) {
-    return '첨부 이미지는 종일 일정에서만 사용할 수 있습니다.';
+  const allowsAttachments =
+    input.allDay === true || input.scheduleCategory === 'performance';
+
+  if (!allowsAttachments) {
+    return '첨부 이미지는 종일 일정 또는 수행평가에서만 사용할 수 있습니다.';
   }
 
   if (attachmentIds.length > SCHEDULE_ATTACHMENT_MAX_COUNT) {

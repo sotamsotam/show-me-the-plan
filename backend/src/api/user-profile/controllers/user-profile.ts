@@ -38,8 +38,11 @@ import {
 } from '../../../services/student-neis-schedule';
 import {
   buildConsentProfileFields,
+  buildPaidServiceConsentFields,
+  validatePaidServiceConsent,
   validateSignupConsents,
 } from '../../../services/legal-consent';
+import { assertBillingInternalAccess } from '../../../services/billing-internal-auth';
 import { deleteUserAccount } from '../../../services/account-deletion';
 import { maskEmailHint } from '../../../services/email-hint';
 import {
@@ -2168,6 +2171,46 @@ export default factories.createCoreController(
       });
 
       return ctx.send({ notificationsEnabled: enabled });
+    },
+
+    async internalPaidServiceConsent(ctx) {
+      if (!assertBillingInternalAccess(ctx)) {
+        return;
+      }
+
+      const { userId, paidServiceAgreed, paidServiceVersion } = ctx.request.body as {
+        userId?: number;
+        paidServiceAgreed?: boolean;
+        paidServiceVersion?: string;
+      };
+
+      if (!userId) {
+        return ctx.badRequest('userId is required.');
+      }
+
+      const consentError = validatePaidServiceConsent({
+        paidServiceAgreed,
+        paidServiceVersion,
+      });
+
+      if (consentError) {
+        return ctx.badRequest(consentError);
+      }
+
+      const profile = await strapi.db.query('api::user-profile.user-profile').findOne({
+        where: { user: Number(userId) },
+      });
+
+      if (!profile) {
+        return ctx.notFound('프로필을 찾을 수 없습니다.');
+      }
+
+      await strapi.db.query('api::user-profile.user-profile').update({
+        where: { id: profile.id },
+        data: buildPaidServiceConsentFields(paidServiceVersion!),
+      });
+
+      return ctx.send({ ok: true });
     },
   })
 );
