@@ -382,7 +382,7 @@ export function renderCalendarEventContent(
         ) : (
           <span className="cal-event-list-row">
             <span className="cal-event-title cal-event-title--wrap">{listTitle}</span>
-            {attachmentEvent && performance.attachments.length > 0 ? (
+            {performance && performance.attachments.length > 0 && attachmentEvent ? (
               <ScheduleAttachmentViewer
                 event={attachmentEvent}
                 title={performance.title}
