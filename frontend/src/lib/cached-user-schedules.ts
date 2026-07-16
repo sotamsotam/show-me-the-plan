@@ -5,15 +5,26 @@ import {
   buildStudentCachePrefix,
   createRangeQueryCache,
 } from '@/lib/range-query-cache';
-import type { UserSchedule } from '@/lib/user-schedule';
+import type { ScheduleCategory, UserSchedule } from '@/lib/user-schedule';
 
 const CACHE_NAMESPACE = 'user-schedules';
 
 const cache = createRangeQueryCache<UserScheduleRangeData>();
 
+type InvalidationListener = (studentUserId: number | null) => void;
+
+const invalidationListeners = new Set<InvalidationListener>();
+
 export interface UserScheduleRangeData {
   schedules: UserSchedule[];
   events: EventInput[];
+}
+
+export interface UserScheduleRangeQuery {
+  start: string;
+  end: string;
+  studentUserId: number | null;
+  scheduleCategory?: ScheduleCategory;
 }
 
 function normalizeSchedules(raw: UserSchedule[] | undefined): UserSchedule[] {
@@ -27,12 +38,26 @@ function normalizeSchedules(raw: UserSchedule[] | undefined): UserSchedule[] {
   }));
 }
 
+function buildUserSchedulesCacheKey(options: UserScheduleRangeQuery): string {
+  return buildRangeCacheKey(
+    options.studentUserId,
+    options.start,
+    options.end,
+    CACHE_NAMESPACE,
+    options.scheduleCategory ?? null
+  );
+}
+
 async function fetchUserSchedulesFromApi(
   start: string,
   end: string,
-  withStudent: (url: string) => string
+  withStudent: (url: string) => string,
+  scheduleCategory?: ScheduleCategory
 ): Promise<UserScheduleRangeData> {
   const params = new URLSearchParams({ start, end });
+  if (scheduleCategory) {
+    params.set('scheduleCategory', scheduleCategory);
+  }
   const res = await fetch(withStudent(`/api/user-schedules?${params}`), {
     credentials: 'include',
   });
@@ -53,45 +78,46 @@ async function fetchUserSchedulesFromApi(
   };
 }
 
-export function readCachedUserSchedulesInRange(options: {
-  start: string;
-  end: string;
-  studentUserId: number | null;
-}): UserScheduleRangeData | undefined {
-  const key = buildRangeCacheKey(
-    options.studentUserId,
-    options.start,
-    options.end,
-    CACHE_NAMESPACE
-  );
-  return cache.read(key);
+export function readCachedUserSchedulesInRange(
+  options: UserScheduleRangeQuery
+): UserScheduleRangeData | undefined {
+  return cache.read(buildUserSchedulesCacheKey(options));
 }
 
 export async function getUserSchedulesInRange(
-  options: {
-    start: string;
-    end: string;
-    studentUserId: number | null;
-  },
+  options: UserScheduleRangeQuery,
   withStudent: (url: string) => string,
   fetchOptions?: { force?: boolean }
 ): Promise<UserScheduleRangeData> {
   const studentPrefix = buildStudentCachePrefix(options.studentUserId);
-  const key = buildRangeCacheKey(
-    options.studentUserId,
-    options.start,
-    options.end,
-    CACHE_NAMESPACE
-  );
+  const key = buildUserSchedulesCacheKey(options);
 
   return cache.getOrFetch(
     key,
     studentPrefix,
-    () => fetchUserSchedulesFromApi(options.start, options.end, withStudent),
+    () =>
+      fetchUserSchedulesFromApi(
+        options.start,
+        options.end,
+        withStudent,
+        options.scheduleCategory
+      ),
     fetchOptions
   );
 }
 
+export function subscribeUserSchedulesInvalidation(
+  listener: InvalidationListener
+): () => void {
+  invalidationListeners.add(listener);
+  return () => {
+    invalidationListeners.delete(listener);
+  };
+}
+
 export function invalidateCachedUserSchedules(studentUserId: number | null): void {
   cache.invalidateByStudentPrefix(buildStudentCachePrefix(studentUserId));
+  for (const listener of invalidationListeners) {
+    listener(studentUserId);
+  }
 }

@@ -91,6 +91,7 @@ import {
   type WeeklyPlanPlacementContext,
 } from '@/lib/weekly-plan-placement';
 import { unlinkWeeklyPlanFromDeletedTodo } from '@/lib/weekly-plan-unlink';
+import { scheduleScrollListWeekToToday } from '@/lib/calendar-list-week-scroll';
 
 const CALENDAR_PLUGINS = [dayGridPlugin, timeGridPlugin, listPlugin, interactionPlugin];
 
@@ -653,6 +654,10 @@ export default function StudyPlanCalendar() {
       setToolbarVersion((version) => version + 1);
       setVisibleRange({ start: arg.start, end: arg.end });
 
+      if (isMobile && isListCalendarView(arg.view.type)) {
+        scheduleScrollListWeekToToday(calendarContainerRef.current);
+      }
+
       const rangeKey = buildRangeKey(arg);
 
       if (lastRangeKeyRef.current === rangeKey) {
@@ -662,7 +667,7 @@ export default function StudyPlanCalendar() {
       lastRangeKeyRef.current = rangeKey;
       void fetchTimetableEvents(arg.start, arg.end);
     },
-    [fetchTimetableEvents]
+    [fetchTimetableEvents, isMobile]
   );
 
   const handleFormClose = useCallback(() => {
@@ -1431,6 +1436,15 @@ export default function StudyPlanCalendar() {
 
     calendarRef.current?.getApi().updateSize();
   }, [calendarHeight, usesMeasuredCalendarHeight]);
+
+  // 일정 로드 후 리스트 DOM이 갱신되면 오늘 행으로 다시 맞춘다.
+  useEffect(() => {
+    if (!isMobile || !isListView || loading) {
+      return;
+    }
+
+    scheduleScrollListWeekToToday(calendarContainerRef.current);
+  }, [calendarEvents, isListView, isMobile, loading, calendarHeight]);
 
   const showWeeklyPlanPanel = useMemo(() => {
     if (!visibleRange) {

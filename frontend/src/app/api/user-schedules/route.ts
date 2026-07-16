@@ -21,6 +21,7 @@ export async function GET(request: NextRequest) {
 
   const start = request.nextUrl.searchParams.get('start');
   const end = request.nextUrl.searchParams.get('end');
+  const scheduleCategory = request.nextUrl.searchParams.get('scheduleCategory');
 
   if (!start || !end) {
     return NextResponse.json(
@@ -33,6 +34,9 @@ export async function GET(request: NextRequest) {
     new URLSearchParams({ start, end }),
     request
   );
+  if (scheduleCategory) {
+    params.set('scheduleCategory', scheduleCategory);
+  }
   const res = await strapiFetch(`/api/user-schedules?${params}`, { jwt });
   const data = await res.json();
 

@@ -81,6 +81,24 @@ describe('user-schedules attachment API integration', () => {
     );
   });
 
+  it('GET forwards scheduleCategory to Strapi', async () => {
+    vi.mocked(getServerStrapiJwt).mockResolvedValue('jwt-token');
+    vi.mocked(strapiFetch).mockResolvedValue(
+      new Response(JSON.stringify({ schedules: [], events: [] }), { status: 200 })
+    );
+
+    const request = new NextRequest(
+      'http://localhost:3000/api/user-schedules?start=2026-06-01&end=2026-06-30&scheduleCategory=performance'
+    );
+    const response = await GET(request);
+
+    expect(response.status).toBe(200);
+    expect(strapiFetch).toHaveBeenCalledWith(
+      '/api/user-schedules?start=2026-06-01&end=2026-06-30&scheduleCategory=performance',
+      expect.objectContaining({ jwt: 'jwt-token' })
+    );
+  });
+
   it('POST upload proxies multipart file to Strapi and returns attachment', async () => {
     vi.mocked(getServerStrapiJwt).mockResolvedValue('jwt-token');
 

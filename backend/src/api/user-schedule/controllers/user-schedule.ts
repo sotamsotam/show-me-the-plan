@@ -16,6 +16,7 @@ import {
   buildScheduleData,
   expandSchedulesToEvents,
   isOccurrenceEditableSource,
+  parseScheduleCategoryQuery,
   resolveOccurrenceFields,
   toScheduleRecord,
   validateOccurrenceDetachInput,
@@ -87,27 +88,43 @@ export default factories.createCoreController(UID, ({ strapi }) => ({
         : ctx.forbidden(owner.error);
     }
 
-    const { start = '', end = '' } = ctx.query as {
+    const { start = '', end = '', scheduleCategory } = ctx.query as {
       start?: string;
       end?: string;
+      scheduleCategory?: string;
     };
 
     if (!start || !end) {
       return ctx.badRequest('start, end는 필수입니다. (YYYY-MM-DD)');
     }
 
+    const categoryFilter = parseScheduleCategoryQuery(scheduleCategory);
+    if (categoryFilter.ok === false) {
+      return ctx.badRequest(categoryFilter.error);
+    }
+
+    const where: { user: number; scheduleCategory?: string } = {
+      user: owner.userId,
+    };
+    if (categoryFilter.category) {
+      where.scheduleCategory = categoryFilter.category;
+    }
+
     const rows = await strapi.db.query(UID).findMany({
-      where: { user: owner.userId },
+      where,
       orderBy: { id: 'asc' },
       populate: SCHEDULE_POPULATE,
     });
 
     const schedules = rows.map((row) => serializeSchedule(row as Record<string, unknown>));
-    const events = expandSchedulesToEvents(
-      rows.map((row) => toScheduleRecord(row as Record<string, unknown>)),
-      String(start),
-      String(end)
-    );
+    const events =
+      categoryFilter.category === 'performance'
+        ? []
+        : expandSchedulesToEvents(
+            rows.map((row) => toScheduleRecord(row as Record<string, unknown>)),
+            String(start),
+            String(end)
+          );
 
     return ctx.send({ schedules, events });
   },

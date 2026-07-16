@@ -99,6 +99,22 @@ describe('createRangeQueryCache', () => {
     expect(cache.read(otherKey)).toBe('42');
   });
 
+  it('invalidates namespaced keys that include a variant suffix', async () => {
+    const cache = createRangeQueryCache<string>();
+    const key = buildRangeCacheKey(
+      null,
+      '2026-06-01',
+      '2026-06-30',
+      'user-schedules',
+      'performance'
+    );
+
+    await cache.getOrFetch(key, 'self', async () => 'perf');
+    cache.invalidateByStudentPrefix('self');
+
+    expect(cache.read(key)).toBeUndefined();
+  });
+
   it('evicts the oldest entry per student when max entries is exceeded', async () => {
     const cache = createRangeQueryCache<string>({ maxEntriesPerStudent: 2 });
     const fetcher = vi.fn(async (value: string) => value);
@@ -118,5 +134,17 @@ describe('buildRangeCacheKey', () => {
     expect(
       buildRangeCacheKey(null, '2026-06-01', '2026-06-30', 'user-schedules')
     ).toBe('user-schedules:self:2026-06-01:2026-06-30');
+  });
+
+  it('includes variant when provided so filtered queries do not collide', () => {
+    expect(
+      buildRangeCacheKey(
+        null,
+        '2026-06-01',
+        '2026-06-30',
+        'user-schedules',
+        'performance'
+      )
+    ).toBe('user-schedules:self:2026-06-01:2026-06-30:performance');
   });
 });

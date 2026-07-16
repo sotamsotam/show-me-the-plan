@@ -27,6 +27,25 @@ export const SCHEDULE_CATEGORIES: ScheduleCategory[] = [
   'performance',
 ];
 
+export function parseScheduleCategoryQuery(
+  raw: unknown
+): { ok: true; category: ScheduleCategory | null } | { ok: false; error: string } {
+  if (raw === undefined || raw === null || raw === '') {
+    return { ok: true, category: null };
+  }
+
+  const value = String(raw);
+  if (!SCHEDULE_CATEGORIES.includes(value as ScheduleCategory)) {
+    return {
+      ok: false,
+      error:
+        'scheduleCategory는 managed, academy, fixed, other, performance 중 하나여야 합니다.',
+    };
+  }
+
+  return { ok: true, category: value as ScheduleCategory };
+}
+
 export const ALL_WEEKDAYS = [0, 1, 2, 3, 4, 5, 6] as const;
 
 export interface ScheduleOccurrenceOverride {

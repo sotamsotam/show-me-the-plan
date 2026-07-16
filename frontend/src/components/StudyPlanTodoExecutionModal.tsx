@@ -86,7 +86,7 @@ function formatElapsedDurationLabel(ms: number): string {
 
 function TimerPlayIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="currentColor" className="ml-0.5 h-6 w-6" aria-hidden>
+    <svg viewBox="0 0 24 24" fill="currentColor" className="ml-0.5 h-7 w-7" aria-hidden>
       <path d="M8 5v14l11-7z" />
     </svg>
   );
@@ -94,9 +94,40 @@ function TimerPlayIcon() {
 
 function TimerStopIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5" aria-hidden>
-      <rect x="6" y="6" width="12" height="12" rx="1" />
+    <svg viewBox="0 0 24 24" fill="currentColor" className="h-6 w-6" aria-hidden>
+      <rect x="6" y="6" width="12" height="12" rx="2" />
     </svg>
+  );
+}
+
+function TimerDigit({
+  value,
+  emphasize = false,
+}: {
+  value: number;
+  emphasize?: boolean;
+}) {
+  return (
+    <span
+      className={`inline-block min-w-[3.1rem] text-center font-mono text-[2.35rem] font-semibold leading-none tracking-tight tabular-nums sm:min-w-[3.6rem] sm:text-[2.75rem] ${
+        emphasize ? 'text-emerald-300' : 'text-white'
+      }`}
+    >
+      {String(value).padStart(2, '0')}
+    </span>
+  );
+}
+
+function TimerColon({ pulsing }: { pulsing: boolean }) {
+  return (
+    <span
+      className={`select-none font-mono text-2xl font-light text-white/40 ${
+        pulsing ? 'animate-pulse' : ''
+      }`}
+      aria-hidden
+    >
+      :
+    </span>
   );
 }
 
@@ -531,6 +562,23 @@ export default function StudyPlanTodoExecutionModal({
   const elapsedParts = getElapsedParts(elapsedMs);
   const timerStatus = timerRunning ? 'running' : elapsedMs > 0 ? 'paused' : 'idle';
   const plannedDurationMinutes = getPlannedDurationMinutes(todo.start, todo.end);
+  const plannedMs = Math.max(plannedDurationMinutes, 0) * 60_000;
+  const timerProgress =
+    plannedMs > 0 ? Math.min(1, elapsedMs / plannedMs) : timerRunning || elapsedMs > 0 ? 1 : 0;
+  const timerStatusLabel =
+    timerStatus === 'running' ? '측정 중' : timerStatus === 'paused' ? '일시정지' : '대기';
+  const timerStatusDotClass =
+    timerStatus === 'running'
+      ? 'bg-emerald-400'
+      : timerStatus === 'paused'
+        ? 'bg-amber-400'
+        : 'bg-white/35';
+  const timerProgressClass =
+    timerStatus === 'running'
+      ? 'bg-emerald-400'
+      : timerStatus === 'paused'
+        ? 'bg-amber-300'
+        : 'bg-white/35';
 
   return (
     <>
@@ -617,58 +665,58 @@ export default function StudyPlanTodoExecutionModal({
                   </label>
                 </div>
               ) : (
-                <div className="rounded-xl border border-gray-200 p-4 dark:border-neutral-700">
-                  <div className="mb-3 flex justify-center">
-                    {timerStatus === 'idle' && (
-                      <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600 dark:bg-zinc-800 dark:text-gray-400">
-                        대기
+                <div className="overflow-hidden rounded-2xl border border-[#092254]/12 bg-[#f4f6fa] dark:border-white/10 dark:bg-zinc-950">
+                  <div className="flex items-center justify-between gap-3 px-4 pt-3.5">
+                    <div className="inline-flex items-center gap-2">
+                      <span
+                        className={`h-2 w-2 rounded-full ${timerStatusDotClass} ${
+                          timerRunning ? 'animate-pulse' : ''
+                        }`}
+                      />
+                      <span className="text-xs font-semibold tracking-wide text-[#092254] dark:text-gray-200">
+                        {timerStatusLabel}
                       </span>
-                    )}
-                    {timerStatus === 'running' && (
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-700 dark:bg-green-950 dark:text-green-300">
-                        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-green-500" />
-                        측정 중
-                      </span>
-                    )}
-                    {timerStatus === 'paused' && (
-                      <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-950 dark:text-amber-300">
-                        일시정지
-                      </span>
-                    )}
+                    </div>
+                    <span className="rounded-md bg-white px-2.5 py-1 text-[11px] font-medium text-[#092254]/80 shadow-sm dark:bg-white/10 dark:text-gray-300">
+                      계획 {formatDurationLabel(plannedDurationMinutes)}
+                    </span>
                   </div>
 
-                  <div
-                    className={`rounded-xl bg-zinc-900 px-3 py-5 shadow-inner dark:bg-black ${
-                      timerRunning ? 'ring-1 ring-green-500/30' : ''
-                    }`}
-                  >
-                    <div className="flex items-center justify-center font-mono text-4xl font-semibold tabular-nums tracking-wider text-emerald-400 dark:text-green-300">
-                      <span>{String(elapsedParts.hours).padStart(2, '0')}</span>
-                      <span
-                        className={`mx-0.5 opacity-60 ${timerRunning ? 'animate-pulse' : ''}`}
-                      >
-                        :
-                      </span>
-                      <span>{String(elapsedParts.minutes).padStart(2, '0')}</span>
-                      <span
-                        className={`mx-0.5 opacity-60 ${timerRunning ? 'animate-pulse' : ''}`}
-                      >
-                        :
-                      </span>
-                      <span className={timerRunning ? 'text-green-200' : ''}>
-                        {String(elapsedParts.seconds).padStart(2, '0')}
-                      </span>
+                  <div className="relative mx-3 mt-3 overflow-hidden rounded-xl bg-[#092254] px-2 py-6 dark:bg-[#071428]">
+                    <div
+                      className="pointer-events-none absolute inset-0 opacity-40"
+                      style={{
+                        background:
+                          'radial-gradient(ellipse at 50% 0%, rgba(255,255,255,0.12), transparent 55%)',
+                      }}
+                      aria-hidden
+                    />
+                    <div className="relative flex items-center justify-center gap-1 sm:gap-2">
+                      <TimerDigit value={elapsedParts.hours} />
+                      <TimerColon pulsing={timerRunning} />
+                      <TimerDigit value={elapsedParts.minutes} />
+                      <TimerColon pulsing={timerRunning} />
+                      <TimerDigit
+                        value={elapsedParts.seconds}
+                        emphasize={timerRunning}
+                      />
+                    </div>
+                    <div className="relative mx-auto mt-5 h-1 max-w-[13rem] overflow-hidden rounded-full bg-white/15">
+                      <div
+                        className={`h-full rounded-full transition-[width] duration-300 ease-out ${timerProgressClass}`}
+                        style={{ width: `${Math.round(timerProgress * 100)}%` }}
+                      />
                     </div>
                   </div>
 
-                  <div className="mt-4 flex justify-center">
+                  <div className="flex flex-col items-center gap-3 px-4 py-4">
                     <button
                       type="button"
                       onClick={timerRunning ? handleStopTimer : handleStartTimer}
-                      className={`flex h-14 w-14 items-center justify-center rounded-full text-white shadow-md transition-transform hover:scale-105 active:scale-95 ${
+                      className={`flex h-16 w-16 items-center justify-center rounded-full text-white transition-transform hover:scale-[1.03] active:scale-95 ${
                         timerRunning
-                          ? 'bg-red-600 hover:bg-red-700'
-                          : 'bg-green-600 hover:bg-green-700'
+                          ? 'bg-rose-600 shadow-[0_10px_24px_-10px_rgba(225,29,72,0.85)]'
+                          : 'bg-[#092254] shadow-[0_10px_24px_-10px_rgba(9,34,84,0.7)] dark:bg-emerald-600 dark:shadow-[0_10px_24px_-10px_rgba(5,150,105,0.7)]'
                       }`}
                       aria-label={
                         timerRunning ? '중지' : elapsedMs > 0 ? '재개' : '시작'
@@ -676,23 +724,22 @@ export default function StudyPlanTodoExecutionModal({
                     >
                       {timerRunning ? <TimerStopIcon /> : <TimerPlayIcon />}
                     </button>
-                  </div>
 
-                  <p className="mt-3 text-center text-xs leading-relaxed text-gray-500 dark:text-gray-400">
-                    계획 {formatDurationLabel(plannedDurationMinutes)}
                     {(timerRunning || elapsedMs > 0) && (
-                      <> · 경과 {formatElapsedDurationLabel(elapsedMs)}</>
+                      <p className="text-center text-xs leading-relaxed text-gray-500 dark:text-gray-400">
+                        경과 {formatElapsedDurationLabel(elapsedMs)}
+                        {executedStartTime && (
+                          <>
+                            {' '}
+                            · {executedStartTime}
+                            {timerRunning
+                              ? ' ~ 진행 중'
+                              : ` ~ ${addMsToTime(executedStartTime, elapsedMs)}`}
+                          </>
+                        )}
+                      </p>
                     )}
-                    {(timerRunning || elapsedMs > 0) && executedStartTime && (
-                      <>
-                        {' '}
-                        · {executedStartTime}
-                        {timerRunning
-                          ? ' ~ 진행 중'
-                          : ` ~ ${addMsToTime(executedStartTime, elapsedMs)}`}
-                      </>
-                    )}
-                  </p>
+                  </div>
                 </div>
               )}
             </>

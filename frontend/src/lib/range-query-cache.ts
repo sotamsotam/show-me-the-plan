@@ -6,10 +6,15 @@ export function buildRangeCacheKey(
   studentUserId: number | null,
   start: string,
   end: string,
-  namespace?: string
+  namespace?: string,
+  variant?: string | null
 ): string {
   const prefix = buildStudentCachePrefix(studentUserId);
-  const base = `${prefix}:${start}:${end}`;
+  const parts = [prefix, start, end];
+  if (variant) {
+    parts.push(variant);
+  }
+  const base = parts.join(':');
   return namespace ? `${namespace}:${base}` : base;
 }
 
@@ -63,15 +68,12 @@ export function createRangeQueryCache<T>(
   function cacheKeyMatchesStudentPrefix(key: string, studentPrefix: string): boolean {
     const segments = key.split(':');
 
-    if (segments.length === 3) {
-      return segments[0] === studentPrefix;
+    if (segments[0] === studentPrefix) {
+      return true;
     }
 
-    if (segments.length === 4) {
-      return segments[1] === studentPrefix;
-    }
-
-    return false;
+    // namespaced keys: {namespace}:{studentPrefix}:{start}:{end}[:variant]
+    return segments.length >= 2 && segments[1] === studentPrefix;
   }
 
   function invalidateByStudentPrefix(studentPrefix: string) {

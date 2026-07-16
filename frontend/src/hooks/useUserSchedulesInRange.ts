@@ -5,16 +5,18 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   getUserSchedulesInRange,
   readCachedUserSchedulesInRange,
+  subscribeUserSchedulesInvalidation,
   type UserScheduleRangeData,
 } from '@/lib/cached-user-schedules';
 import { useStudentApi } from '@/hooks/useStudentApi';
 import type { EventInput } from '@fullcalendar/core';
-import type { UserSchedule } from '@/lib/user-schedule';
+import type { ScheduleCategory, UserSchedule } from '@/lib/user-schedule';
 
 interface UseUserSchedulesInRangeOptions {
   start: string;
   end: string;
   enabled?: boolean;
+  scheduleCategory?: ScheduleCategory;
 }
 
 interface UseUserSchedulesInRangeResult {
@@ -28,7 +30,7 @@ interface UseUserSchedulesInRangeResult {
 export function useUserSchedulesInRange(
   options: UseUserSchedulesInRangeOptions
 ): UseUserSchedulesInRangeResult {
-  const { start, end, enabled = true } = options;
+  const { start, end, enabled = true, scheduleCategory } = options;
   const { withStudent, studentUserId } = useStudentApi();
   const [data, setData] = useState<UserScheduleRangeData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -42,9 +44,10 @@ export function useUserSchedulesInRange(
       }
 
       const fetchId = ++fetchIdRef.current;
+      const query = { start, end, studentUserId, scheduleCategory };
 
       if (!force) {
-        const cached = readCachedUserSchedulesInRange({ start, end, studentUserId });
+        const cached = readCachedUserSchedulesInRange(query);
         if (cached) {
           setData(cached);
           setError('');
@@ -57,11 +60,7 @@ export function useUserSchedulesInRange(
       setError('');
 
       try {
-        const next = await getUserSchedulesInRange(
-          { start, end, studentUserId },
-          withStudent,
-          { force }
-        );
+        const next = await getUserSchedulesInRange(query, withStudent, { force });
 
         if (fetchId !== fetchIdRef.current) {
           return;
@@ -84,12 +83,26 @@ export function useUserSchedulesInRange(
         }
       }
     },
-    [enabled, end, start, studentUserId, withStudent]
+    [enabled, end, scheduleCategory, start, studentUserId, withStudent]
   );
 
   useEffect(() => {
     void load(false);
   }, [load]);
+
+  useEffect(() => {
+    if (!enabled) {
+      return;
+    }
+
+    return subscribeUserSchedulesInvalidation((invalidatedStudentUserId) => {
+      if (invalidatedStudentUserId !== studentUserId) {
+        return;
+      }
+
+      void load(false);
+    });
+  }, [enabled, load, studentUserId]);
 
   const refetch = useCallback(async (force = true) => {
     await load(force);

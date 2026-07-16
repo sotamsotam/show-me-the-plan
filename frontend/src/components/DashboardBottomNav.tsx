@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState } from 'react';
 import ResponsiveOverlay from '@/components/ResponsiveOverlay';
 import {
   MoreNavIcon,
@@ -76,24 +76,17 @@ export default function DashboardBottomNav({ variant }: DashboardBottomNavProps)
   const pathname = usePathname();
   const [moreOpen, setMoreOpen] = useState(false);
   const today = getTodayIsoDate();
-  const performanceRangeEnd = useMemo(() => shiftIsoDate(today, 120), [today]);
-  const { schedules: performanceSchedules, refetch: refetchPerformanceSchedules } =
-    useUserSchedulesInRange({
-      start: today,
-      end: performanceRangeEnd,
-      enabled: variant === 'student',
-    });
+  const performanceRangeEnd = useMemo(() => shiftIsoDate(today, 60), [today]);
+  const { schedules: performanceSchedules } = useUserSchedulesInRange({
+    start: today,
+    end: performanceRangeEnd,
+    scheduleCategory: 'performance',
+    enabled: variant === 'student',
+  });
   const upcomingPerformanceCount = useMemo(
     () => countUpcomingPerformanceAssessments(performanceSchedules, today),
     [performanceSchedules, today]
   );
-
-  useEffect(() => {
-    if (variant !== 'student') {
-      return;
-    }
-    void refetchPerformanceSchedules(true);
-  }, [pathname, refetchPerformanceSchedules, variant]);
 
   function isActive(href: string, exact = false) {
     if (exact) {

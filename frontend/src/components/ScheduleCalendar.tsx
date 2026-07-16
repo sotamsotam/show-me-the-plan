@@ -70,6 +70,7 @@ import {
   resolveVacationPeriods,
 } from '@/lib/school-term-periods';
 import { isNeisSchoolCalendarEventType } from '@/lib/timetable';
+import { scheduleScrollListWeekToToday } from '@/lib/calendar-list-week-scroll';
 
 const CALENDAR_PLUGINS = [dayGridPlugin, timeGridPlugin, listPlugin, interactionPlugin];
 
@@ -484,7 +485,8 @@ export default function ScheduleCalendar() {
 
   const refreshUserSchedules = useCallback(async () => {
     invalidateUserSchedules(studentUserId);
-    await refetchUserSchedules(true);
+    // 캐시 무효화 알림으로 다른 훅(하단 네비 등)도 갱신. force 없이 in-flight 공유.
+    await refetchUserSchedules(false);
   }, [refetchUserSchedules, studentUserId]);
 
   const refreshCalendar = useCallback(() => {
@@ -508,6 +510,11 @@ export default function ScheduleCalendar() {
       setCurrentViewType(arg.view.type);
       setToolbarVersion((version) => version + 1);
       setVisibleRange({ start: arg.start, end: arg.end });
+
+      if (isMobile && isListCalendarView(arg.view.type)) {
+        scheduleScrollListWeekToToday(calendarContainerRef.current);
+      }
+
       const rangeKey = buildRangeKey(arg);
 
       if (lastRangeKeyRef.current === rangeKey) {
@@ -517,7 +524,7 @@ export default function ScheduleCalendar() {
       lastRangeKeyRef.current = rangeKey;
       void fetchTimetableEvents(arg.start, arg.end);
     },
-    [fetchTimetableEvents]
+    [fetchTimetableEvents, isMobile]
   );
 
   const closeAllModals = useCallback(() => {
@@ -1187,6 +1194,15 @@ export default function ScheduleCalendar() {
 
     calendarRef.current?.getApi().updateSize();
   }, [calendarHeight, usesMeasuredCalendarHeight]);
+
+  // 일정 로드 후 리스트 DOM이 갱신되면 오늘 행으로 다시 맞춘다.
+  useEffect(() => {
+    if (!isMobile || !isListView || loading) {
+      return;
+    }
+
+    scheduleScrollListWeekToToday(calendarContainerRef.current);
+  }, [calendarEvents, isListView, isMobile, loading, calendarHeight]);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4">

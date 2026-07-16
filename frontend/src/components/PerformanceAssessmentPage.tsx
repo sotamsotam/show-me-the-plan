@@ -180,6 +180,7 @@ export default function PerformanceAssessmentPage() {
   const { schedules, isLoading, error, refetch } = useUserSchedulesInRange({
     start: range.start,
     end: range.end,
+    scheduleCategory: 'performance',
   });
 
   const assessments = useMemo(
@@ -213,7 +214,8 @@ export default function PerformanceAssessmentPage() {
 
   async function handleSaved() {
     invalidateUserSchedules(studentUserId);
-    await refetch(true);
+    // 캐시 무효화 알림으로 하단 네비 등도 갱신. force 없이 in-flight 공유.
+    await refetch(false);
   }
 
   function openCreate() {
