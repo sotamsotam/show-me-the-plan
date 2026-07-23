@@ -3,6 +3,7 @@
 import type { EventInput } from '@fullcalendar/core';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useExamCountdown } from '@/hooks/useExamCountdown';
+import { useMatchMedia } from '@/hooks/useIsMobile';
 import { useExamPrepWeeklyPlansContext } from '@/hooks/useExamPrepWeeklyPlansContext';
 import { useNeisTimetableEnabled } from '@/hooks/useNeisTimetableEnabled';
 import { useStudentApi } from '@/hooks/useStudentApi';
@@ -46,10 +47,6 @@ import { formatOccurrenceDateLabel, getMonthRange, getTodayIsoDate } from '@/lib
 
 const MOBILE_MEDIA_QUERY = '(max-width: 640px)';
 
-function getIsMobileViewport() {
-  return window.matchMedia(MOBILE_MEDIA_QUERY).matches;
-}
-
 export default function StudyPlanTodoPage() {
   const { withStudent, studentUserId } = useStudentApi();
   const { usesNeisTimetable, loading: neisProfileLoading } = useNeisTimetableEnabled();
@@ -67,7 +64,7 @@ export default function StudyPlanTodoPage() {
   const [timetableLoading, setTimetableLoading] = useState(false);
   const [timetableError, setTimetableError] = useState('');
   const [error, setError] = useState('');
-  const [isMobile, setIsMobile] = useState(getIsMobileViewport);
+  const isMobile = useMatchMedia(MOBILE_MEDIA_QUERY);
   const [modalOpen, setModalOpen] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState<StudyPlanTodoFormMode>('create');

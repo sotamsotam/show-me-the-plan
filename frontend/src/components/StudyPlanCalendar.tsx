@@ -43,6 +43,7 @@ import WeeklyPlanCarryOverModal from '@/components/calendar/WeeklyPlanCarryOverM
 import MobileFab from '@/components/MobileFab';
 import { buildCalendarEditHint } from '@/lib/calendar-edit-hint';
 import { useExamCountdown } from '@/hooks/useExamCountdown';
+import { useMatchMedia } from '@/hooks/useIsMobile';
 import { useResponsiveCalendarHeight } from '@/hooks/useResponsiveCalendarHeight';
 import { useExamPrepWeeklyPlansContext } from '@/hooks/useExamPrepWeeklyPlansContext';
 import { useVacationPeriodSettings } from '@/hooks/useVacationPeriodSettings';
@@ -268,10 +269,6 @@ function createDraftFromSelection(start: Date, end: Date): DraftSlot {
   return { start, end };
 }
 
-function getIsMobileViewport() {
-  return window.matchMedia(MOBILE_MEDIA_QUERY).matches;
-}
-
 function resolveDefaultCalendarView(isMobile: boolean): string {
   return isMobile ? MOBILE_LIST_VIEW : DESKTOP_WEEK_VIEW;
 }
@@ -296,10 +293,8 @@ export default function StudyPlanCalendar() {
   const handleEventDidMount = useCallback((arg: EventMountArg) => {
     mountCalendarEventSubjectColor(arg.el, arg.event.extendedProps);
   }, []);
-  const [isMobile, setIsMobile] = useState(getIsMobileViewport);
-  const [activeViewType, setActiveViewType] = useState(() =>
-    resolveDefaultCalendarView(getIsMobileViewport())
-  );
+  const isMobile = useMatchMedia(MOBILE_MEDIA_QUERY);
+  const [activeViewType, setActiveViewType] = useState(DESKTOP_WEEK_VIEW);
   const [scheduleRange, setScheduleRange] = useState<{ start: string; end: string } | null>(
     null
   );
@@ -352,7 +347,7 @@ export default function StudyPlanCalendar() {
   const calendarRef = useRef<FullCalendar>(null);
   const calendarContainerRef = useRef<HTMLDivElement>(null);
   const [toolbarVersion, setToolbarVersion] = useState(0);
-  const [weeklyPlanPanelOpen, setWeeklyPlanPanelOpen] = useState(() => !getIsMobileViewport());
+  const [weeklyPlanPanelOpen, setWeeklyPlanPanelOpen] = useState(true);
   const [carryOverTarget, setCarryOverTarget] = useState<UnachievedWeeklyPlanItem | null>(null);
   const [carryOverWeek, setCarryOverWeek] = useState(1);
   const [carryOverLoading, setCarryOverLoading] = useState(false);
@@ -390,18 +385,10 @@ export default function StudyPlanCalendar() {
   }, [weeklyPlanPlacement]);
 
   useEffect(() => {
-    const mediaQuery = window.matchMedia(MOBILE_MEDIA_QUERY);
-    const handleChange = () => {
-      setIsMobile(mediaQuery.matches);
-    };
-
-    handleChange();
-    mediaQuery.addEventListener('change', handleChange);
-
-    return () => {
-      mediaQuery.removeEventListener('change', handleChange);
-    };
-  }, []);
+    if (isMobile) {
+      setWeeklyPlanPanelOpen(false);
+    }
+  }, [isMobile]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {

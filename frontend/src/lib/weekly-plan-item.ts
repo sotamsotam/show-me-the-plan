@@ -1,5 +1,5 @@
 export const MAX_WEEKLY_PLAN_ITEM_TITLE_LENGTH = 500;
-export const MAX_WEEKLY_PLAN_ITEMS_PER_CELL = 30;
+export const MAX_WEEKLY_PLAN_ITEMS_PER_CELL = 50;
 
 export interface WeeklyPlanItem {
   id: string;

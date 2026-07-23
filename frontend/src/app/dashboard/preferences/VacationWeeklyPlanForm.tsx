@@ -29,8 +29,10 @@ import {
 } from '@/lib/vacation-weekly-plan-template';
 import {
   areVacationWeeklyPlansEqual,
+  copyVacationWeeklyPlanWeekAppend,
   createEmptyVacationWeeklyPlans,
   getVacationWeeklyPlanItems,
+  hasVacationWeekContent,
   previewItemToVacationPeriod,
   resolveStudyPlanTodoQueryRangeForVacation,
   resolveVacationWeeklyPlans,
@@ -120,6 +122,8 @@ export default function VacationWeeklyPlanForm() {
   const [templateApplying, setTemplateApplying] = useState(false);
   const [templateDeletingId, setTemplateDeletingId] = useState<string | null>(null);
   const [templateActionError, setTemplateActionError] = useState('');
+  const [weekCopyDestination, setWeekCopyDestination] = useState<number | null>(null);
+  const [weekCopyFromWeek, setWeekCopyFromWeek] = useState<number | null>(null);
 
   const selectedPreview = useMemo(
     () =>
@@ -154,6 +158,11 @@ export default function VacationWeeklyPlanForm() {
   }, [selectedPreview, weekNumbers]);
 
   const currentWeekCount = selectedPreview?.weekCount ?? 0;
+
+  const subjectIds = useMemo(
+    () => subjects.map((subject) => subject.id),
+    [subjects]
+  );
 
   const currentPeriodLabel = useMemo(
     () =>
@@ -451,6 +460,40 @@ export default function VacationWeeklyPlanForm() {
     setSuccess('');
   }
 
+  function clearWeekCopyUi() {
+    setWeekCopyDestination(null);
+    setWeekCopyFromWeek(null);
+  }
+
+  function handleWeekCopy() {
+    if (
+      weekCopyDestination === null ||
+      weekCopyFromWeek === null ||
+      !selectedPeriodKey
+    ) {
+      return;
+    }
+
+    const result = copyVacationWeeklyPlanWeekAppend(
+      draftPlans,
+      selectedPeriodKey,
+      weekCopyFromWeek,
+      weekCopyDestination,
+      subjectIds
+    );
+
+    if ('error' in result) {
+      setError(result.error);
+      setSuccess('');
+      return;
+    }
+
+    setDraftPlans(result);
+    clearWeekCopyUi();
+    setSuccess('주차 공부계획이 복사되었습니다. 저장 버튼을 눌러 반영해 주세요.');
+    setError('');
+  }
+
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setError('');
@@ -554,9 +597,10 @@ export default function VacationWeeklyPlanForm() {
                 <select
                   id="vacation-weekly-plan-period"
                   value={selectedPeriodKey}
-                  onChange={(event) =>
-                    setSelectedPeriodKey(event.target.value as VacationPeriodSlot)
-                  }
+                  onChange={(event) => {
+                    clearWeekCopyUi();
+                    setSelectedPeriodKey(event.target.value as VacationPeriodSlot);
+                  }}
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 dark:border-neutral-700 dark:bg-zinc-800"
                 >
                   {vacationPeriodPreview.map((preview) => (
@@ -641,18 +685,83 @@ export default function VacationWeeklyPlanForm() {
                         </tr>
                       </thead>
                       <tbody>
-                        {weekNumbers.map((weekNumber) => (
+                        {weekNumbers.map((weekNumber) => {
+                          const weekRangeLabel = weekRanges.get(weekNumber) ?? '';
+                          const isCopyOpen = weekCopyDestination === weekNumber;
+                          const copyFromOptions = weekNumbers.filter(
+                            (fromWeek) =>
+                              fromWeek !== weekNumber &&
+                              hasVacationWeekContent(
+                                draftPlans,
+                                selectedPeriodKey,
+                                fromWeek,
+                                subjectIds
+                              )
+                          );
+                          const canCopyWeek =
+                            !saving && copyFromOptions.length > 0;
+
+                          return (
                           <tr key={weekNumber} className="align-top">
                             <th
                               scope="row"
                               className={`exam-prep-weekly-plan-week-cell px-3 py-3 text-left font-medium text-gray-700 dark:text-gray-200 ${getColumnHoverClassName(0)}`}
                               {...getColumnHoverHandlers(0)}
                             >
-                              {weekRanges.get(weekNumber) ?? ''}
+                              <div className="space-y-2">
+                                <span>{weekRangeLabel}</span>
+                                {isCopyOpen ? (
+                                  <select
+                                    aria-label={`${weekRangeLabel} 가져올 주차`}
+                                    value={weekCopyFromWeek ?? ''}
+                                    onChange={(event) => {
+                                      const value = event.target.value;
+                                      setWeekCopyFromWeek(
+                                        value ? Number(value) : null
+                                      );
+                                    }}
+                                    disabled={saving}
+                                    className="block w-auto max-w-full rounded border border-gray-300 px-1.5 py-1 text-xs font-normal outline-none focus:border-blue-500 disabled:opacity-50 dark:border-neutral-600 dark:bg-zinc-800"
+                                  >
+                                    <option value="">복사할 주차 선택</option>
+                                    {copyFromOptions.map((fromWeek) => (
+                                      <option key={fromWeek} value={fromWeek}>
+                                        {weekRanges.get(fromWeek) ??
+                                          `${fromWeek}주차`}
+                                      </option>
+                                    ))}
+                                  </select>
+                                ) : null}
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (isCopyOpen && weekCopyFromWeek !== null) {
+                                      handleWeekCopy();
+                                      return;
+                                    }
+
+                                    if (isCopyOpen) {
+                                      clearWeekCopyUi();
+                                      return;
+                                    }
+
+                                    setWeekCopyDestination(weekNumber);
+                                    setWeekCopyFromWeek(null);
+                                  }}
+                                  disabled={
+                                    saving ||
+                                    (!isCopyOpen && !canCopyWeek)
+                                  }
+                                  className="block rounded border border-gray-300 px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-neutral-600 dark:text-gray-200 dark:hover:bg-zinc-800"
+                                >
+                                  {isCopyOpen && weekCopyFromWeek !== null
+                                    ? '선택주차에서 복사해오기'
+                                    : '복사해오기'}
+                                </button>
+                              </div>
                             </th>
                             {subjects.map((subject, subjectIndex) => {
                               const colIndex = subjectIndex + 1;
-                              const weekRangeLabel = weekRanges.get(weekNumber) ?? '';
                               const fieldId = `vacation-plan-${selectedPeriodKey}-${weekNumber}-${subject.id}`;
 
                               return (
@@ -685,7 +794,8 @@ export default function VacationWeeklyPlanForm() {
                               );
                             })}
                           </tr>
-                        ))}
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>

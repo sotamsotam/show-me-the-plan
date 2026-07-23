@@ -416,6 +416,92 @@ export function writeVacationWeeklyPlanItemsForCell(
   return nextPlans;
 }
 
+export function hasVacationWeekContent(
+  plans: VacationWeeklyPlans,
+  periodKey: VacationPeriodSlot,
+  weekNumber: number,
+  subjectIds: string[]
+): boolean {
+  for (const subjectId of subjectIds) {
+    if (
+      getVacationWeeklyPlanItems(plans, periodKey, weekNumber, subjectId).length > 0
+    ) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * 소스 주차의 과목별 항목을 제목만 복제해 대상 주차 뒤에 이어 붙인다.
+ * scheduledTodoId는 복사하지 않으며, 대상 주차의 기존 항목은 유지된다.
+ */
+export function copyVacationWeeklyPlanWeekAppend(
+  plans: VacationWeeklyPlans,
+  periodKey: VacationPeriodSlot,
+  sourceWeekNumber: number,
+  targetWeekNumber: number,
+  subjectIds: string[]
+): VacationWeeklyPlans | { error: string } {
+  if (sourceWeekNumber === targetWeekNumber) {
+    return plans;
+  }
+
+  let nextPlans = plans;
+
+  for (const subjectId of subjectIds) {
+    const sourceItems = getVacationWeeklyPlanItems(
+      plans,
+      periodKey,
+      sourceWeekNumber,
+      subjectId
+    );
+
+    if (sourceItems.length === 0) {
+      continue;
+    }
+
+    const targetItems = getVacationWeeklyPlanItems(
+      nextPlans,
+      periodKey,
+      targetWeekNumber,
+      subjectId
+    );
+    const remainingSlots =
+      MAX_VACATION_WEEKLY_PLAN_ITEMS_PER_CELL - targetItems.length;
+
+    if (sourceItems.length > remainingSlots) {
+      return {
+        error:
+          remainingSlots > 0
+            ? `복사할 항목이 많아 대상 주차 일부 칸에 ${remainingSlots}개만 더 추가할 수 있습니다.`
+            : `대상 주차에 이미 칸당 최대 ${MAX_VACATION_WEEKLY_PLAN_ITEMS_PER_CELL}개가 있어 복사할 수 없습니다.`,
+      };
+    }
+
+    const clonedItems = sourceItems.map((item) =>
+      createVacationWeeklyPlanItem(item.title)
+    );
+    const weekKey = String(targetWeekNumber);
+    const periodPlan = nextPlans[periodKey] ?? { weeks: {} };
+    const weekSubjects = { ...(periodPlan.weeks[weekKey] ?? {}) };
+    weekSubjects[subjectId] = [...targetItems, ...clonedItems];
+
+    nextPlans = {
+      ...nextPlans,
+      [periodKey]: {
+        weeks: {
+          ...periodPlan.weeks,
+          [weekKey]: weekSubjects,
+        },
+      },
+    };
+  }
+
+  return nextPlans;
+}
+
 export function setVacationWeeklyPlanItemScheduledTodoId(
   plans: VacationWeeklyPlans,
   periodKey: VacationPeriodSlot,

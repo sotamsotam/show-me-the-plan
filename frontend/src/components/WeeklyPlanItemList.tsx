@@ -277,6 +277,16 @@ export default function WeeklyPlanItemList({
     applyAllItems(removeUnscheduledWeeklyPlanItem(items, itemId));
   }
 
+  function copyItem(title: string) {
+    const result = appendWeeklyPlanItemsFromTitles(items, [title]);
+    if ('error' in result) {
+      setInputError(result.error);
+      return;
+    }
+
+    applyAllItems(result.items);
+  }
+
   function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
     if (event.key === 'Enter') {
       event.preventDefault();
@@ -409,15 +419,27 @@ export default function WeeklyPlanItemList({
                 )}
 
                 {isEditable ? (
-                  <button
-                    type="button"
-                    onClick={() => removeItem(item.id)}
-                    disabled={disabled}
-                    aria-label={`${item.title} 삭제`}
-                    className="shrink-0 rounded px-1 text-gray-500 hover:bg-gray-200 hover:text-gray-800 disabled:opacity-40 dark:hover:bg-neutral-700 dark:hover:text-gray-100"
-                  >
-                    ×
-                  </button>
+                  <div className="flex shrink-0 items-start gap-0.5">
+                    <button
+                      type="button"
+                      onClick={() => copyItem(item.title)}
+                      disabled={disabled || atCapacity}
+                      aria-label={`${item.title} 복사`}
+                      title="복사"
+                      className="rounded px-1 text-gray-500 hover:bg-gray-200 hover:text-gray-800 disabled:opacity-40 dark:hover:bg-neutral-700 dark:hover:text-gray-100"
+                    >
+                      ⧉
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => removeItem(item.id)}
+                      disabled={disabled}
+                      aria-label={`${item.title} 삭제`}
+                      className="rounded px-1 text-gray-500 hover:bg-gray-200 hover:text-gray-800 disabled:opacity-40 dark:hover:bg-neutral-700 dark:hover:text-gray-100"
+                    >
+                      ×
+                    </button>
+                  </div>
                 ) : (
                   <WeeklyPlanItemStatusIcon kind={rowKind} />
                 )}

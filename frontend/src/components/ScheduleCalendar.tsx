@@ -61,6 +61,7 @@ import CalendarEditHint from '@/components/calendar/CalendarEditHint';
 import CalendarExamCountdownBadge from '@/components/calendar/CalendarExamCountdownBadge';
 import { buildCalendarEditHint } from '@/lib/calendar-edit-hint';
 import { useExamCountdown } from '@/hooks/useExamCountdown';
+import { useMatchMedia } from '@/hooks/useIsMobile';
 import { useResponsiveCalendarHeight } from '@/hooks/useResponsiveCalendarHeight';
 import { useExamPrepDayHeader } from '@/hooks/useExamPrepDayHeader';
 import type { VisibleDateRange } from '@/lib/exam-prep-visible-week-plans';
@@ -195,10 +196,6 @@ function createDraftFromSelection(
   return { start, end };
 }
 
-function getIsMobileViewport() {
-  return window.matchMedia(MOBILE_MEDIA_QUERY).matches;
-}
-
 function resolveDefaultCalendarView(isMobile: boolean): string {
   return isMobile ? MOBILE_LIST_VIEW : DESKTOP_WEEK_VIEW;
 }
@@ -219,7 +216,7 @@ export default function ScheduleCalendar() {
     (arg: EventContentArg) => renderCalendarEventContent(arg, profileSubjects),
     [profileSubjects]
   );
-  const [isMobile, setIsMobile] = useState(getIsMobileViewport);
+  const isMobile = useMatchMedia(MOBILE_MEDIA_QUERY);
   const [scheduleRange, setScheduleRange] = useState<{ start: string; end: string } | null>(
     null
   );
@@ -262,9 +259,7 @@ export default function ScheduleCalendar() {
   const calendarContainerRef = useRef<HTMLDivElement>(null);
   const [toolbarVersion, setToolbarVersion] = useState(0);
   const [visibleRange, setVisibleRange] = useState<VisibleDateRange | null>(null);
-  const [currentViewType, setCurrentViewType] = useState(() =>
-    resolveDefaultCalendarView(getIsMobileViewport())
-  );
+  const [currentViewType, setCurrentViewType] = useState(DESKTOP_WEEK_VIEW);
   const { countdown, examPrepPeriods } = useExamCountdown({ visibleRange });
   const vacationPeriods = useMemo(
     () =>
@@ -296,20 +291,6 @@ export default function ScheduleCalendar() {
   useEffect(() => {
     savingDragRef.current = savingDrag;
   }, [savingDrag]);
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia(MOBILE_MEDIA_QUERY);
-    const handleChange = () => {
-      setIsMobile(mediaQuery.matches);
-    };
-
-    handleChange();
-    mediaQuery.addEventListener('change', handleChange);
-
-    return () => {
-      mediaQuery.removeEventListener('change', handleChange);
-    };
-  }, []);
 
   const clearEditSession = useCallback(() => {
     setEditSession(null);
